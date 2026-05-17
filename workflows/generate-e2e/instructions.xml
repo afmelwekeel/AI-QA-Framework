@@ -17,6 +17,7 @@
     </check>
 
     <action>Derive {story_id} from {suite_name} or {story_file} filename</action>
+    <action>If {story_file} is provided, read it fully and store the acceptance criteria count as {ac_count}</action>
   </step>
 
   <step n="2" goal="Execute E2E generation skill">
@@ -27,11 +28,46 @@
     </action>
   </step>
 
-  <step n="3" goal="Verify generated files">
-    <action>Confirm both files exist at the output paths</action>
-    <action>Display the file paths generated</action>
+  <step n="3" goal="Self-review — verify artifacts and test quality">
+    <review>
+      <artifact-checklist>
+        <file path="{output_folder}/{story_id}/e2e/pages/{suite_name}.page.js" required="true">
+          Page Object Model class — must exist at the exact path inside TestResult/
+        </file>
+        <file path="{output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js" required="true">
+          Playwright spec file — must exist at the exact path inside TestResult/
+        </file>
+      </artifact-checklist>
+
+      <quality-checklist>
+        <check id="E2E-1">Both files exist at the correct paths INSIDE {output_folder}/{story_id}/e2e/ — FAIL if files are in any host project folder</check>
+        <check id="E2E-2">Page Object file uses JavaScript (not TypeScript) — no type annotations, no .ts extension, no interface/type keywords</check>
+        <check id="E2E-3">Page Object constructor accepts `page` parameter and assigns `this.page = page`</check>
+        <check id="E2E-4">All locators use `this.page.locator()` or Playwright locator methods — no raw CSS selectors as strings outside locator calls</check>
+        <check id="E2E-5">Spec file imports the Page Object using a relative path pointing to the pages/ folder</check>
+        <check id="E2E-6">Spec file uses `test.describe` and individual `test()` blocks — not bare function calls</check>
+        <check id="E2E-7">If {story_file} was provided: the number of test cases in the spec covers ALL {ac_count} acceptance criteria — at minimum one positive test per AC</check>
+        <check id="E2E-8">Each AC has at least one negative test case (invalid input, missing field, auth failure, etc.)</check>
+        <check id="E2E-9">No hardcoded base URLs in `page.goto()` — must use `baseURL` from Playwright config or config.yaml</check>
+        <check id="E2E-10">No `page.waitForTimeout()` with arbitrary delays — use `page.waitForSelector()` or `expect().toBeVisible()` instead</check>
+        <check id="E2E-11">Each test has meaningful assertions using `expect()` — not just navigation without assertions</check>
+      </quality-checklist>
+
+      <fix-if-needed>
+        For every failed check, edit the file to fix the issue before marking this step complete:
+        - E2E-1 → move the files to the correct path; never write to host project
+        - E2E-2 → convert any TypeScript syntax to plain JavaScript
+        - E2E-3/E2E-4 → fix POM constructor and locator patterns
+        - E2E-5/E2E-6 → fix import path and test structure
+        - E2E-7/E2E-8 → add missing test cases for uncovered ACs and negative scenarios
+        - E2E-9 → replace hardcoded URLs with `baseURL` references
+        - E2E-10 → replace arbitrary waits with proper Playwright waiters
+        - E2E-11 → add missing assertions to each test
+        After all fixes, re-read both files and confirm all checks pass.
+      </fix-if-needed>
+    </review>
     <output>
-      ✅ E2E files generated:
+      ✅ E2E files generated and reviewed:
       - Page Object: {output_folder}/{story_id}/e2e/pages/{suite_name}.page.js
       - Spec: {output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js
 

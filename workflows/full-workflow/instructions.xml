@@ -6,85 +6,296 @@
   <critical>Never skip a phase even if prior phases produced warnings — collect ALL results</critical>
   <critical>Output base path for all artifacts: {output_folder}/{story_id}/</critical>
   <critical>ALL generated files (E2E tests, test cases, test data, bug reports, reports) MUST be written ONLY inside {output_folder}/{story_id}/ — which resolves to ai-qa-framework/TestResult/{story_id}/. NEVER write to any folder found in the host project such as e2e/, tests/, src/e2e/, src/test/, or similar. Those folders belong to the host project and must NEVER be touched.</critical>
+  <critical>SELF-REVIEW RULE: After every phase, execute the phase's review checklist before proceeding. Fix all failures before moving to the next phase.</critical>
 
   <step n="1" goal="Resolve story file and suite name">
     <check if="{story_file} is provided by user">
       <action>Use provided story file path directly</action>
       <action>Derive {story_id} from the filename (e.g., "1-1-opt-in-link-generation" from "1-1-opt-in-link-generation.md")</action>
       <action>Derive {suite_name} from {story_id} if not provided</action>
+      <action>Read {story_file} fully and store {ac_count} = number of acceptance criteria</action>
       <goto anchor="phase_0" />
     </check>
 
     <check if="{story_file} is NOT provided">
-      <ask>Please provide the path to the user story file (e.g., _bmad-output/implementation-artifacts/1-1-opt-in-link-generation.md):
-    You can also run: /AIQA-FullWorkflow _bmad-output/implementation-artifacts/1-1-opt-in-link-generation.md
-      </ask>
+      <ask>Please provide the path to the user story file (e.g., docs/stories/1-1-feature.md):</ask>
       <action>Store user-provided path as {story_file}</action>
       <action>Derive {story_id} from the filename</action>
       <action>Derive {suite_name} from {story_id}</action>
+      <action>Read {story_file} fully and store {ac_count} = number of acceptance criteria</action>
     </check>
   </step>
 
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- PHASE 0                                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
   <step n="2" anchor="phase_0" goal="Phase 0 — Analyze Project">
     <action>Execute skill: project-analysis</action>
     <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-project</action>
-    <action>Verify project.config.json is written to core/ folder</action>
-    <output>✅ Phase 0 complete — project stack detected and saved to core/project.config.json</output>
+
+    <review>
+      <artifact-checklist>
+        <file path="{project-root}/AI-QA-FRAMEWORK/core/project.config.json" required="true">Project config JSON</file>
+      </artifact-checklist>
+      <quality-checklist>
+        <check id="P0-1">project.config.json exists and is valid JSON</check>
+        <check id="P0-2">frontend field is a real framework name — NOT null or "unknown"</check>
+        <check id="P0-3">backend.baseUrl is a real URL — NOT a placeholder</check>
+        <check id="P0-4">auth.scheme is populated</check>
+        <check id="P0-5">routes.pages contains at least one entry</check>
+      </quality-checklist>
+      <fix-if-needed>
+        P0-2 → re-scan package.json and entry files for framework detection
+        P0-3 → ask user for base URL and update config
+        P0-4/P0-5 → re-scan project structure; ask user if auto-detection fails
+        Fix all issues before proceeding to Phase 1.
+      </fix-if-needed>
+    </review>
+    <output>✅ Phase 0 complete — project stack detected and verified in project.config.json</output>
   </step>
 
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- PHASE 1                                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
   <step n="3" anchor="phase_1" goal="Phase 1 — Analyze Story">
     <action>Execute skill: user-story-analysis</action>
     <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-story --story "{story_file}"</action>
-    <action>Verify story AST JSON is generated in TestResult/{story_id}/</action>
-    <output>✅ Phase 1 complete — story AST generated with acceptance criteria, scenarios, and risks</output>
+
+    <review>
+      <artifact-checklist>
+        <file path="{project-root}/AI-QA-FRAMEWORK/reports/story-asts/{story_id}.json" required="true">Story AST JSON</file>
+      </artifact-checklist>
+      <quality-checklist>
+        <check id="P1-1">Story AST JSON file exists and is valid parseable JSON</check>
+        <check id="P1-2">AST acceptance_criteria array has exactly {ac_count} items — every AC from the story must be present</check>
+        <check id="P1-3">Each AC matches the original story text — no omissions, no paraphrasing that loses meaning</check>
+        <check id="P1-4">At least 2 positive scenarios defined</check>
+        <check id="P1-5">At least 1 negative scenario per AC</check>
+        <check id="P1-6">Edge cases section is not empty</check>
+        <check id="P1-7">Security scenarios section covers unauthorised access and input injection</check>
+      </quality-checklist>
+      <fix-if-needed>
+        P1-2/P1-3 → re-read {story_file} and add any missing ACs to the AST
+        P1-4/P1-5 → add missing positive/negative scenarios
+        P1-6 → add boundary, empty-input, and special-character edge cases
+        P1-7 → add auth bypass and injection security scenarios
+        Save corrected AST before proceeding to Phase 2.
+      </fix-if-needed>
+    </review>
+    <output>✅ Phase 1 complete — story AST verified: {ac_count} ACs captured, all scenario sections populated</output>
   </step>
 
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- PHASE 2                                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
   <step n="4" anchor="phase_2" goal="Phase 2 — Generate Test Cases">
     <action>Execute skill: test-case-generation</action>
     <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-test-cases --story "{story_file}"</action>
-    <action>Verify Arabic XLSX and MD files are written to {output_folder}/{story_id}/test-cases/</action>
-    <output>✅ Phase 2 complete — Arabic test cases generated in XLSX and MD formats</output>
+
+    <review>
+      <artifact-checklist>
+        <file path="{output_folder}/{story_id}/test-cases/{story_id}-test-cases.xlsx" required="true">XLSX test cases</file>
+        <file path="{output_folder}/{story_id}/test-cases/{story_id}-test-cases.md"  required="true">MD test cases</file>
+      </artifact-checklist>
+      <quality-checklist>
+        <check id="P2-1">Both XLSX and MD files exist at the correct paths</check>
+        <check id="P2-2">Every AC from {story_file} has at least one positive test case — total positive tests ≥ {ac_count}</check>
+        <check id="P2-3">Every AC has at least one negative test case covering invalid/rejected input</check>
+        <check id="P2-4">Edge case test cases are present (boundary values, empty inputs, max-length, special characters)</check>
+        <check id="P2-5">Each test case has: ID, title, preconditions, numbered steps, expected result — no field is blank</check>
+        <check id="P2-6">Expected results are specific and measurable — NOT vague ("system works correctly")</check>
+        <check id="P2-7">No duplicate test case IDs</check>
+        <check id="P2-8">All text content is in {reporting_language}</check>
+      </quality-checklist>
+      <fix-if-needed>
+        P2-2/P2-3 → add missing test cases for uncovered ACs and negative scenarios
+        P2-4 → add at least 3 edge case tests
+        P2-5 → fill any blank fields with accurate content
+        P2-6 → rewrite vague expected results to be specific and measurable
+        P2-7 → renumber any duplicate IDs
+        P2-8 → translate all content to {reporting_language}
+        Save corrected files before proceeding to Phase 3.
+      </fix-if-needed>
+    </review>
+    <output>✅ Phase 2 complete — test cases verified: all ACs covered, all fields populated, language correct</output>
   </step>
 
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- PHASE 3                                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
   <step n="5" anchor="phase_3" goal="Phase 3 — Generate E2E Tests">
     <action>Execute skill: playwright-generation</action>
     <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-e2e --suite "{suite_name}" --story "{story_file}"</action>
-    <action>Verify Page Object file and spec file are written to {output_folder}/{story_id}/e2e/</action>
-    <output>✅ Phase 3 complete — Playwright POM + spec files generated</output>
+
+    <review>
+      <artifact-checklist>
+        <file path="{output_folder}/{story_id}/e2e/pages/{suite_name}.page.js" required="true">Page Object Model</file>
+        <file path="{output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js"  required="true">Playwright spec</file>
+      </artifact-checklist>
+      <quality-checklist>
+        <check id="P3-1">Both files exist at the correct paths INSIDE {output_folder}/{story_id}/e2e/ — NOT in any host project folder</check>
+        <check id="P3-2">Files are JavaScript — no TypeScript syntax, type annotations, or interface/type keywords</check>
+        <check id="P3-3">POM constructor accepts `page` and assigns `this.page = page`</check>
+        <check id="P3-4">All locators use `this.page.locator()` or Playwright locator methods</check>
+        <check id="P3-5">Spec imports the POM via correct relative path</check>
+        <check id="P3-6">Tests use `test.describe` + `test()` blocks — not bare function calls</check>
+        <check id="P3-7">Number of test cases covers all {ac_count} ACs — at least one positive test per AC</check>
+        <check id="P3-8">At least one negative test case per AC</check>
+        <check id="P3-9">No hardcoded base URLs — uses `baseURL` from config</check>
+        <check id="P3-10">No arbitrary `page.waitForTimeout()` — uses proper Playwright waiters</check>
+        <check id="P3-11">Every test has at least one `expect()` assertion</check>
+      </quality-checklist>
+      <fix-if-needed>
+        P3-1 → move files to the correct path; remove any host project copies
+        P3-2 → convert TypeScript syntax to plain JavaScript
+        P3-3/P3-4 → fix POM structure
+        P3-5/P3-6 → fix import path and test structure
+        P3-7/P3-8 → add missing tests for uncovered ACs and negative scenarios
+        P3-9 → replace hardcoded URLs with baseURL
+        P3-10 → replace arbitrary waits with proper waiters
+        P3-11 → add assertions to tests that lack them
+        Save corrected files before proceeding to Phase 4.
+      </fix-if-needed>
+    </review>
+    <output>✅ Phase 3 complete — E2E files verified: correct path, JavaScript, all ACs covered, assertions present</output>
   </step>
 
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- PHASE 4                                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
   <step n="6" anchor="phase_4" goal="Phase 4 — Generate Test Data">
     <action>Execute skill: test-data-generation</action>
     <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-test-data --suite "{suite_name}"</action>
-    <action>Verify JSON test data files are written to {output_folder}/{story_id}/test-data/</action>
-    <output>✅ Phase 4 complete — test data JSON files generated (including edge case and security payloads)</output>
+
+    <review>
+      <artifact-checklist>
+        <file path="{output_folder}/{story_id}/test-data/{suite_name}-valid.json"    required="true">Valid test data</file>
+        <file path="{output_folder}/{story_id}/test-data/{suite_name}-edge.json"     required="true">Edge case data</file>
+        <file path="{output_folder}/{story_id}/test-data/{suite_name}-security.json" required="true">Security payloads</file>
+      </artifact-checklist>
+      <quality-checklist>
+        <check id="P4-1">All 3 JSON data files exist at the correct paths</check>
+        <check id="P4-2">valid.json contains realistic positive data matching the story's domain</check>
+        <check id="P4-3">edge.json covers: empty strings, null values, maximum length strings, special characters, numeric boundaries</check>
+        <check id="P4-4">security.json contains: SQL injection payloads, XSS payloads, CSRF tokens, oversized inputs</check>
+        <check id="P4-5">All JSON files are valid parseable JSON</check>
+        <check id="P4-6">Data values are realistic for the domain — no generic "test123" or "foo" placeholders</check>
+      </quality-checklist>
+      <fix-if-needed>
+        P4-1 → create any missing JSON file with appropriate content
+        P4-2 → replace generic placeholders with domain-specific realistic values
+        P4-3 → add missing edge cases (empty, null, maxLength, special chars)
+        P4-4 → add missing security payloads
+        P4-5 → fix any malformed JSON
+        Save corrected files before proceeding to Phase 5.
+      </fix-if-needed>
+    </review>
+    <output>✅ Phase 4 complete — test data verified: 3 files generated, realistic values, edge cases and security payloads included</output>
   </step>
 
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- PHASE 5                                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
   <step n="7" anchor="phase_5" goal="Phase 5 — Execute Tests">
     <action>Execute skill: test-execution</action>
     <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs run-tests --suite "{suite_name}" --headed {test_mode == "headed"}</action>
     <action>Browser opens visually in {test_mode} mode using {default_browser}</action>
     <action>Capture screenshots, videos, traces, JUnit XML</action>
     <action>Save all artifacts to {output_folder}/{story_id}/</action>
-    <output>✅ Phase 5 complete — tests executed, artifacts saved</output>
-    <output>📊 Current pass rate: {pass_rate}% (gate: {min_pass_rate}%)</output>
+
+    <review>
+      <artifact-checklist>
+        <file path="{output_folder}/{story_id}/test-results.xml" required="true">JUnit XML results</file>
+        <file path="{output_folder}/{story_id}/screenshots/"     required="false">Screenshots folder</file>
+      </artifact-checklist>
+      <quality-checklist>
+        <check id="P5-1">Test execution actually ran — results file exists and is not empty</check>
+        <check id="P5-2">Pass rate is a real calculated value — NOT a placeholder</check>
+        <check id="P5-3">Every test in the spec file appears in the results (no tests were silently skipped)</check>
+        <check id="P5-4">Failed tests have error messages and stack traces captured</check>
+        <check id="P5-5">Screenshots exist for any failed test</check>
+      </quality-checklist>
+      <fix-if-needed>
+        P5-1 → if execution failed to start, diagnose the error (missing dependency, wrong path) and retry
+        P5-3 → if tests were skipped, investigate skip reason and resolve
+        P5-4 → if error details are missing, re-run the specific failing tests with verbose output
+      </fix-if-needed>
+    </review>
+    <output>✅ Phase 5 complete — tests executed</output>
+    <output>📊 Pass rate: {pass_rate}% (gate: {min_pass_rate}%)</output>
   </step>
 
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- PHASE 6                                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
   <step n="8" anchor="phase_6" goal="Phase 6 — Analyze Bugs">
     <action>Execute skill: bug-analysis</action>
     <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-bugs</action>
-    <action>Triage all test failures and generate Arabic bug reports</action>
+    <action>Triage all test failures and generate bug reports in {reporting_language}</action>
     <action>Save reports to {output_folder}/{story_id}/bug-reports/</action>
-    <output>✅ Phase 6 complete — Arabic bug reports generated with root-cause analysis</output>
+
+    <review>
+      <artifact-checklist>
+        <file path="{output_folder}/{story_id}/bug-reports/" required="true">
+          Bug reports folder — must contain one report per failed test
+        </file>
+      </artifact-checklist>
+      <quality-checklist>
+        <check id="P6-1">One bug report exists for every failed test from Phase 5 — no failure goes undocumented</check>
+        <check id="P6-2">Each report contains: bug ID, title, severity (Critical/High/Medium/Low), steps to reproduce, actual result, expected result, root cause analysis</check>
+        <check id="P6-3">Severity is correctly classified — not every bug is "Critical"</check>
+        <check id="P6-4">Root cause analysis is specific — NOT generic ("unknown error" or "test failed")</check>
+        <check id="P6-5">All bug report content is in {reporting_language}</check>
+        <check id="P6-6">If pass rate is 100% and there are no failures, this step outputs "No bugs found" and skips report generation</check>
+      </quality-checklist>
+      <fix-if-needed>
+        P6-1 → create a bug report for any undocumented failure
+        P6-2 → add any missing required field to each report
+        P6-3 → re-evaluate severity based on impact (data loss/security = Critical, functional = High, UX = Medium)
+        P6-4 → analyse the stack trace and error message to write a specific root cause
+        P6-5 → translate all content to {reporting_language}
+        Save corrected reports before proceeding to Phase 7.
+      </fix-if-needed>
+    </review>
+    <output>✅ Phase 6 complete — bug reports verified: one report per failure, severity classified, root cause specific</output>
   </step>
 
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- PHASE 7                                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
   <step n="9" anchor="phase_7" goal="Phase 7 — Generate QA Report">
     <action>Execute skill: qa-reporting</action>
     <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-report</action>
     <action>Aggregate all phase results into HTML dashboard + XLSX + MD summary</action>
     <action>All report content in {reporting_language}</action>
     <action>Save to {output_folder}/{story_id}/reports/</action>
-    <output>✅ Phase 7 complete — final QA report generated</output>
+
+    <review>
+      <artifact-checklist>
+        <file path="{output_folder}/{story_id}/reports/qa-report.html" required="true">HTML dashboard</file>
+        <file path="{output_folder}/{story_id}/reports/qa-report.xlsx" required="true">XLSX summary</file>
+        <file path="{output_folder}/{story_id}/reports/qa-report.md"   required="true">MD summary</file>
+      </artifact-checklist>
+      <quality-checklist>
+        <check id="P7-1">All 3 report files exist</check>
+        <check id="P7-2">Pass rate matches the actual Phase 5 execution result</check>
+        <check id="P7-3">Bug count matches the number of reports in the bug-reports/ folder</check>
+        <check id="P7-4">All test results (pass and fail) are listed — none omitted</check>
+        <check id="P7-5">Quality gate result (PASSED / FAILED) is clearly stated</check>
+        <check id="P7-6">MD report contains: executive summary, pass rate, failed test list, bug severity breakdown, recommended next actions</check>
+        <check id="P7-7">All content is in {reporting_language}</check>
+      </quality-checklist>
+      <fix-if-needed>
+        P7-1 → re-run generate-report for any missing file
+        P7-2/P7-3 → recalculate figures from source data; update all 3 files
+        P7-4 → add any omitted test results
+        P7-5 → add quality gate result prominently
+        P7-6 → add missing MD sections
+        P7-7 → translate all content to {reporting_language}
+        Save corrected reports.
+      </fix-if-needed>
+    </review>
+    <output>✅ Phase 7 complete — QA report verified: all 3 formats generated, figures accurate, language correct</output>
 
     <check if="pass_rate >= {min_pass_rate}">
       <output>🎉 Quality gate PASSED — {pass_rate}% ≥ {min_pass_rate}%</output>

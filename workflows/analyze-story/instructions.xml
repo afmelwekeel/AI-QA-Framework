@@ -15,7 +15,8 @@
 
   <step n="2" goal="Load and read the story file completely">
     <action>Read the COMPLETE content of {story_file}</action>
-    <action>Identify: title, actor, goal, benefit, acceptance criteria, technical notes</action>
+    <action>Identify and store internally: title, actor, goal, benefit, acceptance criteria (exact list), technical notes</action>
+    <action>Count and store {ac_count} = number of acceptance criteria found in the story file</action>
   </step>
 
   <step n="3" goal="Execute story analysis skill">
@@ -36,11 +37,43 @@
       6. Risks and Dependencies
       7. Data Needed
     </output>
+  </step>
+
+  <step n="5" goal="Self-review — verify artifact completeness and accuracy">
+    <review>
+      <artifact-checklist>
+        <file path="{project-root}/AI-QA-FRAMEWORK/reports/story-asts/{story_id}.json" required="true">
+          Story AST — must exist and be valid JSON
+        </file>
+      </artifact-checklist>
+
+      <quality-checklist>
+        <check id="SA-1">Story AST JSON file exists and is valid parseable JSON</check>
+        <check id="SA-2">AST contains an acceptance_criteria array with exactly {ac_count} items — one entry per AC found in the original story file. No AC may be omitted.</check>
+        <check id="SA-3">Each acceptance criterion in the AST matches the original text in {story_file} — no paraphrasing that loses meaning</check>
+        <check id="SA-4">At least 2 positive test scenarios are defined</check>
+        <check id="SA-5">At least 1 negative test scenario is defined per acceptance criterion</check>
+        <check id="SA-6">Edge cases section is not empty — contains boundary conditions, empty input, max-length, special characters</check>
+        <check id="SA-7">Security scenarios section covers at minimum: unauthorised access attempt and input injection</check>
+        <check id="SA-8">Risks and Dependencies section is populated</check>
+        <check id="SA-9">Data Needed section lists concrete test data values (not vague placeholders)</check>
+      </quality-checklist>
+
+      <fix-if-needed>
+        For every failed check, apply the specific fix before marking this step complete:
+        - SA-2/SA-3 → re-read {story_file}, extract every AC precisely, update the AST
+        - SA-4 → add missing positive scenarios covering happy-path and alternate flows
+        - SA-5 → add negative scenarios for each AC (invalid input, missing required field, auth failure, etc.)
+        - SA-6 → add edge cases: empty inputs, boundary values, maximum length, special characters, concurrent actions
+        - SA-7 → add security scenarios: SQL injection attempt, XSS payload, CSRF, broken auth
+        - SA-8/SA-9 → populate with specific values based on the story context
+        After all fixes, save the corrected AST to the JSON file and re-display the updated analysis.
+      </fix-if-needed>
+    </review>
+    <output>✅ Review complete — story AST verified: {ac_count} ACs captured, all scenario sections populated</output>
 
     <ask>Would you like to proceed with test case generation for this story? [Y/N]</ask>
-
     <check if="user says yes or Y">
-      <action>HALT — user should run [GE] Generate E2E or [FW] Full Workflow next</action>
       <output>✅ Analysis saved. Run [FW] Full Workflow or [GE] Generate E2E Tests to continue.</output>
     </check>
   </step>

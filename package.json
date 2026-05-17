@@ -1,6 +1,6 @@
 {
   "name": "ai-qa-framework",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "type": "module",
   "description": "Universal AI QA Automation Framework — project-agnostic, enterprise-grade. Install with npx ai-qa-framework install.",
   "license": "MIT",

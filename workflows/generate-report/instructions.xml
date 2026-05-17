@@ -36,4 +36,41 @@
       <output>❌ FAILED — Pass rate below quality gate. Review bug reports at: {output_folder}/{story_id}/bug-reports/</output>
     </check>
   </step>
+
+  <step n="4" goal="Self-review — verify report completeness and accuracy">
+    <review>
+      <artifact-checklist>
+        <file path="{output_folder}/{story_id}/reports/qa-report.html" required="true">
+          HTML dashboard — must exist and contain test results table</file>
+        <file path="{output_folder}/{story_id}/reports/qa-report.xlsx" required="true">
+          XLSX summary — must exist with at least one data sheet</file>
+        <file path="{output_folder}/{story_id}/reports/qa-report.md" required="true">
+          Markdown summary — must exist and contain pass rate and bug summary</file>
+      </artifact-checklist>
+
+      <quality-checklist>
+        <check id="QR-1">All 3 report files exist at the correct paths</check>
+        <check id="QR-2">Pass rate in the report matches the actual test execution results — not a placeholder value</check>
+        <check id="QR-3">Bug count in the report matches the number of files in {output_folder}/{story_id}/bug-reports/</check>
+        <check id="QR-4">All test results (passed and failed) are listed in the report — no tests omitted</check>
+        <check id="QR-5">Report language is {reporting_language} — all headings, labels, and content use the correct language</check>
+        <check id="QR-6">HTML report renders valid HTML (opening and closing tags balanced, no broken structure)</check>
+        <check id="QR-7">MD report contains: executive summary, pass rate, failed test list, bug severity breakdown, and next recommended actions</check>
+        <check id="QR-8">Quality gate result (PASSED / FAILED) is clearly stated in all three report formats</check>
+      </quality-checklist>
+
+      <fix-if-needed>
+        For every failed check, apply the fix before marking this step complete:
+        - QR-1 → re-run generate-report skill for any missing file
+        - QR-2/QR-3 → re-read test results and bug-reports folder; recalculate and update figures
+        - QR-4 → add all missing test results to the report
+        - QR-5 → translate or correct all content to {reporting_language}
+        - QR-6 → fix broken HTML structure
+        - QR-7 → add missing MD sections
+        - QR-8 → add quality gate result prominently to all formats
+        After all fixes, re-read the reports and confirm all checks pass.
+      </fix-if-needed>
+    </review>
+    <output>✅ Review complete — all 3 report files verified: pass rate accurate, bug count consistent, language correct</output>
+  </step>
 </workflow>

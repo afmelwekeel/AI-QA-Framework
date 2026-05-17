@@ -22,4 +22,34 @@
       Full config saved to: AI-QA-FRAMEWORK/core/project.config.json
     </output>
   </step>
+
+  <step n="3" goal="Self-review — verify artifact completeness and accuracy">
+    <review>
+      <artifact-checklist>
+        <file path="{project-root}/AI-QA-FRAMEWORK/core/project.config.json" required="true">
+          Project config — must exist and be valid JSON
+        </file>
+      </artifact-checklist>
+
+      <quality-checklist>
+        <check id="PC-1">project.config.json exists and is parseable JSON — FAIL if missing or malformed</check>
+        <check id="PC-2">frontend field is a real framework name (Angular/React/Vue/Blazor etc.), NOT null or "unknown"</check>
+        <check id="PC-3">backend.framework is populated and backend.baseUrl is a real URL, NOT a placeholder</check>
+        <check id="PC-4">database field is populated — if no DB found, explicitly state "none" (not blank)</check>
+        <check id="PC-5">auth.scheme is one of: jwt / oauth / session / basic / none — NOT blank</check>
+        <check id="PC-6">routes.pages contains at least one real route entry</check>
+        <check id="PC-7">No field contains "unknown", "detected", "N/A" or is left empty</check>
+      </quality-checklist>
+
+      <fix-if-needed>
+        For every failed check, apply the specific fix before marking this step complete:
+        - PC-2 fails → re-scan package.json dependencies and src/ entry files; update frontend field
+        - PC-3 fails → ask user: "What is your backend base URL (e.g. http://localhost:3000)?" then update config
+        - PC-6 fails → read router config files (app-routing.module.ts, routes.js, etc.) and extract routes; update config
+        - Any other blank/unknown field → ask user to confirm the correct value then update project.config.json
+        After all fixes re-display the corrected configuration summary and confirm all checks pass.
+      </fix-if-needed>
+    </review>
+    <output>✅ Review complete — project.config.json is verified and accurate</output>
+  </step>
 </workflow>
