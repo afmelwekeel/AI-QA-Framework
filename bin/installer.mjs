@@ -63,8 +63,8 @@ export async function runInstall(flags = {}) {
 
   // ── Step 1: Install directory ───────────────────────────────────────────────
   section('Step 1 of 5 — Installation Directory');
-  const installDir = flags.directory
-    ? flags.directory
+  const installDir = flags.directory || flags.yes
+    ? (flags.directory || defaultDir)
     : await ask('Where should the framework be installed?', defaultDir);
   const targetDir = resolve(process.cwd(), installDir);
   info(`Installing to: ${targetDir}`);
