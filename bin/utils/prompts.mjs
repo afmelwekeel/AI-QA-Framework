@@ -142,8 +142,12 @@ export async function checkbox(question, options, defaultAll = false) {
   options.forEach((o, i) => { if (o.required || o.default) ticked.add(i); });
 
   const lines = () => {
+    const count = ticked.size;
+    const hint  = count > 0
+      ? `${c.green}${count} selected${c.reset}  ${c.dim}· Enter confirm${c.reset}`
+      : `${c.dim}↑↓ move · Space toggle · Enter select${c.reset}`;
     const out = [];
-    out.push(`\n  ${c.cyan}${c.bold}?${c.reset} ${c.bold}${question}${c.reset}  ${c.dim}↑↓ move · Space toggle · Enter confirm${c.reset}`);
+    out.push(`\n  ${c.cyan}${c.bold}?${c.reset} ${c.bold}${question}${c.reset}  ${hint}`);
     for (let i = 0; i < options.length; i++) {
       const o = options[i];
       const active  = i === cur;
@@ -181,6 +185,8 @@ export async function checkbox(question, options, defaultAll = false) {
           print();
         }
       } else if (key === '\r') {
+        // If nothing is ticked, treat Enter as "select cursor item + confirm"
+        if (ticked.size === 0 && !options[cur].required) ticked.add(cur);
         process.stdin.setRawMode(false);
         process.stdin.removeListener('data', onKey);
         process.stdin.pause();
@@ -209,7 +215,12 @@ async function _legacyCheckbox(question, options, defaultAll) {
   const hint     = defaults || 'all';
   const raw      = await getRL().question(`  ${c.cyan}›${c.reset} Numbers comma-separated ${c.dim}(default: ${hint})${c.reset}: `);
 
-  if (!raw.trim()) return defaultAll ? options : options.filter(o => o.required || o.default);
+  if (!raw.trim()) {
+    if (defaultAll) return options;
+    const defaults = options.filter(o => o.required || o.default);
+    // If no defaults defined, fall back to the first non-"none" option so we never return empty
+    return defaults.length > 0 ? defaults : options.filter(o => o.id !== 'none').slice(0, 1);
+  }
 
   const chosen = raw.split(',')
     .map(s => parseInt(s.trim(), 10))
