@@ -14,3 +14,4 @@ dist/
 .vs/
 test-cases/
 CLEANUP-MANIFEST.md
+*.tgz
