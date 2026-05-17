@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { ask, select, checkbox, section, ok, info, warn, createSpinner, closeRL, c } from './utils/prompts.mjs';
+import { ask, select, checkbox, confirm, section, ok, info, warn, createSpinner, closeRL, c } from './utils/prompts.mjs';
 import { copyFramework, writeConfig, writeManifest, writeToolStubs } from './utils/copy.mjs';
 import { printPostInstall } from './utils/post-install.mjs';
 import { runInit } from './utils/init.mjs';
@@ -131,6 +131,27 @@ export async function runInstall(flags = {}) {
         { id: 'headless', label: 'Headless', description: 'No browser window — faster, good for CI' },
       ]);
 
+  // ── Database connection (optional) ──────────────────────────────────────────
+  let dbConnectionString = '';
+  let dbUsersTable       = 'users';
+  let dbUsernameColumn   = 'email';
+  let dbPasswordColumn   = 'password';
+
+  if (!flags.yes) {
+    const connectDB = await confirm(
+      'Connect to a database so Rayan can fetch test users automatically?',
+      false
+    );
+    if (connectDB) {
+      console.log(`\n  ${c.dim}Supported: SQL Server, PostgreSQL, MySQL, MongoDB, SQLite${c.reset}`);
+      dbConnectionString = await ask('Database connection string');
+      dbUsersTable       = await ask('Users table / collection name', 'users');
+      dbUsernameColumn   = await ask('Username or email column',       'email');
+      dbPasswordColumn   = await ask('Password column',                'password');
+      ok(`Database config saved — ${c.dim}Rayan will query ${dbUsersTable} when test users are needed${c.reset}`);
+    }
+  }
+
   // ── Step 3: AI tools ───────────────────────────────────────────────────────
   section('Step 3 of 6 — AI Tool Integration');
   const selectedTools = flags.tools
@@ -153,6 +174,10 @@ export async function runInstall(flags = {}) {
     userName,
     communicationLanguage: commLang,
     reportingLanguage: typeof reportLang === 'string' ? reportLang : REPORTING_CODES[commLang],
+    dbConnectionString,
+    dbUsersTable,
+    dbUsernameColumn,
+    dbPasswordColumn,
     testMode: testModeChoice.id || testModeChoice,
     tools: selectedTools.filter(t => t !== 'none'),
     modules: selectedModules,

@@ -38,3 +38,15 @@ parallel: false
 min_pass_rate: 95
 block_on_critical: true
 block_on_high: true
+
+# ── Test Data & Database ──────────────────────────────────────────────────────
+# ⚠️  SECURITY: Add this file to .gitignore if db_connection_string contains real credentials.
+# Supported: SQL Server, PostgreSQL, MySQL, MongoDB, SQLite
+db_connection_string: ""           # e.g. "Server=localhost;Database=mydb;User Id=sa;Password=xxx;"
+db_users_table: "users"            # table or collection that holds test accounts
+db_username_column: "email"        # column for username / email
+db_password_column: "password"     # column for password
+
+# Saved test users — populated by /AIQA-FetchTestUsers
+# Format: { role, username, password, notes }
+test_users: []

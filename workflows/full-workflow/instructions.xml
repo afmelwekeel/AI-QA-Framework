@@ -164,6 +164,18 @@
   <!-- PHASE 4                                                         -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <step n="6" anchor="phase_4" goal="Phase 4 — Generate Test Data">
+    <action>
+      Check {test_users} in config.yaml:
+      - If {test_users} is NOT empty → use saved users directly, skip the prompt below
+      - If {test_users} IS empty → ask the user:
+          "I need test user credentials for Phase 4 (test data) and Phase 5 (test execution).
+           Should I:
+           A) Fetch them from your database automatically ({db_connection_string})
+           B) You provide them manually one by one
+           Your choice?"
+        Then load and execute workflow: {project-root}/AI-QA-FRAMEWORK/workflows/fetch-test-data/workflow.yaml
+        WAIT for the workflow to complete and {test_users} to be saved before continuing.
+    </action>
     <action>Execute skill: test-data-generation</action>
     <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-test-data --suite "{suite_name}"</action>
 

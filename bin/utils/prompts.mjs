@@ -62,6 +62,14 @@ export function createSpinner(text) {
   };
 }
 
+// ── confirm (yes / no) ───────────────────────────────────────────────────────
+export async function confirm(question, defaultYes = false) {
+  const yes = { id: 'yes', label: `Yes` };
+  const no  = { id: 'no',  label: `No`  };
+  const result = await select(question, defaultYes ? [yes, no] : [no, yes]);
+  return result.id === 'yes';
+}
+
 // ── ask ───────────────────────────────────────────────────────────────────────
 export async function ask(question, defaultValue = '') {
   const hint = defaultValue ? ` ${c.dim}(${defaultValue})${c.reset}` : '';

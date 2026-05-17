@@ -1,0 +1,227 @@
+<workflow>
+  <critical>Communicate in {communication_language}</critical>
+  <critical>NEVER display plain-text passwords in output — always mask as ****</critical>
+  <critical>After collecting or fetching users, ALWAYS save them to config.yaml test_users before completing</critical>
+
+  <step n="1" goal="Check existing test users and DB config">
+    <action>Read {project-root}/AI-QA-FRAMEWORK/config.yaml</action>
+    <action>Store: {db_connection_string}, {db_users_table}, {db_username_column}, {db_password_column}, {test_users}</action>
+
+    <check if="{test_users} is not empty">
+      <output>
+        ℹ️  You already have {test_users.length} saved test user(s):
+        List each user as: [index] {role} — {username} — ****
+      </output>
+      <ask>What would you like to do?
+        1) Add more users
+        2) Replace all users (clear and start fresh)
+        3) Keep current users and exit
+      </ask>
+      <check if="user chooses 3">
+        <output>✅ Keeping existing test users. No changes made.</output>
+        <action>STOP workflow</action>
+      </check>
+      <check if="user chooses 2">
+        <action>Set {test_users} = []</action>
+        <output>🗑️ Existing users cleared. Ready to add new users.</output>
+      </check>
+    </check>
+  </step>
+
+  <step n="2" goal="Ask how to provide test users">
+    <ask>How would you like to provide test users?
+      A) Fetch from database automatically  — uses {db_connection_string} from config
+      B) Enter users manually one by one    — I will ask you for each user's details
+    </ask>
+
+    <check if="user chooses A and {db_connection_string} is empty">
+      <output>⚠️  No database connection string is configured in config.yaml.</output>
+      <ask>Please provide your database connection string now:</ask>
+      <action>Store as {db_connection_string} and update config.yaml db_connection_string field</action>
+      <ask>Users table / collection name:</ask>
+      <action>Update {db_users_table} in config.yaml</action>
+      <ask>Username or email column name:</ask>
+      <action>Update {db_username_column} in config.yaml</action>
+      <ask>Password column name:</ask>
+      <action>Update {db_password_column} in config.yaml</action>
+    </check>
+
+    <check if="user chooses A">
+      <goto anchor="fetch-from-db" />
+    </check>
+    <check if="user chooses B">
+      <goto anchor="manual-entry" />
+    </check>
+  </step>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- PATH A — Fetch from database                                         -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <step n="3" anchor="fetch-from-db" goal="Detect database type and run query">
+    <action>
+      Detect database type from {db_connection_string}:
+      - Contains "Server=" or "Data Source=" or "mssql" → SQL Server
+      - Starts with "postgresql://" or "postgres://"    → PostgreSQL
+      - Starts with "mysql://"                          → MySQL
+      - Starts with "mongodb://" or "mongodb+srv://"    → MongoDB
+      - Starts with "sqlite:" or ends with ".db"        → SQLite
+      Store as {db_type}
+    </action>
+
+    <action>
+      Write a temporary Node.js script at {project-root}/AI-QA-FRAMEWORK/core/_tmp_fetch_users.mjs
+      that connects to the database using {db_connection_string} and queries:
+        SQL Server / PostgreSQL / MySQL / SQLite:
+          SELECT TOP 20 {db_username_column}, {db_password_column}, role
+          FROM {db_users_table}
+          (use LIMIT 20 for non-SQL-Server)
+        MongoDB:
+          db.getCollection('{db_users_table}').find({}).limit(20).toArray()
+
+      The script must:
+      - Use the appropriate Node.js driver (mssql / pg / mysql2 / mongodb / better-sqlite3)
+      - Output a JSON array to stdout: [{ username, password, role }]
+      - Handle connection errors gracefully and output: { error: "message" }
+    </action>
+
+    <action>Execute: node {project-root}/AI-QA-FRAMEWORK/core/_tmp_fetch_users.mjs</action>
+    <action>Capture stdout as {db_result}</action>
+    <action>Delete the temp script after execution</action>
+
+    <check if="{db_result} contains error">
+      <output>❌ Database query failed: {db_result.error}</output>
+      <ask>Would you like to:
+        1) Try again with a corrected connection string
+        2) Switch to manual user entry
+      </ask>
+      <check if="user chooses 1">
+        <ask>Enter corrected database connection string:</ask>
+        <action>Update {db_connection_string} and retry step 3</action>
+      </check>
+      <check if="user chooses 2">
+        <goto anchor="manual-entry" />
+      </check>
+    </check>
+
+    <action>Parse {db_result} as JSON array of users</action>
+
+    <output>
+      ✅ Fetched {db_result.length} user(s) from {db_users_table}:
+
+      Display a table:
+      | # | Role | Username | Password |
+      |---|------|----------|----------|
+      For each user: | {index} | {role or "user"} | {username} | **** |
+    </output>
+
+    <ask>
+      Select which users to save as test users.
+      Enter comma-separated numbers (e.g. 1,3,5), or type "all" to save all, or "none" to cancel:
+    </ask>
+
+    <action>Filter {db_result} to only the selected entries → store as {selected_users}</action>
+
+    <ask>
+      For each selected user, do you want to assign a role label?
+      (e.g. admin, manager, regular_user, guest — used to identify the user in tests)
+      Type "auto" to use the role field from the database, or provide them one by one:
+    </ask>
+
+    <check if="user types auto">
+      <action>Use the role field from DB, defaulting to "user" if blank</action>
+    </check>
+    <check if="user provides roles manually">
+      <action>For each selected user, ask: "Role label for {username}:" and store the answer</action>
+    </check>
+
+    <goto anchor="save-users" />
+  </step>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- PATH B — Manual entry                                                -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <step n="4" anchor="manual-entry" goal="Collect users one by one">
+    <output>I will ask you for each test user's details one by one.</output>
+    <action>Initialize {collected_users} = []</action>
+
+    <loop>
+      <output>
+        ─── Test User #{loop_index} ───
+      </output>
+
+      <ask>Role / type for this user (e.g. admin, manager, regular_user, guest):</ask>
+      <action>Store as {current_role}</action>
+
+      <ask>Username or email:</ask>
+      <action>Store as {current_username}</action>
+
+      <ask>Password:</ask>
+      <action>Store as {current_password} — do NOT display it back in plain text</action>
+
+      <ask>Any notes about this user? (e.g. "has admin privileges", "locked account for negative tests") — press Enter to skip:</ask>
+      <action>Store as {current_notes}</action>
+
+      <action>Append { role: {current_role}, username: {current_username}, password: {current_password}, notes: {current_notes} } to {collected_users}</action>
+
+      <output>✓ User added: {current_role} — {current_username} — ****</output>
+
+      <ask>Add another user? [Yes / No]</ask>
+      <check if="user says No">
+        <action>Exit loop</action>
+      </check>
+    </loop>
+
+    <action>Set {selected_users} = {collected_users}</action>
+    <goto anchor="save-users" />
+  </step>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- SAVE                                                                 -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <step n="5" anchor="save-users" goal="Save test users to config.yaml">
+    <action>
+      Read {project-root}/AI-QA-FRAMEWORK/config.yaml
+      Find the line: test_users: []  (or the existing test_users block)
+      Replace it with the new YAML list:
+
+      test_users:
+        - role: "{role}"
+          username: "{username}"
+          password: "{password}"
+          notes: "{notes}"
+        ... (one entry per selected user, appended to any existing users if user chose "Add more")
+
+      Write the updated content back to config.yaml
+    </action>
+
+    <review>
+      <quality-checklist>
+        <check id="FU-1">config.yaml test_users list is valid YAML and parses correctly</check>
+        <check id="FU-2">Every selected/entered user appears in the list with role, username, and password fields</check>
+        <check id="FU-3">No passwords are visible in any console output — all shown as ****</check>
+      </quality-checklist>
+      <fix-if-needed>
+        FU-1 → fix YAML formatting (proper indentation, quoted strings)
+        FU-2 → re-add any missing user entries
+      </fix-if-needed>
+    </review>
+
+    <output>
+      ✅ Test users saved to config.yaml
+
+      Summary (passwords masked):
+      | # | Role | Username | Notes |
+      |---|------|----------|-------|
+      List each saved user
+
+      Total: {selected_users.length} user(s) saved.
+
+      These users will be used automatically when Rayan needs test credentials during:
+      - /AIQA-GenerateE2E
+      - /AIQA-FullWorkflow (Phase 3 & Phase 5)
+      - Any command that requires authentication test data
+
+      To update users at any time, run: /AIQA-FetchTestUsers
+    </output>
+  </step>
+</workflow>

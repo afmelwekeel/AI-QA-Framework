@@ -20,7 +20,22 @@
     <action>If {story_file} is provided, read it fully and store the acceptance criteria count as {ac_count}</action>
   </step>
 
-  <step n="2" goal="Execute E2E generation skill">
+  <step n="2" goal="Check test users before generation">
+    <action>
+      Read {test_users} from config.yaml:
+      - If NOT empty → use them when generating login/auth test steps; proceed to step 3
+      - If empty → ask the user:
+          "I need test user credentials to generate authentication test cases.
+           Should I:
+           A) Fetch them from your database
+           B) You provide them manually
+           C) Skip — generate tests without real credentials (I'll use placeholders)"
+        If A or B → load and execute workflow: {project-root}/AI-QA-FRAMEWORK/workflows/fetch-test-data/workflow.yaml
+        If C → proceed with placeholder credentials and add a TODO comment in the generated spec
+    </action>
+  </step>
+
+  <step n="3" goal="Execute E2E generation skill">
     <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-e2e --suite "{suite_name}" --story "{story_file}"</action>
     <action>Skill generates:
       - Page Object file: {output_folder}/{story_id}/e2e/pages/{suite_name}.page.js
@@ -28,7 +43,7 @@
     </action>
   </step>
 
-  <step n="3" goal="Self-review — verify artifacts and test quality">
+  <step n="4" goal="Self-review — verify artifacts and test quality">
     <review>
       <artifact-checklist>
         <file path="{output_folder}/{story_id}/e2e/pages/{suite_name}.page.js" required="true">
