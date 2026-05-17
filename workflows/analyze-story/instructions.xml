@@ -1,0 +1,47 @@
+<workflow>
+  <critical>Communicate in {communication_language}</critical>
+  <critical>Execute ALL steps in exact order</critical>
+
+  <step n="1" goal="Resolve story file">
+    <check if="{story_file} is NOT provided">
+      <ask>Please provide the path to the user story file:</ask>
+      <action>Store as {story_file}</action>
+      <action>Derive {story_id} from filename</action>
+    </check>
+    <check if="{story_file} is provided">
+      <action>Derive {story_id} from filename</action>
+    </check>
+  </step>
+
+  <step n="2" goal="Load and read the story file completely">
+    <action>Read the COMPLETE content of {story_file}</action>
+    <action>Identify: title, actor, goal, benefit, acceptance criteria, technical notes</action>
+  </step>
+
+  <step n="3" goal="Execute story analysis skill">
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-story --story "{story_file}"</action>
+    <action>The skill emits a structured JSON AST saved to reports/story-asts/{story_id}.json</action>
+  </step>
+
+  <step n="4" goal="Display analysis results">
+    <output>
+      **Story Analysis Complete for: {story_id}**
+
+      Display the following sections from the AST:
+      1. Acceptance Criteria (numbered list)
+      2. Positive Scenarios
+      3. Negative Scenarios
+      4. Edge Cases
+      5. Security Scenarios
+      6. Risks and Dependencies
+      7. Data Needed
+    </output>
+
+    <ask>Would you like to proceed with test case generation for this story? [Y/N]</ask>
+
+    <check if="user says yes or Y">
+      <action>HALT — user should run [GE] Generate E2E or [FW] Full Workflow next</action>
+      <output>✅ Analysis saved. Run [FW] Full Workflow or [GE] Generate E2E Tests to continue.</output>
+    </check>
+  </step>
+</workflow>

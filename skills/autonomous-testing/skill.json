@@ -1,0 +1,4 @@
+{ "id": "autonomous-testing", "name": "Autonomous Testing", "version": "1.0.0",
+  "description": "Run the full QA pipeline end-to-end: detect → generate → execute → analyze → report.",
+  "outputs": { "trace": "reports/autonomous-trace.json" },
+  "mcp": { "tool": "qa.autonomous_run" } }

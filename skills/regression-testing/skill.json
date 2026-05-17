@@ -1,0 +1,4 @@
+{ "id": "regression-testing", "name": "Regression Testing", "version": "1.0.0",
+  "description": "Re-run a baseline suite and diff against the last passing run.",
+  "outputs": { "diff": "reports/regression-diff.md" },
+  "mcp": { "tool": "qa.regression_test" } }

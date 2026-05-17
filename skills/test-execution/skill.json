@@ -1,0 +1,5 @@
+{ "id": "test-execution", "name": "Test Execution", "version": "1.0.0",
+  "description": "Run Playwright tests in headed mode with full artifacts (screenshots, videos, traces).",
+  "inputs": { "suite": "optional suite filter", "headed": "default true" },
+  "outputs": { "junit": "reports/junit.xml", "html": "reports/playwright-html" },
+  "mcp": { "tool": "qa.run_tests" } }

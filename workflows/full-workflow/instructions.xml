@@ -1,0 +1,106 @@
+<workflow>
+  <critical>Communicate all responses in {communication_language}</critical>
+  <critical>Generate all QA documents in {reporting_language} (Arabic by default)</critical>
+  <critical>Execute ALL steps in exact order — do NOT skip steps</critical>
+  <critical>Save artifacts after EACH phase completes — never batch phases</critical>
+  <critical>Never skip a phase even if prior phases produced warnings — collect ALL results</critical>
+  <critical>Output base path for all artifacts: {output_folder}/{story_id}/</critical>
+
+  <step n="1" goal="Resolve story file and suite name">
+    <check if="{story_file} is provided by user">
+      <action>Use provided story file path directly</action>
+      <action>Derive {story_id} from the filename (e.g., "1-1-opt-in-link-generation" from "1-1-opt-in-link-generation.md")</action>
+      <action>Derive {suite_name} from {story_id} if not provided</action>
+      <goto anchor="phase_0" />
+    </check>
+
+    <check if="{story_file} is NOT provided">
+      <ask>Please provide the path to the user story file (e.g., _bmad-output/implementation-artifacts/1-1-opt-in-link-generation.md):
+    You can also run: /AIQA-FullWorkflow _bmad-output/implementation-artifacts/1-1-opt-in-link-generation.md
+      </ask>
+      <action>Store user-provided path as {story_file}</action>
+      <action>Derive {story_id} from the filename</action>
+      <action>Derive {suite_name} from {story_id}</action>
+    </check>
+  </step>
+
+  <step n="2" anchor="phase_0" goal="Phase 0 — Analyze Project">
+    <action>Execute skill: project-analysis</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-project</action>
+    <action>Verify project.config.json is written to core/ folder</action>
+    <output>✅ Phase 0 complete — project stack detected and saved to core/project.config.json</output>
+  </step>
+
+  <step n="3" anchor="phase_1" goal="Phase 1 — Analyze Story">
+    <action>Execute skill: user-story-analysis</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-story --story "{story_file}"</action>
+    <action>Verify story AST JSON is generated in TestResult/{story_id}/</action>
+    <output>✅ Phase 1 complete — story AST generated with acceptance criteria, scenarios, and risks</output>
+  </step>
+
+  <step n="4" anchor="phase_2" goal="Phase 2 — Generate Test Cases">
+    <action>Execute skill: test-case-generation</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-test-cases --story "{story_file}"</action>
+    <action>Verify Arabic XLSX and MD files are written to {output_folder}/{story_id}/test-cases/</action>
+    <output>✅ Phase 2 complete — Arabic test cases generated in XLSX and MD formats</output>
+  </step>
+
+  <step n="5" anchor="phase_3" goal="Phase 3 — Generate E2E Tests">
+    <action>Execute skill: playwright-generation</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-e2e --suite "{suite_name}" --story "{story_file}"</action>
+    <action>Verify Page Object file and spec file are written to {output_folder}/{story_id}/e2e/</action>
+    <output>✅ Phase 3 complete — Playwright POM + spec files generated</output>
+  </step>
+
+  <step n="6" anchor="phase_4" goal="Phase 4 — Generate Test Data">
+    <action>Execute skill: test-data-generation</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-test-data --suite "{suite_name}"</action>
+    <action>Verify JSON test data files are written to {output_folder}/{story_id}/test-data/</action>
+    <output>✅ Phase 4 complete — test data JSON files generated (including edge case and security payloads)</output>
+  </step>
+
+  <step n="7" anchor="phase_5" goal="Phase 5 — Execute Tests">
+    <action>Execute skill: test-execution</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs run-tests --suite "{suite_name}" --headed {test_mode == "headed"}</action>
+    <action>Browser opens visually in {test_mode} mode using {default_browser}</action>
+    <action>Capture screenshots, videos, traces, JUnit XML</action>
+    <action>Save all artifacts to {output_folder}/{story_id}/</action>
+    <output>✅ Phase 5 complete — tests executed, artifacts saved</output>
+    <output>📊 Current pass rate: {pass_rate}% (gate: {min_pass_rate}%)</output>
+  </step>
+
+  <step n="8" anchor="phase_6" goal="Phase 6 — Analyze Bugs">
+    <action>Execute skill: bug-analysis</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-bugs</action>
+    <action>Triage all test failures and generate Arabic bug reports</action>
+    <action>Save reports to {output_folder}/{story_id}/bug-reports/</action>
+    <output>✅ Phase 6 complete — Arabic bug reports generated with root-cause analysis</output>
+  </step>
+
+  <step n="9" anchor="phase_7" goal="Phase 7 — Generate QA Report">
+    <action>Execute skill: qa-reporting</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-report</action>
+    <action>Aggregate all phase results into HTML dashboard + XLSX + MD summary</action>
+    <action>All report content in {reporting_language}</action>
+    <action>Save to {output_folder}/{story_id}/reports/</action>
+    <output>✅ Phase 7 complete — final QA report generated</output>
+
+    <check if="pass_rate >= {min_pass_rate}">
+      <output>🎉 Quality gate PASSED — {pass_rate}% ≥ {min_pass_rate}%</output>
+    </check>
+    <check if="pass_rate &lt; {min_pass_rate}">
+      <output>⚠️ Quality gate FAILED — {pass_rate}% &lt; {min_pass_rate}% — review bug reports before release</output>
+    </check>
+  </step>
+
+  <step n="10" goal="Update QA History">
+    <action>Append entry to {project-root}/AI-QA-FRAMEWORK/_memory/qae-sidecar/qa-history.md with:
+      - Story: {story_id}
+      - Date: {system_date}
+      - Pass rate: {pass_rate}%
+      - Bug count: {bug_count}
+      - Report path: {output_folder}/{story_id}/reports/
+    </action>
+    <output>📝 QA history updated</output>
+  </step>
+</workflow>

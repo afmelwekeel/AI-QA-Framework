@@ -1,0 +1,12 @@
+{
+  "id": "playwright-generation",
+  "name": "Playwright E2E Generation",
+  "version": "1.0.0",
+  "description": "Generate Playwright TypeScript E2E spec + Page Object scaffold from a story AST.",
+  "inputs": { "suite": "logical name (required)", "story": "optional story path" },
+  "outputs": {
+    "spec": "testing/tests/<suite>.spec.ts",
+    "page": "testing/pages/<suite>.page.ts"
+  },
+  "mcp": { "tool": "qa.generate_e2e" }
+}

@@ -1,0 +1,4 @@
+{ "id": "security-validation", "name": "Security Validation", "version": "1.0.0",
+  "description": "Lightweight OWASP-style checks: auth required, RBAC enforced, no secrets in responses, headers.",
+  "outputs": { "report": "reports/security-scan.md" },
+  "mcp": { "tool": "qa.security_scan" } }

@@ -1,0 +1,5 @@
+{ "id": "bug-analysis", "name": "Bug Analysis & RCA", "version": "1.0.0",
+  "description": "Triage Playwright failures, classify severity, and produce Arabic bug reports with suggested root causes.",
+  "inputs": { "junit": "optional path to junit xml" },
+  "outputs": { "bugs": "reports/bugs/*.md" },
+  "mcp": { "tool": "qa.analyze_bugs" } }

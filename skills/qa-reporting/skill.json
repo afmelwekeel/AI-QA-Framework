@@ -1,0 +1,4 @@
+{ "id": "qa-reporting", "name": "Arabic QA Reporting", "version": "1.0.0",
+  "description": "Generate Arabic QA summary reports (Markdown + HTML + CSV) aggregating tests, bugs, and observations.",
+  "outputs": { "md": "reports/qa-summary.md", "html": "reports/qa-summary.html", "csv": "reports/qa-summary.csv" },
+  "mcp": { "tool": "qa.generate_report" } }

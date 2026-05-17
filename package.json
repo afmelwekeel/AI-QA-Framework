@@ -1,0 +1,29 @@
+{
+  "name": "ai-qa-framework",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Universal AI QA Automation Framework — project-agnostic, enterprise-grade.",
+  "scripts": {
+    "qa":             "node ./core/orchestrator.mjs",
+    "detect":         "node ./core/orchestrator.mjs detect",
+    "analyze-story":  "node ./core/orchestrator.mjs analyze-story",
+    "test-cases":     "node ./core/orchestrator.mjs generate-test-cases",
+    "e2e":            "node ./core/orchestrator.mjs generate-e2e",
+    "test-data":      "node ./core/orchestrator.mjs generate-test-data",
+    "run-tests":      "playwright test --headed",
+    "run-tests:ci":   "playwright test --headed=false",
+    "run-tests:debug":"playwright test --debug",
+    "bugs":           "node ./core/orchestrator.mjs analyze-bugs",
+    "report":         "node ./core/orchestrator.mjs generate-report",
+    "full":           "node ./core/orchestrator.mjs full-workflow",
+    "show-report":    "playwright show-report ./reports/playwright-html"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "@axe-core/playwright": "^4.9.1"
+  }
+}

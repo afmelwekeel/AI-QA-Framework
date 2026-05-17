@@ -1,0 +1,7 @@
+# AI QA Framework — Memory Config
+# Tracks agent session state
+
+agent: qae
+agent_name: Layla
+last_session: null
+sessions_count: 0

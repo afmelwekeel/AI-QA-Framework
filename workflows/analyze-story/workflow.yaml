@@ -1,0 +1,14 @@
+name: analyze-story
+description: 'Parse a user story and extract AC, scenarios, risks, and edge cases. Use when user says "analyze story" or "parse story" or "extract acceptance criteria"'
+
+config_source: "{project-root}/AI-QA-FRAMEWORK/config.yaml"
+user_name: "{config_source}:user_name"
+communication_language: "{config_source}:communication_language"
+reporting_language: "{config_source}:reporting_language"
+output_folder: "{config_source}:output_folder"
+
+installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/analyze-story"
+instructions: "{installed_path}/instructions.xml"
+
+story_file: ""     # Ask user if empty
+story_id: ""       # Derived from filename

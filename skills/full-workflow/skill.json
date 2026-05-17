@@ -1,0 +1,17 @@
+{
+  "id": "full-workflow",
+  "name": "Full QA Workflow (Master Command)",
+  "version": "1.0.0",
+  "description": "MASTER command — executes all 7 QA phases in sequence: analyze-story → generate-test-cases → generate-e2e → generate-test-data → run-tests → analyze-bugs → generate-report.",
+  "inputs": {
+    "story": "path to user story file (optional — skips phases 1-4 if not provided)",
+    "suite": "suite name (optional — derived from story if not provided)",
+    "headed": "true/false — whether browser opens visually (default: true)"
+  },
+  "outputs": {
+    "phases": "array of phase results",
+    "summary": "overall pass/fail summary",
+    "reportPath": "path to final HTML report"
+  },
+  "mcp": { "tool": "qa.full_workflow" }
+}

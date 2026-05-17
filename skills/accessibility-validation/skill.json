@@ -1,0 +1,4 @@
+{ "id": "accessibility-validation", "name": "Accessibility Validation", "version": "1.0.0",
+  "description": "Run an a11y check on detected pages using @axe-core/playwright (added at setup time).",
+  "outputs": { "report": "reports/a11y-scan.md" },
+  "mcp": { "tool": "qa.accessibility_scan" } }

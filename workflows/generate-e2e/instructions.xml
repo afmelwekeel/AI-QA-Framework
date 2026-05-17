@@ -1,0 +1,40 @@
+<workflow>
+  <critical>Communicate in {communication_language}</critical>
+  <critical>Execute ALL steps in exact order</critical>
+  <critical>All generated test files must be JavaScript (not TypeScript)</critical>
+  <critical>Tests run in {test_mode} mode using {default_browser}</critical>
+
+  <step n="1" goal="Resolve suite name and story">
+    <check if="{suite_name} is NOT provided">
+      <ask>Please provide the suite name (e.g., opt-in-link-generation):</ask>
+      <action>Store as {suite_name}</action>
+    </check>
+
+    <check if="{story_file} is NOT provided">
+      <ask>Please provide the story file path (optional — press Enter to skip):</ask>
+      <action>Store as {story_file} if provided</action>
+    </check>
+
+    <action>Derive {story_id} from {suite_name} or {story_file} filename</action>
+  </step>
+
+  <step n="2" goal="Execute E2E generation skill">
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-e2e --suite "{suite_name}" --story "{story_file}"</action>
+    <action>Skill generates:
+      - Page Object file: {output_folder}/{story_id}/e2e/pages/{suite_name}.page.js
+      - Spec file: {output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js
+    </action>
+  </step>
+
+  <step n="3" goal="Verify generated files">
+    <action>Confirm both files exist at the output paths</action>
+    <action>Display the file paths generated</action>
+    <output>
+      ✅ E2E files generated:
+      - Page Object: {output_folder}/{story_id}/e2e/pages/{suite_name}.page.js
+      - Spec: {output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js
+
+      **Next step:** Run [RT] Run Tests to execute these tests in {test_mode} mode.
+    </output>
+  </step>
+</workflow>

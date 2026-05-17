@@ -1,0 +1,25 @@
+<workflow>
+  <critical>Communicate in {communication_language}</critical>
+
+  <step n="1" goal="Execute project analysis skill">
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-project</action>
+    <action>Skill scans the host project and writes core/project.config.json</action>
+  </step>
+
+  <step n="2" goal="Display detected stack">
+    <action>Read core/project.config.json</action>
+    <output>
+      ✅ **Project Analysis Complete**
+
+      Display the following detected properties:
+      - Frontend framework and version
+      - Backend framework and base URL
+      - Database engine
+      - Auth scheme
+      - Detected routes (pages and API endpoints count)
+      - Package manager
+
+      Full config saved to: AI-QA-FRAMEWORK/core/project.config.json
+    </output>
+  </step>
+</workflow>

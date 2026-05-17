@@ -1,0 +1,8 @@
+# CODEOWNERS — AI-QA-Framework
+# Every file in this repository requires review from the owner (@afmelwekeel).
+# This means any Pull Request touching any file must be approved by @afmelwekeel
+# before it can be merged.
+#
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+* @afmelwekeel

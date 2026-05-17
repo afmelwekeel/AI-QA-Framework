@@ -1,0 +1,11 @@
+name,description,module,path
+"analyze-project","Auto-detect the host project stack (frontend, backend, DB, auth, routes). Trigger: /AIQA-AnalyzeProject or analyze project or detect project or what stack","qae","AI-QA-FRAMEWORK/workflows/analyze-project/workflow.yaml"
+"analyze-story","Parse a user story and extract acceptance criteria, scenarios, risks, and edge cases. Trigger: /AIQA-AnalyzeStory <story-file> or analyze story or parse story or extract AC","qae","AI-QA-FRAMEWORK/workflows/analyze-story/workflow.yaml"
+"full-workflow","Run all 7 QA phases end-to-end for a story. Trigger: /AIQA-FullWorkflow <story-file> or full workflow or run all or test this story","qae","AI-QA-FRAMEWORK/workflows/full-workflow/workflow.yaml"
+"generate-e2e","Generate Playwright E2E test files (Page Object + spec). Trigger: /AIQA-GenerateE2E <story-file> or generate e2e or write playwright tests or create test files","qae","AI-QA-FRAMEWORK/workflows/generate-e2e/workflow.yaml"
+"generate-report","Generate final QA summary report in HTML, MD, and XLSX. Trigger: /AIQA-GenerateReport or generate report or create report or show results","qae","AI-QA-FRAMEWORK/workflows/generate-report/workflow.yaml"
+"regression-test","Re-run the baseline test suite and compare with previous run. Trigger: /AIQA-RegressionTest or regression test or re-run tests or diff tests","qae","skills/regression-testing"
+"security-scan","Run OWASP-style security validation on detected endpoints. Trigger: /AIQA-SecurityScan or security scan or security check or OWASP","qae","skills/security-validation"
+"accessibility-scan","Run a11y audit on detected pages. Trigger: /AIQA-AccessibilityScan or accessibility scan or a11y check or check accessibility","qae","skills/accessibility-validation"
+"autonomous-run","Run autonomous QA loop that plans, acts, observes, and reflects. Trigger: /AIQA-AutoRun or autonomous run or auto test or run loop","qae","skills/autonomous-testing"
+"reset-framework","Wipe all test outputs from TestResult/ and reset QA history log. Trigger: /AIQA-Reset or reset framework or clear results or fresh cycle","qae","action:reset-framework"

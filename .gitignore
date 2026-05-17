@@ -1,0 +1,14 @@
+node_modules/
+playwright-report/
+test-results/
+TestResult/
+reports/
+screenshots/
+videos/
+traces/
+core/project.config.json
+_memory/qae-sidecar/qa-history.md
+*.log
+.env
+dist/
+.vs/

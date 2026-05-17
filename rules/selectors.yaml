@@ -1,0 +1,13 @@
+# Selector & Locator Rules
+# Order matters: try first to last.
+prefer:
+  - getByRole
+  - getByLabel
+  - getByPlaceholder
+  - getByTestId
+  - getByText
+forbid:
+  - xpath
+  - css with deeply nested combinators
+  - selectors based on auto-generated class hashes
+test_id_attribute: data-testid

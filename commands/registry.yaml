@@ -1,0 +1,86 @@
+# AI QA Framework — Command Registry v2
+# Mirrored by core/orchestrator.mjs and ready for VS Code / MCP integration.
+version: 2
+commands:
+  # ── Core Pipeline ──────────────────────────────────────────────────────────
+  - id: analyze-project
+    skill: project-analysis
+    phase: 0
+    description: Detect frontend, backend, DB, auth, routes
+    args: []
+
+  - id: analyze-story
+    skill: user-story-analysis
+    phase: 1
+    description: Parse a user story / epic — extract AC, scenarios, risks, edge cases
+    args: [{ name: story, required: true }]
+
+  - id: generate-test-cases
+    skill: test-case-generation
+    phase: 2
+    description: Produce Arabic XLSX + MD test cases saved in /test-cases/
+    args: [{ name: story, required: false }, { name: ast, required: false }]
+
+  - id: generate-e2e
+    skill: playwright-generation
+    phase: 3
+    description: Scaffold JavaScript Playwright POM + spec in /e2e/
+    args: [{ name: suite, required: true }, { name: story, required: false }]
+
+  - id: generate-test-data
+    skill: test-data-generation
+    phase: 4
+    description: Generate JSON test data files in /test-data/ for each E2E suite
+    args: [{ name: suite, required: false }]
+
+  - id: run-tests
+    skill: test-execution
+    phase: 5
+    description: Run Playwright tests in headed mode (browser opens visually)
+    args: [{ name: suite, required: false }, { name: headed, required: false, default: true }]
+
+  - id: analyze-bugs
+    skill: bug-analysis
+    phase: 6
+    description: Triage failures, generate Arabic bug reports in /bug-reports/
+    args: [{ name: junit, required: false }]
+
+  - id: generate-report
+    skill: qa-reporting
+    phase: 7
+    description: Aggregate QA summary (HTML + MD + XLSX) in /reports/
+    args: []
+
+  # ── Master Commands ─────────────────────────────────────────────────────────
+  - id: full-workflow
+    skill: full-workflow
+    phase: all
+    description: "MASTER — run all 7 phases: analyze → generate → run → report"
+    args: [{ name: story, required: false }, { name: suite, required: false }]
+
+  - id: run-all
+    skill: full-workflow
+    phase: all
+    description: Alias for full-workflow
+    args: [{ name: story, required: false }, { name: suite, required: false }]
+
+  # ── Specialized Scans ───────────────────────────────────────────────────────
+  - id: regression-test
+    skill: regression-testing
+    description: Re-run baseline + diff
+    args: []
+
+  - id: security-scan
+    skill: security-validation
+    description: OWASP-style validation pass on detected endpoints
+    args: []
+
+  - id: accessibility-scan
+    skill: accessibility-validation
+    description: a11y audit on detected pages
+    args: []
+
+  - id: autonomous-run
+    skill: autonomous-testing
+    description: Full autonomous pipeline (legacy — prefer full-workflow)
+    args: []

@@ -1,0 +1,12 @@
+{
+  "id": "test-case-generation",
+  "name": "Test Case Generation (Arabic XLSX)",
+  "version": "2.0.0",
+  "description": "Generate professional Arabic test cases as a styled Excel (.xlsx) file from a story AST.",
+  "inputs": {
+    "story": "story id or path (required)",
+    "ast":   "optional path to a pre-computed story AST JSON"
+  },
+  "outputs": { "xlsx": "reports/test-cases/<id>.xlsx", "csv": "reports/test-cases/<id>.csv (intermediate, kept for reference)" },
+  "mcp": { "tool": "qa.generate_test_cases" }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "test-data-generation",
+  "name": "Test Data Generation",
+  "version": "1.0.0",
+  "description": "Generate JSON test data files for each E2E test suite. One file per suite saved in /test-data/.",
+  "inputs": {
+    "suite": "suite name (optional — generates data for all detected suites if omitted)"
+  },
+  "outputs": {
+    "files": "test-data/<suite>.testdata.json per suite"
+  },
+  "mcp": { "tool": "qa.generate_test_data" }
+}

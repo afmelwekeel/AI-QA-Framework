@@ -1,0 +1,39 @@
+<workflow>
+  <critical>Communicate in {communication_language}</critical>
+  <critical>All report CONTENT must be in {reporting_language}</critical>
+
+  <step n="1" goal="Resolve story ID">
+    <check if="{story_id} is NOT provided">
+      <ask>Which story's report do you want to generate? Provide the story ID (e.g., 1-1-opt-in-link-generation):</ask>
+      <action>Store as {story_id}</action>
+    </check>
+  </step>
+
+  <step n="2" goal="Execute QA reporting skill">
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-report</action>
+    <action>Skill aggregates all artifacts from {output_folder}/{story_id}/</action>
+    <action>Generates:
+      - HTML dashboard: {output_folder}/{story_id}/reports/qa-report.html
+      - XLSX summary: {output_folder}/{story_id}/reports/qa-report.xlsx
+      - MD summary: {output_folder}/{story_id}/reports/qa-report.md
+    </action>
+  </step>
+
+  <step n="3" goal="Display report summary">
+    <output>
+      ✅ QA Report Generated for: {story_id}
+      📊 Overall Pass Rate: {pass_rate}%
+      🐛 Total Bugs: {bug_count}
+      📁 Reports saved to: {output_folder}/{story_id}/reports/
+
+      **Quality Gate:** {min_pass_rate}% minimum required
+    </output>
+
+    <check if="pass_rate >= {min_pass_rate}">
+      <output>🎉 PASSED — Story meets quality gate</output>
+    </check>
+    <check if="pass_rate &lt; {min_pass_rate}">
+      <output>❌ FAILED — Pass rate below quality gate. Review bug reports at: {output_folder}/{story_id}/bug-reports/</output>
+    </check>
+  </step>
+</workflow>

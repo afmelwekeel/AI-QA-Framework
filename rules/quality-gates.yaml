@@ -1,0 +1,38 @@
+# Global QA Rules — enforced by the framework before / after every run.
+version: 1
+
+quality_gates:
+  min_pass_rate: 95
+  block_release_on:
+    - severity: حرجة
+      max_count: 0
+    - severity: عالية
+      max_count: 0
+  artifacts_required:
+    - screenshots_on_failure
+    - videos_on_failure
+    - traces_on_retry
+    - junit_xml
+    - html_report
+
+autonomous:
+  max_iterations: 1
+  stop_on_skill_failure:
+    - project-analysis
+
+reporting:
+  language: ar
+  formats: [md, html, csv]
+  include:
+    - test_results
+    - bug_summary
+    - security_scan
+    - accessibility_scan
+    - regression_diff
+
+testing:
+  default_mode: headed
+  default_browser: chromium
+  retries_local: 1
+  retries_ci: 2
+  parallel: false        # readability of human observation > speed

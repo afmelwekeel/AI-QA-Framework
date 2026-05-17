@@ -1,0 +1,11 @@
+{
+  "id": "project-analysis",
+  "name": "Project Analysis",
+  "version": "1.0.0",
+  "description": "Auto-detect host project: stack, routes, auth, DB, package managers.",
+  "inputs": {},
+  "outputs": {
+    "config": "core/project.config.json"
+  },
+  "mcp": { "tool": "qa.analyze_project" }
+}

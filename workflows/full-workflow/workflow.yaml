@@ -1,0 +1,23 @@
+name: full-workflow
+description: 'Run all 7 QA phases end-to-end for a user story. Use when user says "run full workflow" or "run all" or "test this story"'
+
+# Critical variables from config
+config_source: "{project-root}/AI-QA-FRAMEWORK/config.yaml"
+user_name: "{config_source}:user_name"
+communication_language: "{config_source}:communication_language"
+document_output_language: "{config_source}:document_output_language"
+reporting_language: "{config_source}:reporting_language"
+output_folder: "{config_source}:output_folder"
+project_name: "{config_source}:project_name"
+test_mode: "{config_source}:test_mode"
+default_browser: "{config_source}:default_browser"
+min_pass_rate: "{config_source}:min_pass_rate"
+
+# Workflow components
+installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/full-workflow"
+instructions: "{installed_path}/instructions.xml"
+
+# Runtime variables (provided by user or derived)
+story_file: ""       # Path to user story MD file; ask user if empty
+suite_name: ""       # Derived from story filename if empty
+story_id: ""         # Derived from story filename (e.g., "1-1-opt-in-link-generation")

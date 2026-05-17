@@ -1,0 +1,37 @@
+# AI QA Framework Configuration
+# Version: 2.1.0 (BMAD-aligned)
+# Date: 2026-05-16
+
+# ── Project Identity ─────────────────────────────────────────────────────────
+project_name: WhatsAppCampPro
+user_name: Ahmed Al Wakeel
+
+# ── Communication ─────────────────────────────────────────────────────────────
+communication_language: English
+document_output_language: English
+reporting_language: ar          # ISO 639-1: ar = Arabic, en = English
+
+# ── Output Paths ──────────────────────────────────────────────────────────────
+output_folder: "{project-root}/AI-QA-FRAMEWORK/TestResult"
+test_cases_folder: "{output_folder}/{story-id}/test-cases"
+e2e_folder: "{output_folder}/{story-id}/e2e"
+test_data_folder: "{output_folder}/{story-id}/test-data"
+bug_reports_folder: "{output_folder}/{story-id}/bug-reports"
+reports_folder: "{output_folder}/{story-id}/reports"
+
+# ── Project Knowledge ─────────────────────────────────────────────────────────
+project_knowledge: "{project-root}/docs"
+implementation_artifacts: "{project-root}/_bmad-output/implementation-artifacts"  # where user story .md files live
+
+# ── Test Settings ─────────────────────────────────────────────────────────────
+test_mode: headed               # headed | headless
+default_browser: chromium       # chromium | firefox | webkit
+slow_mo_ms: 60
+retries_local: 1
+retries_ci: 2
+parallel: false
+
+# ── Quality Gates ─────────────────────────────────────────────────────────────
+min_pass_rate: 95
+block_on_critical: true
+block_on_high: true

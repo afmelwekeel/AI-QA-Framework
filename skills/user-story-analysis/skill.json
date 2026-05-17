@@ -1,0 +1,9 @@
+{
+  "id": "user-story-analysis",
+  "name": "User Story Analysis",
+  "version": "1.0.0",
+  "description": "Parse a user story / epic into testable units (acceptance criteria, scenarios, risks).",
+  "inputs": { "story": "path to story.md (required)" },
+  "outputs": { "ast": "structured story breakdown (JSON)" },
+  "mcp": { "tool": "qa.analyze_story" }
+}
