@@ -39,6 +39,8 @@ Execute each phase in order. Never skip a phase. If a phase fails, log the error
 ### Phase 5 — Test Execution
 - Run: `@qa run-tests`
 - Browser MUST open visually (headed: true, slowMo: 60ms)
+- Playwright automatically retries each failing test **once** (configured in playwright.config.js)
+- If a test still fails after the single retry → it becomes a bug. Do NOT re-run the suite manually.
 - Expected output: JUnit XML + screenshots + videos
 
 ### Phase 6 — Bug Analysis
@@ -52,10 +54,22 @@ Execute each phase in order. Never skip a phase. If a phase fails, log the error
   - `/reports/qa-report.xlsx` (Arabic sheets)
   - `/reports/qa-report.md` (summary)
 
+### Phase 8 — Bug Fixing & Verification
+- Run: `@qa fix-bugs`
+- For each bug in `/bug-reports/`:
+  1. Read the bug report — extract test name, error, stack trace, spec file
+  2. Read the failing source files
+  3. Apply the minimal fix (spec, page object, or app source)
+  4. Retest that single test: `npx playwright test --headed --grep "EXACT TEST NAME"`
+  5. If passes → append ✅ تم الإصلاح to bug report and move on
+  6. If still fails → append ❌ لا يزال فاشلاً with description — then move on
+  - **Rule**: One fix attempt per bug. No retry loops.
+- Expected output: Updated bug reports with fix status + updated INDEX.md
+
 ## Completion Criteria
-- All 7 phases executed
+- All 9 phases executed
 - Final HTML report generated and accessible
-- All bugs documented with root cause analysis
+- All bugs documented with root cause analysis and fix attempt status
 - Pass rate ≥ 80% for green status
 
 ## Rules
@@ -63,3 +77,4 @@ Execute each phase in order. Never skip a phase. If a phase fails, log the error
 - All reports: Arabic language
 - Browser: headed mode, NOT headless
 - Never hard-fail — log and continue
+- **Retry policy**: Playwright retries each test once automatically. No manual suite re-runs.

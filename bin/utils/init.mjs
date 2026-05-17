@@ -89,6 +89,7 @@ You must fully embody this agent's persona and follow all activation instruction
     { path: '.github/prompts/AIQA-RunTests.prompt.md',       content: runTestsPrompt(fw, 'prompt') },
     { path: '.github/prompts/AIQA-GenerateReport.prompt.md', content: generateReportPrompt(fw, 'prompt') },
     { path: '.github/prompts/AIQA-FullWorkflow.prompt.md',   content: fullWorkflowPrompt(fw, 'prompt') },
+    { path: '.github/prompts/AIQA-FixBugs.prompt.md',        content: fixBugsPrompt(fw, 'prompt') },
     { path: '.github/prompts/AIQA-SecurityScan.prompt.md',   content: securityScanPrompt(fw, 'prompt') },
     { path: '.github/prompts/AIQA-AccessibilityScan.prompt.md', content: accessibilityPrompt(fw, 'prompt') },
     { path: '.github/prompts/AIQA-ListSkills.prompt.md',     content: listSkillsPrompt(fw, 'prompt') },
@@ -114,7 +115,8 @@ Follow all steps in the <activation> section of the agent file.`,
     { path: '.claude/commands/AIQA-GenerateE2E.md',       content: claudeCmd('AIQA-GenerateE2E',       fw, 'Generate Playwright E2E tests (POM) + XLSX test cases', generateE2EPrompt(fw, 'claude')) },
     { path: '.claude/commands/AIQA-RunTests.md',          content: claudeCmd('AIQA-RunTests',          fw, 'Run Playwright tests in headed browser', runTestsPrompt(fw, 'claude')) },
     { path: '.claude/commands/AIQA-GenerateReport.md',    content: claudeCmd('AIQA-GenerateReport',    fw, 'Generate QA summary report (HTML + XLSX + MD)', generateReportPrompt(fw, 'claude')) },
-    { path: '.claude/commands/AIQA-FullWorkflow.md',      content: claudeCmd('AIQA-FullWorkflow',      fw, 'Run the full 8-phase QA pipeline end-to-end', fullWorkflowPrompt(fw, 'claude')) },
+    { path: '.claude/commands/AIQA-FullWorkflow.md',      content: claudeCmd('AIQA-FullWorkflow',      fw, 'Run the full 9-phase QA pipeline end-to-end', fullWorkflowPrompt(fw, 'claude')) },
+    { path: '.claude/commands/AIQA-FixBugs.md',          content: claudeCmd('AIQA-FixBugs',           fw, 'Fix all open bugs in bug-reports/ and retest each one', fixBugsPrompt(fw, 'claude')) },
     { path: '.claude/commands/AIQA-SecurityScan.md',      content: claudeCmd('AIQA-SecurityScan',      fw, 'OWASP-style security scan', securityScanPrompt(fw, 'claude')) },
     { path: '.claude/commands/AIQA-AccessibilityScan.md', content: claudeCmd('AIQA-AccessibilityScan', fw, 'WCAG 2.1 AA accessibility audit', accessibilityPrompt(fw, 'claude')) },
     { path: '.claude/commands/AIQA-ListSkills.md',        content: claudeCmd('AIQA-ListSkills',        fw, 'List all available QA skills', listSkillsPrompt(fw, 'claude')) },
@@ -133,7 +135,8 @@ function buildCursorFiles(fw) {
     { name: 'AIQA-GenerateE2E',       desc: 'Generate Playwright tests', body: generateE2EPrompt(fw, 'cursor') },
     { name: 'AIQA-RunTests',          desc: 'Run Playwright tests',      body: runTestsPrompt(fw, 'cursor') },
     { name: 'AIQA-GenerateReport',    desc: 'Generate QA report',        body: generateReportPrompt(fw, 'cursor') },
-    { name: 'AIQA-FullWorkflow',      desc: 'Full 8-phase QA pipeline',  body: fullWorkflowPrompt(fw, 'cursor') },
+    { name: 'AIQA-FullWorkflow',      desc: 'Full 9-phase QA pipeline',  body: fullWorkflowPrompt(fw, 'cursor') },
+    { name: 'AIQA-FixBugs',          desc: 'Fix bugs and retest each',  body: fixBugsPrompt(fw, 'cursor') },
     { name: 'AIQA-SecurityScan',      desc: 'OWASP security scan',       body: securityScanPrompt(fw, 'cursor') },
     { name: 'AIQA-AccessibilityScan', desc: 'Accessibility audit',       body: accessibilityPrompt(fw, 'cursor') },
   ];
@@ -159,6 +162,7 @@ function buildWindsurfFiles(fw) {
     { name: 'AIQA-RunTests',          body: runTestsPrompt(fw, 'windsurf') },
     { name: 'AIQA-GenerateReport',    body: generateReportPrompt(fw, 'windsurf') },
     { name: 'AIQA-FullWorkflow',      body: fullWorkflowPrompt(fw, 'windsurf') },
+    { name: 'AIQA-FixBugs',          body: fixBugsPrompt(fw, 'windsurf') },
     { name: 'AIQA-SecurityScan',      body: securityScanPrompt(fw, 'windsurf') },
     { name: 'AIQA-AccessibilityScan', body: accessibilityPrompt(fw, 'windsurf') },
   ];
@@ -226,16 +230,33 @@ function fullWorkflowPrompt(fw, _) {
   return `${header(fw)}
 3. Load and execute the workflow at {project-root}/${fw}/workflows/full-workflow/
 4. If a story file path was provided as an argument, use it directly; otherwise ask the user for the story file path
-5. Execute all 8 phases in order:
+5. Execute all 9 phases in order:
    Phase 0: Project Analysis — auto-detect stack, URLs, auth
    Phase 1: Story Analysis — extract AC, scenarios, edge cases
    Phase 2: Test Case Generation — XLSX + MD → /test-cases/
    Phase 3: E2E Generation — JS Playwright POM + specs → /e2e/
    Phase 4: Test Data Generation — JSON per suite → /test-data/
-   Phase 5: Test Execution — headed browser, slowMo 60ms
-   Phase 6: Bug Analysis — bug reports → /bug-reports/
+   Phase 5: Test Execution — headed browser, slowMo 60ms (Playwright retries each test ONCE automatically; if still failing → log bug and move on — do NOT retry the suite)
+   Phase 6: Bug Analysis — triage failures → /bug-reports/
    Phase 7: QA Reporting — HTML + XLSX + MD → /reports/
+   Phase 8: Bug Fixing — read each bug report, fix source code, retest that single test (one fix attempt per bug — if still failing mark ❌ and move on)
 6. Report final pass rate vs {min_pass_rate}% quality gate`;
+}
+
+function fixBugsPrompt(fw, _) {
+  return `${header(fw)}
+3. Read all open bug reports from {output_folder}/bug-reports/ (files matching BUG-XXXX.md)
+4. For EACH bug, one at a time:
+   a. Read the bug report — extract test name, error message, stack trace, spec/module file
+   b. Read the failing spec file and any page objects or source files referenced in the trace
+   c. Identify the root cause — wrong selector, wrong assertion, app bug, or test data issue
+   d. Apply the MINIMAL fix to the correct file (spec, page object, or app source)
+   e. Retest ONLY this single test: npx playwright test --headed --grep "EXACT TEST NAME"
+   f. If exit code = 0 → append ✅ تم الإصلاح block to the bug report
+   g. If exit code ≠ 0 → append ❌ لا يزال فاشلاً block with description of what was tried — then move on
+   RULE: one fix attempt per bug. No retrying failed fixes.
+5. After all bugs processed, print a summary table: Bug ID | Fix Applied | Retest Result
+6. Run /AIQA-GenerateReport to update the QA dashboard with fix statuses`;
 }
 
 function securityScanPrompt(fw, _) {

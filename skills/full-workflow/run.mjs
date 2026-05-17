@@ -10,15 +10,16 @@ const SKILLS_ROOT    = join(FRAMEWORK_ROOT, 'skills');
 /**
  * MASTER COMMAND — @qa full-workflow / @qa run-all
  *
- * Executes all 7 QA phases in sequence:
+ * Executes all 9 QA phases in sequence:
  *   Phase 0: Project Analysis  (if no config exists)
  *   Phase 1: Story Analysis    (if --story provided)
  *   Phase 2: Test Case Generation
  *   Phase 3: E2E Generation
  *   Phase 4: Test Data Generation
- *   Phase 5: Test Execution    (browser opens visually)
+ *   Phase 5: Test Execution    (browser opens visually; Playwright retries each test once — failures become bugs)
  *   Phase 6: Bug Analysis
  *   Phase 7: QA Reporting
+ *   Phase 8: Bug Fixing        (fix source code per bug, retest each individually)
  *
  * Usage:
  *   node core/orchestrator.mjs full-workflow --story ../docs/my-story.md --suite my-feature
@@ -30,7 +31,7 @@ export default async function run(ctx) {
   let   ok        = true;
 
   console.log('\n' + '═'.repeat(60));
-  console.log('   🚀 AI QA Framework v2 — Full Workflow');
+  console.log('   🚀 AI QA Framework v2 — Full Workflow (9 Phases)');
   console.log('═'.repeat(60));
   console.log(`   Story  : ${ctx.args?.story ?? '(not provided)'}`);
   console.log(`   Suite  : ${ctx.args?.suite ?? '(auto-detect)'}`);
@@ -93,10 +94,22 @@ export default async function run(ctx) {
   if (!execResult.ok) ok = false;  // Track overall pass/fail but continue
 
   // ── Phase 6: Bug Analysis ─────────────────────────────────────────────────
-  await runPhase('bug-analysis', ctx, trace);
+  const bugResult = await runPhase('bug-analysis', ctx, trace);
 
   // ── Phase 7: QA Reporting ─────────────────────────────────────────────────
   const reportResult = await runPhase('qa-reporting', ctx, trace);
+
+  // ── Phase 8: Bug Fixing ───────────────────────────────────────────────────
+  // Only run if there are open bugs from the analysis phase
+  const bugCount = bugResult?.data?.count ?? 0;
+  if (bugCount > 0) {
+    console.log('\n' + '─'.repeat(60));
+    console.log(`   🔧 Phase 8 — Bug Fixing (${bugCount} bug(s) to fix)`);
+    console.log('─'.repeat(60));
+    await runPhase('bug-fixing', ctx, trace);
+  } else {
+    skipPhase('bug-fixing', 'No bugs found — all tests passed', trace);
+  }
 
   // ── Final summary ─────────────────────────────────────────────────────────
   const durationSec = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -173,6 +186,7 @@ function getPhaseLabel(skill) {
     'test-execution':       'Phase 5 — Test Execution',
     'bug-analysis':         'Phase 6 — Bug Analysis',
     'qa-reporting':         'Phase 7 — QA Reporting',
+    'bug-fixing':           'Phase 8 — Bug Fixing & Verification',
   };
   return labels[skill] ?? skill;
 }

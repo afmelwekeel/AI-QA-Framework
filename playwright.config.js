@@ -44,7 +44,7 @@ export default defineConfig({
   testDir: TEST_DIR,                     // Suite-scoped or default e2e/tests
   fullyParallel: false,                  // One browser at a time — watch it like a real QA
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 1,
+  retries: 1,  // Always 1 retry max — fail fast, log as bug, move on
   workers: process.env.CI ? 2 : 1,
 
   reporter: [

@@ -51,17 +51,23 @@ commands:
     description: Aggregate QA summary (HTML + MD + XLSX) in /reports/
     args: []
 
+  - id: fix-bugs
+    skill: bug-fixing
+    phase: 8
+    description: Fix each bug in /bug-reports/ by editing source code, then retest that single test (one fix attempt per bug)
+    args: [{ name: suite, required: false }]
+
   # ── Master Commands ─────────────────────────────────────────────────────────
   - id: full-workflow
     skill: full-workflow
     phase: all
-    description: "MASTER — run all 7 phases: analyze → generate → run → report"
+    description: "MASTER — run all 9 phases: analyze → generate → run → report → fix-bugs"
     args: [{ name: story, required: false }, { name: suite, required: false }]
 
   - id: run-all
     skill: full-workflow
     phase: all
-    description: Alias for full-workflow
+    description: Alias for full-workflow (9 phases including bug-fixing)
     args: [{ name: story, required: false }, { name: suite, required: false }]
 
   # ── Specialized Scans ───────────────────────────────────────────────────────

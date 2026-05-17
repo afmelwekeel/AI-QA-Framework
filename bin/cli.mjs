@@ -15,7 +15,8 @@ const HELP = `
 
   Commands:
     install       Install the framework into your project (interactive)
-    update        Quick-update an existing installation
+    upgrade       Upgrade an existing installation to the latest version
+    update        Alias for upgrade
     version       Print the version number
     help          Show this help message
 
@@ -28,12 +29,18 @@ const HELP = `
     --reporting-language <code> Override reporting language only
     --yes / -y                  Accept all defaults, non-interactive
 
+  Upgrade Options:
+    --directory <path>          Path to existing installation (auto-detected if omitted)
+    --force                     Re-copy files even if already on the latest version
+    --yes / -y                  Skip confirmation prompts
+
   Examples:
     npx ai-qa-framework install
     npx ai-qa-framework install --yes
     npx ai-qa-framework install --directory qa/ --tools claude-code --language Arabic
     npx ai-qa-framework install --modules e2e-playwright,test-cases-xlsx --yes
-    npx ai-qa-framework update
+    npx ai-qa-framework upgrade
+    npx ai-qa-framework upgrade --directory qa/ --yes
 
   Repository:  https://github.com/afmelwekeel/AI-QA-Framework
   Docs:        https://github.com/afmelwekeel/AI-QA-Framework#readme
@@ -47,6 +54,7 @@ const command = args.find(a => !a.startsWith('-')) || 'help';
 const flags = {};
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--yes' || args[i] === '-y')           flags.yes = true;
+  else if (args[i] === '--force')                        flags.force = true;
   else if (args[i] === '--directory'  && args[i + 1])    flags.directory = args[++i];
   else if (args[i] === '--modules'    && args[i + 1])    flags.modules = args[++i];
   else if (args[i] === '--tools'      && args[i + 1])    flags.tools = args[++i];
@@ -60,10 +68,10 @@ switch (command) {
     await runInstall(flags);
     break;
   }
+  case 'upgrade':
   case 'update': {
-    const { runInstall } = await import('./installer.mjs');
-    // runInstall detects existing install and offers quick-update
-    await runInstall({ ...flags, update: true });
+    const { runUpgrade } = await import('./upgrader.mjs');
+    await runUpgrade(flags);
     break;
   }
   case 'version':

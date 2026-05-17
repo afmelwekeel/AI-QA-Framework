@@ -15,7 +15,7 @@ npx ai-qa-framework install
 
 ## What It Does
 
-AI-QA-Framework gives any project a **Senior AI QA Engineer** named **Rayan** — a persona-driven agent that automates the complete QA lifecycle across 8 phases:
+AI-QA-Framework gives any project a **Senior AI QA Engineer** named **Rayan** — a persona-driven agent that automates the complete QA lifecycle across 9 phases:
 
 ```
 Phase 0 → Auto-detect project stack (Angular, React, .NET, Node, SQL Server, JWT…)
@@ -23,9 +23,10 @@ Phase 1 → Analyze user story → extract acceptance criteria and test scenario
 Phase 2 → Generate structured test cases (XLSX + Markdown)
 Phase 3 → Generate Playwright E2E tests (Page Object Model)
 Phase 4 → Generate test data (valid, edge-case, and security payloads)
-Phase 5 → Execute tests (headed browser, configurable slow-motion)
+Phase 5 → Execute tests (headed browser, each test retried once on failure)
 Phase 6 → Analyze failures → generate structured bug reports
 Phase 7 → Produce QA summary report (HTML dashboard + XLSX + Markdown)
+Phase 8 → Fix bugs — edit source code per bug, retest each fix individually
 ```
 
 Works with any AI assistant: **Claude Code**, **Cursor**, **GitHub Copilot**, **Windsurf**.
@@ -36,8 +37,11 @@ Works with any AI assistant: **Claude Code**, **Cursor**, **GitHub Copilot**, **
 
 **Step 1 — Install**
 ```bash
-# In your project root:
+# Install:
 npx ai-qa-framework install
+
+# Upgrade an existing installation:
+npx ai-qa-framework upgrade
 ```
 
 The installer asks for your project name, language, test mode, and which AI tools you use. It copies the framework into `./ai-qa-framework/` and writes a `config.yaml` tailored to your project.
@@ -76,14 +80,40 @@ Once the framework is installed, run commands from inside `./ai-qa-framework/`:
 | `npm run run-tests:ci` | Phase 5 — execute tests (headless) |
 | `npm run bugs` | Phase 6 — analyze failures |
 | `npm run report` | Phase 7 — generate QA summary |
-| `npm run full` | All 7 phases in sequence |
+| `npm run full` | All 9 phases in sequence (including bug-fixing) |
 
 Or tell Rayan directly in your AI tool:
 ```
 /AIQA-FullWorkflow ./docs/stories/feature-login.md
+/AIQA-FixBugs
 /AIQA-AnalyzeProject
 /AIQA-SecurityScan
 /AIQA-AccessibilityScan
+```
+
+---
+
+## Upgrading
+
+When a new version of the framework is published, run from your project root:
+
+```bash
+npx ai-qa-framework upgrade
+```
+
+The upgrade command:
+- **Auto-detects** your existing installation directory
+- **Preserves** your `config.yaml` (project name, language, DB config, test users — never overwritten)
+- **Copies** the new framework files (skills, agents, workflows, templates)
+- **Updates** npm dependencies inside the framework folder
+- **Refreshes** AI tool command files (adds any new commands like `/AIQA-FixBugs`)
+- Shows a clear before/after version summary
+
+```bash
+# Options
+npx ai-qa-framework upgrade --yes                    # non-interactive
+npx ai-qa-framework upgrade --directory qa/          # explicit path
+npx ai-qa-framework upgrade --force                  # re-copy even if already latest
 ```
 
 ---
@@ -118,7 +148,7 @@ All values are read at runtime — no restart needed.
 
 ## Modules
 
-Select modules during install. To add more later, re-run `npx ai-qa-framework install` and choose **"Modify Install"**:
+Select modules during install. To add more later, re-run `npx ai-qa-framework install` and choose **"Modify Install"**, or run `npx ai-qa-framework upgrade` to pull the latest files for your current modules:
 
 | Module | What it installs |
 |---|---|
@@ -172,7 +202,7 @@ ai-qa-framework/               ← installed in your project
 ├── core/
 │   ├── orchestrator.mjs       ← routes all commands to skills
 │   └── autonomous-loop.mjs    ← Plan→Act→Observe→Reflect loop
-├── skills/                    ← 13 skills
+├── skills/                    ← 14 skills
 │   ├── project-analysis/
 │   ├── user-story-analysis/
 │   ├── test-case-generation/
@@ -180,6 +210,7 @@ ai-qa-framework/               ← installed in your project
 │   ├── test-data-generation/
 │   ├── test-execution/
 │   ├── bug-analysis/
+│   ├── bug-fixing/            ← Phase 8 — fix source code, retest each bug
 │   ├── qa-reporting/
 │   ├── regression-testing/
 │   ├── security-validation/

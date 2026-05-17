@@ -25,6 +25,7 @@ Suite name: **{{suite}}**
 5. **Execute Tests** — browser opens in {{test_mode}} mode using {{default_browser}}
 6. **Analyze Bugs** — triage failures, {{reporting_language}} reports to `{{output_folder}}/{{story_id}}/bug-reports/`
 7. **Generate Report** — HTML + MD + XLSX to `{{output_folder}}/{{story_id}}/reports/`
+8. **Fix Bugs** — for each bug: read report → fix source code → retest single test → record outcome
 
 ## Rules
 - Never skip phases
@@ -33,3 +34,5 @@ Suite name: **{{suite}}**
 - Browser must open in {{test_mode}} mode (headless: {{test_mode == 'headless'}})
 - All reports must be in {{reporting_language}}
 - Quality gate: {{min_pass_rate}}% minimum pass rate
+- **Retry policy**: Playwright retries each failing test once automatically. If still failing → log bug, move on. Do NOT re-run the suite. Fix bugs in Phase 8.
+- **Bug fixing**: One fix attempt per bug. If fix fails verification → mark ❌ and move to next bug.
