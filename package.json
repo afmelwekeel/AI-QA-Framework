@@ -1,9 +1,52 @@
 {
   "name": "ai-qa-framework",
   "version": "2.0.0",
-  "private": true,
   "type": "module",
-  "description": "Universal AI QA Automation Framework — project-agnostic, enterprise-grade.",
+  "description": "Universal AI QA Automation Framework — project-agnostic, enterprise-grade. Install with npx ai-qa-framework install.",
+  "license": "MIT",
+  "author": "Ahmed Al Wakeel <afmelwekeel@github.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/afmelwekeel/AI-QA-Framework.git"
+  },
+  "homepage": "https://github.com/afmelwekeel/AI-QA-Framework#readme",
+  "bugs": {
+    "url": "https://github.com/afmelwekeel/AI-QA-Framework/issues"
+  },
+  "keywords": [
+    "qa", "testing", "playwright", "ai", "automation", "cli", "npx",
+    "test-generation", "bmad", "e2e", "accessibility", "security"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "bin": {
+    "ai-qa-framework": "./bin/cli.mjs"
+  },
+  "files": [
+    "bin/",
+    "core/orchestrator.mjs",
+    "core/autonomous-loop.mjs",
+    "core/ARCHITECTURE.md",
+    "agents/",
+    "skills/",
+    "workflows/",
+    "templates/",
+    "rules/",
+    "adapters/",
+    "project-detectors/",
+    "reusable-prompts/",
+    "commands/registry.yaml",
+    "_config/",
+    "_memory/",
+    "config.yaml",
+    "playwright.config.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "qa":             "node ./core/orchestrator.mjs",
     "detect":         "node ./core/orchestrator.mjs detect",
@@ -12,7 +55,7 @@
     "e2e":            "node ./core/orchestrator.mjs generate-e2e",
     "test-data":      "node ./core/orchestrator.mjs generate-test-data",
     "run-tests":      "playwright test --headed",
-    "run-tests:ci":   "playwright test --headed=false",
+    "run-tests:ci":   "playwright test",
     "run-tests:debug":"playwright test --debug",
     "bugs":           "node ./core/orchestrator.mjs analyze-bugs",
     "report":         "node ./core/orchestrator.mjs generate-report",

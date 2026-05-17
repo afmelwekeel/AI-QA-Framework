@@ -1,18 +1,21 @@
 # AI QA Framework Configuration
-# Version: 2.1.0 (BMAD-aligned)
-# Date: 2026-05-16
+# Version: 2.0.0
+# Docs: https://github.com/afmelwekeel/AI-QA-Framework
+#
+# This file is written by `npx ai-qa-framework install` and can be edited at any time.
+# All values are read at runtime — no restart needed.
 
-# ── Project Identity ─────────────────────────────────────────────────────────
-project_name: WhatsAppCampPro
-user_name: Ahmed Al Wakeel
+# ── Project Identity ──────────────────────────────────────────────────────────
+project_name: "MyProject"
+user_name: "Your Name"
 
 # ── Communication ─────────────────────────────────────────────────────────────
-communication_language: English
-document_output_language: English
-reporting_language: ar          # ISO 639-1: ar = Arabic, en = English
+communication_language: English          # Language Claude speaks TO you
+document_output_language: English        # Language for docs (test cases, reports)
+reporting_language: en                   # ISO 639-1: en = English, ar = Arabic
 
 # ── Output Paths ──────────────────────────────────────────────────────────────
-output_folder: "{project-root}/AI-QA-FRAMEWORK/TestResult"
+output_folder: "{project-root}/ai-qa-framework/TestResult"
 test_cases_folder: "{output_folder}/{story-id}/test-cases"
 e2e_folder: "{output_folder}/{story-id}/e2e"
 test_data_folder: "{output_folder}/{story-id}/test-data"
@@ -21,7 +24,7 @@ reports_folder: "{output_folder}/{story-id}/reports"
 
 # ── Project Knowledge ─────────────────────────────────────────────────────────
 project_knowledge: "{project-root}/docs"
-implementation_artifacts: "{project-root}/_bmad-output/implementation-artifacts"  # where user story .md files live
+implementation_artifacts: "{project-root}/docs/stories"
 
 # ── Test Settings ─────────────────────────────────────────────────────────────
 test_mode: headed               # headed | headless

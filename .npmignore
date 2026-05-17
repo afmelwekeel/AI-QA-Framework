@@ -1,0 +1,26 @@
+# Files excluded from the published npm package
+# Only what's in package.json "files" array is included.
+
+# Generated at runtime — project-specific
+TestResult/
+test-cases/
+test-data/
+traces/
+core/project.config.json
+_memory/qae-sidecar/qa-history.md
+
+# Dev/internal
+.vs/
+.github/
+node_modules/
+package-lock.json
+CLEANUP-MANIFEST.md
+USER-STORY-*.md
+
+# Replaced by bin/installer.mjs
+setup/
+
+# Logs and env
+*.log
+.env
+dist/

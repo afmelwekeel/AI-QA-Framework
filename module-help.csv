@@ -9,6 +9,6 @@ command,slashCmd,description,triggerPhrases,example
 "Accessibility Scan","/AIQA-AccessibilityScan","Run an a11y audit on detected pages.","/AIQA-AccessibilityScan, accessibility scan, a11y check, check accessibility","/AIQA-AccessibilityScan"
 "List Skills","/AIQA-ListSkills","Display all available QA skills with descriptions.","/AIQA-ListSkills, list skills, what can you do, show skills","/AIQA-ListSkills"
 "List Workflows","/AIQA-ListWorkflows","Display all available QA workflows with trigger phrases.","/AIQA-ListWorkflows, list workflows, show workflows, available workflows","/AIQA-ListWorkflows"
-"Help","/AIQA-Help","Redisplay the Layla command menu.","/AIQA-Help, help, menu, show menu","/AIQA-Help"
+"Help","/AIQA-Help","Redisplay the Rayan command menu.","/AIQA-Help, help, menu, show menu","/AIQA-Help"
 "Reset Framework","/AIQA-Reset","Wipe all contents of TestResult/ and reset the QA history log. Framework source, config, and preferences are preserved.","/AIQA-Reset, reset framework, clear results, fresh cycle, start over","/AIQA-Reset"
-"Chat","/AIQA-Chat","Chat with Layla about any QA topic — test strategy, Playwright tips, bug triage, etc.","/AIQA-Chat, chat, talk, ask, discuss, question","/AIQA-Chat"
+"Chat","/AIQA-Chat","Chat with Rayan about any QA topic — test strategy, Playwright tips, bug triage, etc.","/AIQA-Chat, chat, talk, ask, discuss, question","/AIQA-Chat"

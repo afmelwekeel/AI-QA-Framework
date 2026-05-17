@@ -12,3 +12,5 @@ _memory/qae-sidecar/qa-history.md
 .env
 dist/
 .vs/
+test-cases/
+CLEANUP-MANIFEST.md

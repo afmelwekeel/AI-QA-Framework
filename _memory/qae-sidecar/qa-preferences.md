@@ -1,7 +1,9 @@
 # QAE Agent — Persistent Preferences
+# This file is auto-updated by the Rayan agent across sessions.
+# Edit manually or via /AIQA-Preferences to change defaults.
 
 ## Reporting
-- Language: ar (Arabic)
+- Language: en (English)
 - Report formats: HTML, XLSX, MD
 - Include bug summary: true
 - Include security findings: true

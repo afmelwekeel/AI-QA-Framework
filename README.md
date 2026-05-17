@@ -1,290 +1,216 @@
-# AI QA Framework v2 — Universal AI QA Automation Framework
+# AI-QA-Framework
 
-> **Enterprise-grade, project-independent QA automation powered by AI.**
-> Analyzes user stories → generates Arabic test cases → writes JavaScript E2E tests → runs them visually → detects bugs → generates full reports.
->
-> **Now BMAD-aligned**: Activate the **Layla** QA agent persona in your AI assistant for a consistent, config-driven experience. See [BMAD Integration](#bmad-integration) below.
+> Universal AI QA Automation Framework — project-agnostic, enterprise-grade.
 
-Supports: Web Apps · APIs · Angular · React · Vue · .NET · Node.js · Java · Python · SQL · Microservices · SaaS.
-
----
-
-## 1. What this framework does
-
-It behaves like a **senior autonomous AI QA Engineer**:
-
-1. Auto-detects the project (frontend, backend, DB, auth, routes).
-2. Reads user stories and extracts acceptance criteria.
-3. Generates professional **Arabic XLSX test cases** (styled Excel, RTL, color-coded severity).
-4. Generates **JavaScript Playwright E2E tests** (Page Object Model, headed).
-5. Generates **JSON test data** (per suite, with XSS/SQL injection payloads).
-6. Executes browser automation **visually** (real browser opens, slowMo 60ms).
-7. Captures screenshots, videos, traces, console + network errors.
-8. Detects bugs and generates **Arabic bug reports** with root-cause analysis.
-9. Produces **Arabic QA summary reports** (HTML dashboard / XLSX / MD).
-
----
-
-## 2. Folder Map
-
-```
-AI-QA-FRAMEWORK/
-├── config.yaml                 # ← BMAD-style user config (language, output, test settings)
-├── agents/
-│   └── qae.md                  # ← Layla — BMAD-style QA agent persona
-├── workflows/                  # ← BMAD-style workflow YAML + XML instructions
-│   ├── full-workflow/          #   (workflow.yaml + instructions.xml)
-│   ├── analyze-story/
-│   ├── generate-e2e/
-│   ├── generate-report/
-│   └── analyze-project/
-├── _config/                    # ← Discovery manifests (BMAD pattern)
-│   ├── agent-manifest.csv
-│   ├── skill-manifest.csv
-│   ├── workflow-manifest.csv
-│   └── qa-help.csv
-├── _memory/                    # ← Persistent QA preferences (BMAD sidecar)
-│   ├── config.yaml
-│   └── qae-sidecar/
-│       ├── qa-preferences.md
-│       └── qa-history.md
-├── module-help.csv             # ← /qa-help command entries
-│
-├── core/
-│   ├── orchestrator.mjs        # Single entry point for all @qa commands
-│   ├── autonomous-loop.mjs     # Plan→act→observe loop (programmatic)
-│   └── project.config.json     # Auto-detected project settings
-│
-├── skills/
-│   ├── project-analysis/       # Phase 0 — Detect host project
-│   ├── user-story-analysis/    # Phase 1 — Parse story → AC → risk
-│   ├── test-case-generation/   # Phase 2 → /test-cases/ (Arabic XLSX + MD)
-│   ├── playwright-generation/  # Phase 3 → /e2e/ (JavaScript POM + specs)
-│   ├── test-data-generation/   # Phase 4 → /test-data/ (JSON per suite)
-│   ├── test-execution/         # Phase 5 — Run Playwright (headed)
-│   ├── bug-analysis/           # Phase 6 → /bug-reports/ (Arabic MD)
-│   ├── qa-reporting/           # Phase 7 → /reports/ (HTML + XLSX + MD)
-│   └── full-workflow/          # Master — chains all 7 phases
-│
-├── TestResult/                 # ← All outputs organized by story ID
-│   └── {story-id}/
-│       ├── test-cases/         # Phase 2 output
-│       ├── e2e/                # Phase 3 output
-│       ├── test-data/          # Phase 4 output
-│       ├── bug-reports/        # Phase 6 output
-│       └── reports/            # Phase 7 output
-│
-├── playwright.config.js        # Root config (headed, slowMo 60ms)
-├── package.json                # ExcelJS + Playwright dependencies
-├── commands/registry.yaml      # Command definitions
-├── setup/bootstrap.ps1         # One-time setup (Windows)
-└── setup/bootstrap.sh          # One-time setup (Linux/macOS)
-```
-
----
-
-## 3. Quick Start
-
-```powershell
-# 1. Install dependencies (once)
-cd AI-QA-FRAMEWORK
-.\setup\bootstrap.ps1
-```
-
-### Simplest command
+[![npm version](https://img.shields.io/npm/v/ai-qa-framework.svg)](https://www.npmjs.com/package/ai-qa-framework)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/afmelwekeel/AI-QA-Framework/actions/workflows/ci.yml/badge.svg)](https://github.com/afmelwekeel/AI-QA-Framework/actions/workflows/ci.yml)
+[![Node.js ≥18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 
 ```bash
-# Pass the story file as a positional argument — no flags needed:
-node ./core/orchestrator.mjs full-workflow ../docs/my-story.md
-
-# Or using the npm alias:
-npm run full
+npx ai-qa-framework install
 ```
 
-### With explicit flags (when you also want to name the suite)
+---
 
+## What It Does
+
+AI-QA-Framework gives any project a **Senior AI QA Engineer** named **Rayan** — a persona-driven agent that automates the complete QA lifecycle in 7 phases:
+
+```
+Phase 0 → Auto-detect project stack (Angular, React, .NET, Node, SQL Server, JWT…)
+Phase 1 → Analyze user story → extract acceptance criteria and test scenarios
+Phase 2 → Generate structured test cases (XLSX + Markdown)
+Phase 3 → Generate Playwright E2E tests (Page Object Model)
+Phase 4 → Generate test data (valid, edge-case, and security payloads)
+Phase 5 → Execute tests (headed browser, configurable slow-motion)
+Phase 6 → Analyze failures → generate structured bug reports
+Phase 7 → Produce QA summary report (HTML dashboard + XLSX + Markdown)
+```
+
+Works with any AI assistant: **Claude Code**, **Cursor**, **GitHub Copilot**, **Windsurf**.
+
+---
+
+## Quick Start
+
+**Step 1 — Install**
 ```bash
-node ./core/orchestrator.mjs full-workflow --story ../docs/my-story.md --suite login
+# In your project root:
+npx ai-qa-framework install
 ```
 
-### Equivalent `@qa` chat command
+The installer asks for your project name, language, test mode, and which AI tools you use. It copies the framework into `./ai-qa-framework/` and writes a `config.yaml` tailored to your project.
 
-In Copilot Chat / any AI agent, type:
+**Step 2 — Activate the Rayan QA agent**
 
+Open your AI tool and load the agent:
+- **Claude Code**: Run `/qa` (stub created in `.claude/commands/`)
+- **Cursor / Copilot**: Reference `./ai-qa-framework/agents/qae.md`
+
+**Step 3 — Run your first QA workflow**
+
+Tell Rayan:
 ```
-@qa full-workflow ../docs/my-story.md
+Run full workflow on ./docs/stories/my-user-story.md
 ```
 
-or with a named suite:
-
-```
-@qa full-workflow --story ../docs/my-story.md --suite login
-```
+Rayan detects your stack, generates test cases, writes Playwright tests, executes them, and delivers a full QA report — all automatically.
 
 ---
 
-## 4. All Commands
+## Commands
 
-| Layla Command | CLI Equivalent | Phase | Output |
-|---|---|---|---|
-| `/AIQA-AnalyzeStory <story>` | `orchestrator.mjs analyze-story` | 1 | Console + AST |
-| `/AIQA-GenerateE2E <story>` | `orchestrator.mjs generate-e2e` | 2–3 | XLSX + JS tests |
-| `/AIQA-RunTests` | `orchestrator.mjs run-tests` | 5 | JUnit XML + screenshots |
-| `/AIQA-GenerateReport` | `orchestrator.mjs generate-report` | 7 | HTML + XLSX + MD |
-| `/AIQA-FullWorkflow <story>` | `orchestrator.mjs full-workflow` | 0–7 | **Everything** |
-| `/AIQA-AnalyzeProject` | `orchestrator.mjs analyze-project` | 0 | `core/project.config.json` |
-| `/AIQA-SecurityScan` | `orchestrator.mjs security-scan` | — | Security report |
-| `/AIQA-AccessibilityScan` | `orchestrator.mjs accessibility-scan` | — | a11y report |
-| `/AIQA-ListSkills` | — | — | Skill list |
-| `/AIQA-ListWorkflows` | — | — | Workflow list |
-| `/AIQA-Help` | — | — | Redisplay menu |
+Once the framework is installed, run commands from inside `./ai-qa-framework/`:
 
----
-
-## 5. 7-Phase Workflow
-
-```
-User Story (.md)
-     │
-     ▼
-[Phase 0] Project Analysis ──── auto-detect stack, URLs, auth
-     │
-     ▼
-[Phase 1] Story Analysis ─────── extract AC, scenarios, edge cases
-     │
-     ▼
-[Phase 2] Test Case Generation ── Arabic XLSX + MD → /test-cases/
-     │
-     ▼
-[Phase 3] E2E Generation ──────── JS Playwright POM + specs → /e2e/
-     │
-     ▼
-[Phase 4] Test Data Generation ── JSON per suite → /test-data/
-     │
-     ▼
-[Phase 5] Test Execution ──────── headed browser, slowMo 60ms
-     │                            → screenshots / videos / JUnit XML
-     ▼
-[Phase 6] Bug Analysis ────────── Arabic bug reports → /bug-reports/
-     │
-     ▼
-[Phase 7] QA Reporting ────────── HTML + XLSX + MD → /reports/
-```
-
----
-
-## 6. Requirements
-
-| Tool | Version |
+| npm script | What it does |
 |---|---|
-| Node.js | ≥ 18 |
-| npm | ≥ 9 |
-| Playwright | ≥ 1.47 (auto-installed) |
-| ExcelJS | 4.4.0 (auto-installed) |
+| `npm run detect` | Phase 0 — auto-detect stack |
+| `npm run analyze-story` | Phase 1 — parse user story |
+| `npm run test-cases` | Phase 2 — generate XLSX test cases |
+| `npm run e2e` | Phase 3 — generate Playwright tests |
+| `npm run test-data` | Phase 4 — generate test data |
+| `npm run run-tests` | Phase 5 — execute tests (headed) |
+| `npm run run-tests:ci` | Phase 5 — execute tests (headless) |
+| `npm run bugs` | Phase 6 — analyze failures |
+| `npm run report` | Phase 7 — generate QA summary |
+| `npm run full` | All 7 phases in sequence |
 
-> All E2E tests are **JavaScript** (`.js`), not TypeScript. The legacy `testing/` folder with TypeScript tests is preserved for backward compatibility.
-
----
-
-## 7. Adapting to a New Project
-
-1. Copy `AI-QA-FRAMEWORK/` to your project root
-2. Run `.\setup\bootstrap.ps1`
-3. Update `core/project.config.json` (or let `/AIQA-AnalyzeProject` auto-detect it)
-4. Run `/AIQA-FullWorkflow docs/my-story.md` — or via CLI: `node ./core/orchestrator.mjs full-workflow --story docs/my-story.md`
-
----
-
-*AI QA Framework v2 — Built for WhatsApp Campaign Pro, designed to work with any project.*
-
-| `/AIQA-GenerateReport` | QA summary (MD + HTML + CSV) |
-| `/AIQA-RegressionTest` | Re-run baseline + diff |
-| `/AIQA-SecurityScan` | OWASP-style validation pass |
-| `/AIQA-AccessibilityScan` | a11y audit |
-| `/AIQA-FullWorkflow <story>` | Full pipeline: detect → generate → run → report |
-
-All commands are also available via CLI — see `commands/registry.yaml`.
-
----
-
-## 5. Reusability Contract
-
-This framework is **project-agnostic**. It never hard-codes:
-- URLs (read from `core/project.config.json`, auto-generated)
-- Selectors (POM auto-scaffolded per detected framework)
-- Auth flow (adapter pattern in `adapters/auth/`)
-- Tech stack (detected via `project-detectors/`)
-
-To use in a NEW project: copy `AI-QA-FRAMEWORK/` and run `/AIQA-AnalyzeProject`.
-
----
-
-## 6. Extensibility
-
-- **MCP-ready**: skills are pure JSON-described capabilities (`skills/*/skill.json`)
-- **VS Code extension-ready**: command registry mirrors VS Code command contributions
-- **Autonomous-ready**: `core/autonomous-loop.mjs` provides plan→act→observe→reflect
-
-See [core/ARCHITECTURE.md](core/ARCHITECTURE.md).
-
----
-
-## 7. BMAD Integration
-
-The AI-QA-FRAMEWORK now follows the same patterns as the [BMAD Method](./../docs/bmad-method-learnings.md).
-
-### How it works
-
-Just like BMAD agents, the **Layla** QA agent is activated by instructing your AI assistant to load the agent file. The agent:
-
-1. **Loads `config.yaml`** first (BMAD's "config-first" principle)
-2. **Stores session variables** — `{user_name}`, `{communication_language}`, `{reporting_language}`, `{output_folder}`, etc.
-3. **Shows a menu** of available commands — waits for user input
-4. **Dispatches to workflow YAML files** when a command is chosen
-5. **Follows `instructions.xml`** for step-by-step execution within each workflow
-
-### Activating Layla
-
-In your AI assistant (GitHub Copilot Chat), load the agent file:
-
+Or tell Rayan directly in your AI tool:
 ```
-Read and follow: AI-QA-FRAMEWORK/agents/qae.md
+/AIQA-FullWorkflow ./docs/stories/feature-login.md
+/AIQA-AnalyzeProject
+/AIQA-SecurityScan
+/AIQA-AccessibilityScan
 ```
 
-Layla will greet you, show her menu, and wait for your command.
+---
 
-### Config-driven behavior
+## Configuration
 
-Edit `AI-QA-FRAMEWORK/config.yaml` to change behavior without touching any code:
+Edit `./ai-qa-framework/config.yaml` after install:
 
 ```yaml
-user_name: Ahmed Al Wakeel
-communication_language: English
-reporting_language: ar          # Change to 'en' for English reports
-test_mode: headed               # Change to 'headless' for CI
-default_browser: chromium
-min_pass_rate: 95
-output_folder: "{project-root}/AI-QA-FRAMEWORK/TestResult"
+# Project Identity
+project_name: "MyApp"
+user_name: "Your Name"
+
+# Language
+communication_language: English    # Rayan speaks to you in this language
+reporting_language: en             # Test cases and reports use this (en | ar | fr | es)
+
+# Test Settings
+test_mode: headed                  # headed | headless
+default_browser: chromium          # chromium | firefox | webkit
+slow_mo_ms: 60                     # milliseconds between actions (0 = instant)
+
+# Quality Gates
+min_pass_rate: 95                  # Minimum % pass rate to consider suite green
+block_on_critical: true            # Fail pipeline on critical bugs
+block_on_high: true                # Fail pipeline on high-severity bugs
 ```
 
-### Discovery system
+All values are read at runtime — no restart needed.
 
-Layla can list all available skills and workflows on demand:
-- `/AIQA-ListSkills` → reads `_config/skill-manifest.csv`
-- `/AIQA-ListWorkflows` → reads `_config/workflow-manifest.csv`
-- `/AIQA-Help` → redisplays the full command menu
+---
 
-### BMAD vs CLI — two ways to work
+## Modules
 
-| Mode | How | When |
-|---|---|---|
-| **BMAD Agent (Layla)** | Activate agent in AI chat → interactive menu | When working with AI assistant |
-| **CLI (orchestrator)** | `node core/orchestrator.mjs <command>` | When automating in scripts/CI |
+Select modules during `npx ai-qa-framework install` or re-run to add more:
 
-Both modes use the same underlying skills. The BMAD layer adds persona, config-driven settings, and structured workflow execution on top of the CLI.
+| Module | What it installs |
+|---|---|
+| `core` *(always)* | Orchestrator, detectors, adapters, Rayan agent |
+| `e2e-playwright` | Playwright test generation + headed execution |
+| `test-cases-xlsx` | Structured XLSX test case generation |
+| `security-scan` | OWASP-style security validation |
+| `accessibility-scan` | axe-core a11y audit |
+| `regression-testing` | Baseline diff testing |
 
-### Persistent memory
+---
 
-Layla remembers preferences across sessions via `_memory/qae-sidecar/`:
-- `qa-preferences.md` — browser, language, quality gate settings
-- `qa-history.md` — log of previously tested stories and pass rates
+## Supported Project Stacks
+
+**Frontend:** Angular, React, Vue, Blazor
+**Backend:** .NET, Node.js, Java (Spring), Python (Django/FastAPI), Go
+**Database:** SQL Server, PostgreSQL, MySQL, MongoDB, SQLite
+**Auth:** JWT, OAuth 2.0, Cookie sessions, HTTP Basic
+
+The auto-detector scans your project files and configures the right adapters automatically.
+
+---
+
+## AI Tool Integration
+
+### Claude Code
+The installer creates `.claude/commands/qa.md`. Open Claude Code and run `/qa` to activate Rayan.
+
+### Cursor
+The installer adds `.cursorrules` with a reference to `./ai-qa-framework/agents/qae.md`. Open the file in Cursor to activate.
+
+### GitHub Copilot
+The installer creates `.github/copilot-instructions.md`. In Copilot Chat, reference `@workspace` to load Rayan's persona.
+
+### Manual (any tool)
+Attach or load `./ai-qa-framework/agents/qae.md` into your AI assistant. Rayan activates, reads `config.yaml`, and presents an interactive menu.
+
+---
+
+## Architecture
+
+```
+ai-qa-framework/               ← installed in your project
+├── agents/qae.md              ← Rayan — Senior AI QA Engineer persona
+├── config.yaml                ← your project settings (edit this)
+├── core/
+│   ├── orchestrator.mjs       ← routes all commands to skills
+│   └── autonomous-loop.mjs    ← Plan→Act→Observe→Reflect loop
+├── skills/                    ← 11 atomic capabilities
+│   ├── project-analysis/
+│   ├── user-story-analysis/
+│   ├── test-case-generation/
+│   ├── playwright-generation/
+│   ├── test-data-generation/
+│   ├── test-execution/
+│   ├── bug-analysis/
+│   ├── qa-reporting/
+│   ├── regression-testing/
+│   ├── security-validation/
+│   └── accessibility-validation/
+├── workflows/                 ← 5 named multi-phase workflows
+├── project-detectors/         ← 8 stack detection modules
+├── adapters/                  ← stack-specific glue (Angular, .NET, etc.)
+├── templates/                 ← report and test case templates
+├── rules/                     ← quality gates + selector strategies
+├── _config/                   ← agent/skill/workflow manifests
+├── _memory/                   ← persistent QA preferences across sessions
+└── TestResult/                ← all phase outputs (gitignored)
+```
+
+---
+
+## Requirements
+
+- **Node.js** >= 18.0.0
+- **npm** >= 9.0.0
+- An AI assistant (Claude Code, Cursor, GitHub Copilot, or any LLM)
+- Your project must be accessible locally
+
+---
+
+## Contributing
+
+Contributions are welcome! Read [CONTRIBUTING.md](CONTRIBUTING.md) to learn how to add skills, workflows, and project detectors.
+
+```bash
+git clone https://github.com/afmelwekeel/AI-QA-Framework.git
+cd AI-QA-Framework
+npm install
+node ./core/orchestrator.mjs detect
+```
+
+---
+
+## License
+
+[MIT](LICENSE) © 2026 Ahmed Al Wakeel
