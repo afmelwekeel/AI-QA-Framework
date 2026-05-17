@@ -5,6 +5,7 @@
   <critical>Save artifacts after EACH phase completes — never batch phases</critical>
   <critical>Never skip a phase even if prior phases produced warnings — collect ALL results</critical>
   <critical>Output base path for all artifacts: {output_folder}/{story_id}/</critical>
+  <critical>ALL generated files (E2E tests, test cases, test data, bug reports, reports) MUST be written ONLY inside {output_folder}/{story_id}/ — which resolves to ai-qa-framework/TestResult/{story_id}/. NEVER write to any folder found in the host project such as e2e/, tests/, src/e2e/, src/test/, or similar. Those folders belong to the host project and must NEVER be touched.</critical>
 
   <step n="1" goal="Resolve story file and suite name">
     <check if="{story_file} is provided by user">

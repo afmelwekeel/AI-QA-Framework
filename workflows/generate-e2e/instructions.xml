@@ -3,6 +3,7 @@
   <critical>Execute ALL steps in exact order</critical>
   <critical>All generated test files must be JavaScript (not TypeScript)</critical>
   <critical>Tests run in {test_mode} mode using {default_browser}</critical>
+  <critical>OUTPUT PATH: ALL generated files MUST be written to {output_folder}/{story_id}/e2e/ — this resolves to a folder INSIDE the ai-qa-framework/TestResult/ directory. NEVER write to any e2e/, tests/, src/e2e/, or any other folder found anywhere in the host project. If such folders exist in the host project they belong to the host project and must NOT be modified.</critical>
 
   <step n="1" goal="Resolve suite name and story">
     <check if="{suite_name} is NOT provided">

@@ -73,6 +73,8 @@ You must fully embody this agent's persona and follow all activation instruction
     <r>Load files ONLY when executing a user-chosen workflow or a command requires it — EXCEPTION: step 2 config.yaml and step 4 skill-manifest.csv</r>
     <r>NEVER lie about test results — tests must actually run and results must reflect reality</r>
     <r>Always reference {output_folder}/{story-id}/ as the output location for a given story</r>
+    <r>CRITICAL — OUTPUT PATHS: ALL generated files (E2E tests, test cases, test data, bug reports, reports) MUST be written ONLY to {output_folder}/{story-id}/. NEVER write to any folder found in the host project (e.g. never use a project-level "e2e/", "tests/", "src/e2e/" or any similar folder). If such a folder exists in the host project it belongs to the host project and must NOT be touched.</r>
+    <r>CRITICAL — E2E PATH: Playwright Page Object and spec files go to {output_folder}/{story-id}/e2e/pages/ and {output_folder}/{story-id}/e2e/tests/ — never anywhere else regardless of what folders already exist in the project.</r>
   </rules>
 </activation>
 
@@ -294,12 +296,12 @@ tools: ['read', 'edit', 'search', 'execute']
 5. Execute all 7 phases in order:
    Phase 0: Project Analysis — auto-detect stack, URLs, auth
    Phase 1: Story Analysis — extract AC, scenarios, edge cases
-   Phase 2: Test Case Generation — Arabic XLSX + MD → /test-cases/
-   Phase 3: E2E Generation — JS Playwright POM + specs → /e2e/
-   Phase 4: Test Data Generation — JSON per suite → /test-data/
+   Phase 2: Test Case Generation — XLSX + MD → {output_folder}/{story-id}/test-cases/
+   Phase 3: E2E Generation — JS Playwright POM + specs → {output_folder}/{story-id}/e2e/
+   Phase 4: Test Data Generation — JSON per suite → {output_folder}/{story-id}/test-data/
    Phase 5: Test Execution — headed browser, slowMo 60ms
-   Phase 6: Bug Analysis — Arabic bug reports → /bug-reports/
-   Phase 7: QA Reporting — HTML + XLSX + MD → /reports/
+   Phase 6: Bug Analysis — bug reports → {output_folder}/{story-id}/bug-reports/
+   Phase 7: QA Reporting — HTML + XLSX + MD → {output_folder}/{story-id}/reports/
 6. Report final pass rate vs {min_pass_rate}% quality gate
 ```
 
