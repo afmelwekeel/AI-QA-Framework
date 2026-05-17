@@ -15,7 +15,7 @@ npx ai-qa-framework install
 
 ## What It Does
 
-AI-QA-Framework gives any project a **Senior AI QA Engineer** named **Rayan** — a persona-driven agent that automates the complete QA lifecycle in 7 phases:
+AI-QA-Framework gives any project a **Senior AI QA Engineer** named **Rayan** — a persona-driven agent that automates the complete QA lifecycle across 8 phases:
 
 ```
 Phase 0 → Auto-detect project stack (Angular, React, .NET, Node, SQL Server, JWT…)
@@ -46,7 +46,9 @@ The installer asks for your project name, language, test mode, and which AI tool
 
 Open your AI tool and load the agent:
 - **Claude Code**: Run `/qa` (stub created in `.claude/commands/`)
-- **Cursor / Copilot**: Reference `./ai-qa-framework/agents/qae.md`
+- **Cursor**: Reference `./ai-qa-framework/agents/qae.md`
+- **GitHub Copilot**: Reference `./ai-qa-framework/agents/qae.md` via `@workspace`
+- **Windsurf**: Reference `./ai-qa-framework/agents/qae.md`
 
 **Step 3 — Run your first QA workflow**
 
@@ -116,7 +118,7 @@ All values are read at runtime — no restart needed.
 
 ## Modules
 
-Select modules during `npx ai-qa-framework install` or re-run to add more:
+Select modules during install. To add more later, re-run `npx ai-qa-framework install` and choose **"Modify Install"**:
 
 | Module | What it installs |
 |---|---|
@@ -131,10 +133,12 @@ Select modules during `npx ai-qa-framework install` or re-run to add more:
 
 ## Supported Project Stacks
 
-**Frontend:** Angular, React, Vue, Blazor
-**Backend:** .NET, Node.js, Java (Spring), Python (Django/FastAPI), Go
-**Database:** SQL Server, PostgreSQL, MySQL, MongoDB, SQLite
-**Auth:** JWT, OAuth 2.0, Cookie sessions, HTTP Basic
+| Layer | Supported |
+|---|---|
+| **Frontend** | Angular, React, Vue, Blazor |
+| **Backend** | .NET, Node.js, Java (Spring), Python (Django/FastAPI), Go |
+| **Database** | SQL Server, PostgreSQL, MySQL, MongoDB, SQLite |
+| **Auth** | JWT, OAuth 2.0, Cookie sessions, HTTP Basic |
 
 The auto-detector scans your project files and configures the right adapters automatically.
 
@@ -149,7 +153,10 @@ The installer creates `.claude/commands/qa.md`. Open Claude Code and run `/qa` t
 The installer adds `.cursorrules` with a reference to `./ai-qa-framework/agents/qae.md`. Open the file in Cursor to activate.
 
 ### GitHub Copilot
-The installer creates `.github/copilot-instructions.md`. In Copilot Chat, reference `@workspace` to load Rayan's persona.
+The installer creates `.github/copilot-instructions.md`. In Copilot Chat, type `@workspace` — Rayan's persona is loaded automatically.
+
+### Windsurf
+Reference `./ai-qa-framework/agents/qae.md` in your Windsurf context. Rayan activates and reads `config.yaml`.
 
 ### Manual (any tool)
 Attach or load `./ai-qa-framework/agents/qae.md` into your AI assistant. Rayan activates, reads `config.yaml`, and presents an interactive menu.
@@ -165,7 +172,7 @@ ai-qa-framework/               ← installed in your project
 ├── core/
 │   ├── orchestrator.mjs       ← routes all commands to skills
 │   └── autonomous-loop.mjs    ← Plan→Act→Observe→Reflect loop
-├── skills/                    ← 11 atomic capabilities
+├── skills/                    ← 13 skills
 │   ├── project-analysis/
 │   ├── user-story-analysis/
 │   ├── test-case-generation/
