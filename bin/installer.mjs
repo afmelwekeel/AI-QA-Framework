@@ -5,14 +5,16 @@ import { fileURLToPath } from 'node:url';
 import { ask, select, checkbox, section, ok, info, warn, closeRL } from './utils/prompts.mjs';
 import { copyFramework, writeConfig, writeManifest, writeToolStubs } from './utils/copy.mjs';
 import { printPostInstall } from './utils/post-install.mjs';
+import { runInit } from './utils/init.mjs';
 
 const PKG_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
 const { version } = JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8'));
 
 const BANNER = `
 ╔═══════════════════════════════════════════════════════════╗
-║           AI-QA-Framework  v${version.padEnd(29)}║
+║           AI-QA-Framework  v${version.padEnd(29)}         ║
 ║     Universal AI QA Automation — npx ai-qa-framework      ║
+║     Developed by Ahmed Al Wakeel                          ║
 ║     https://github.com/afmelwekeel/AI-QA-Framework        ║
 ╚═══════════════════════════════════════════════════════════╝`;
 
@@ -62,7 +64,7 @@ export async function runInstall(flags = {}) {
   }
 
   // ── Step 1: Install directory ───────────────────────────────────────────────
-  section('Step 1 of 5 — Installation Directory');
+  section('Step 1 of 6 — Installation Directory');
   const installDir = flags.directory || flags.yes
     ? (flags.directory || defaultDir)
     : await ask('Where should the framework be installed?', defaultDir);
@@ -70,7 +72,7 @@ export async function runInstall(flags = {}) {
   info(`Installing to: ${targetDir}`);
 
   // ── Step 2: Project config ──────────────────────────────────────────────────
-  section('Step 2 of 5 — Project Configuration');
+  section('Step 2 of 6 — Project Configuration');
 
   let detectedProjectName = 'MyProject';
   let detectedUserName = 'Your Name';
@@ -103,21 +105,21 @@ export async function runInstall(flags = {}) {
   ]);
 
   // ── Step 3: AI tool integration ─────────────────────────────────────────────
-  section('Step 3 of 5 — AI Tool Integration');
+  section('Step 3 of 6 — AI Tool Integration');
   const selectedTools = flags.tools
     ? flags.tools.split(',').map(t => t.trim())
     : flags.yes ? ['claude-code']
     : (await checkbox('Which AI tools do you use? (select all that apply)', TOOLS, false)).map(t => t.id);
 
   // ── Step 4: Module selection ────────────────────────────────────────────────
-  section('Step 4 of 5 — Module Selection');
+  section('Step 4 of 6 — Module Selection');
   const selectedModules = flags.modules
     ? ['core', ...flags.modules.split(',').map(m => m.trim())]
     : flags.yes ? MODULES.map(m => m.id)
     : (await checkbox('Which modules do you want to install?', MODULES, false)).map(m => m.id);
 
   // ── Step 5: Install ─────────────────────────────────────────────────────────
-  section('Step 5 of 5 — Installing');
+  section('Step 5 of 6 — Installing');
 
   const answers = {
     projectName,
@@ -162,6 +164,21 @@ export async function runInstall(flags = {}) {
     ok('Playwright chromium installed');
   } catch {
     warn('Playwright install failed — run manually: cd ' + installDir + ' && npx playwright install chromium');
+  }
+
+  // ── Step 6: /AIQA-Init — create .github/agents/ and .github/prompts/ ────────
+  section('Step 6 of 6 — Initializing AI Tool Integration (/AIQA-Init)');
+  info('Creating .github/agents/ and .github/prompts/ files…');
+  try {
+    const initResults = runInit(installDir, answers.tools);
+    const created = initResults.filter(r => r.status === 'created');
+    const skipped = initResults.filter(r => r.status === 'skipped');
+    created.forEach(r => ok(r.path));
+    skipped.forEach(r => info(`Skipped (already exists): ${r.path}`));
+    ok(`/AIQA-Init complete — ${created.length} file(s) created, ${skipped.length} skipped`);
+  } catch (e) {
+    warn('/AIQA-Init failed: ' + e.message);
+    warn('Run /AIQA-Init manually inside your AI tool after activation.');
   }
 
   closeRL();
