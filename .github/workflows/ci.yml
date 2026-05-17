@@ -29,23 +29,16 @@ jobs:
         run: npm ci
 
       - name: Verify CLI entry point exists
-        run: node --input-type=module <<'EOF'
-          import { existsSync } from 'fs';
-          if (!existsSync('./bin/cli.mjs')) throw new Error('bin/cli.mjs missing');
-          console.log('bin/cli.mjs found');
-          EOF
+        run: test -f bin/cli.mjs && echo "bin/cli.mjs found" || (echo "bin/cli.mjs MISSING" && exit 1)
 
-      - name: Verify skill manifests are valid
-        run: node --input-type=module <<'EOF'
-          import { readFileSync } from 'fs';
-          const manifest = readFileSync('./_config/skill-manifest.csv', 'utf8');
-          const lines = manifest.trim().split('\n').filter(l => l && !l.startsWith('#'));
-          console.log(`skill-manifest.csv: ${lines.length} skills registered`);
-          if (lines.length === 0) throw new Error('No skills in manifest');
-          EOF
+      - name: Verify skill manifest has entries
+        run: |
+          count=$(grep -c . _config/skill-manifest.csv || true)
+          echo "skill-manifest.csv lines: $count"
+          [ "$count" -gt 0 ] || (echo "skill-manifest.csv is empty" && exit 1)
 
       - name: Verify orchestrator loads
-        run: node -e "import('./core/orchestrator.mjs').then(() => console.log('orchestrator OK'))"
+        run: node --input-type=module -e "import('./core/orchestrator.mjs').then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); })"
 
-      - name: Run installer --help (smoke test)
+      - name: Run installer --help
         run: node bin/cli.mjs --help
