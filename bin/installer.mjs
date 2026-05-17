@@ -1,8 +1,8 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { execSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { ask, select, checkbox, section, ok, info, warn, closeRL } from './utils/prompts.mjs';
+import { ask, select, checkbox, section, ok, info, warn, createSpinner, closeRL, c } from './utils/prompts.mjs';
 import { copyFramework, writeConfig, writeManifest, writeToolStubs } from './utils/copy.mjs';
 import { printPostInstall } from './utils/post-install.mjs';
 import { runInit } from './utils/init.mjs';
@@ -10,115 +10,142 @@ import { runInit } from './utils/init.mjs';
 const PKG_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
 const { version } = JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8'));
 
-const BANNER = `
-╔═══════════════════════════════════════════════════════════╗
-║           AI-QA-Framework  v${version.padEnd(29)}         ║
-║     Universal AI QA Automation — npx ai-qa-framework      ║
-║     Developed by Ahmed Al Wakeel                          ║
-║     https://github.com/afmelwekeel/AI-QA-Framework        ║
-╚═══════════════════════════════════════════════════════════╝`;
+// ── Banner ────────────────────────────────────────────────────────────────────
+function printBanner() {
+  const W = 56;
+  const center = (text, width) => {
+    const raw = text.replace(/\x1b\[[0-9;]*m/g, '');
+    const pad = Math.max(0, width - raw.length);
+    const l = Math.floor(pad / 2);
+    const r = pad - l;
+    return ' '.repeat(l) + text + ' '.repeat(r);
+  };
 
+  console.log(`\n  ${c.blue}╔${'═'.repeat(W)}╗${c.reset}`);
+  console.log(`  ${c.blue}║${c.reset}${' '.repeat(W)}${c.blue}║${c.reset}`);
+  console.log(`  ${c.blue}║${c.reset}${center(`${c.cyan}${c.bold}  ✦  AI-QA-Framework  ✦${c.reset}`, W)}${c.blue}║${c.reset}`);
+  console.log(`  ${c.blue}║${c.reset}${center(`${c.magenta}${c.bold}  v${version}${c.reset}`, W)}${c.blue}║${c.reset}`);
+  console.log(`  ${c.blue}║${c.reset}${' '.repeat(W)}${c.blue}║${c.reset}`);
+  console.log(`  ${c.blue}║${c.reset}${center(`${c.dim}Universal AI QA Automation${c.reset}`, W)}${c.blue}║${c.reset}`);
+  console.log(`  ${c.blue}║${c.reset}${center(`${c.dim}npx ai-qa-framework install${c.reset}`, W)}${c.blue}║${c.reset}`);
+  console.log(`  ${c.blue}║${c.reset}${center(`${c.dim}by Ahmed Al Wakeel${c.reset}`, W)}${c.blue}║${c.reset}`);
+  console.log(`  ${c.blue}║${c.reset}${' '.repeat(W)}${c.blue}║${c.reset}`);
+  console.log(`  ${c.blue}╚${'═'.repeat(W)}╝${c.reset}\n`);
+}
+
+// ── Run a shell command with a spinner ───────────────────────────────────────
+function runCmd(cmd, args, cwd) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(cmd, args, { cwd, shell: true, stdio: 'pipe' });
+    let out = '';
+    proc.stdout?.on('data', d => { out += d; });
+    proc.stderr?.on('data', d => { out += d; });
+    proc.on('close', code => code === 0 ? resolve() : reject(new Error(out.slice(-400))));
+  });
+}
+
+// ── Module / tool definitions ─────────────────────────────────────────────────
 const MODULES = [
   { id: 'core',               label: 'Core',               required: true,  description: 'Orchestrator, detectors, adapters, Rayan agent' },
   { id: 'e2e-playwright',     label: 'E2E Playwright',      default: true,   description: 'Generate and run Playwright Page Object tests' },
-  { id: 'test-cases-xlsx',   label: 'Test Cases XLSX',     default: true,   description: 'Generate structured XLSX test cases from user stories' },
-  { id: 'security-scan',     label: 'Security Scan',       default: false,  description: 'OWASP-style security validation' },
-  { id: 'accessibility-scan',label: 'Accessibility Scan',  default: false,  description: 'axe-core a11y audit' },
-  { id: 'regression-testing',label: 'Regression Testing',  default: false,  description: 'Baseline diff testing against previous runs' },
+  { id: 'test-cases-xlsx',    label: 'Test Cases XLSX',     default: true,   description: 'Generate structured XLSX test cases from user stories' },
+  { id: 'security-scan',      label: 'Security Scan',       default: false,  description: 'OWASP-style security validation' },
+  { id: 'accessibility-scan', label: 'Accessibility Scan',  default: false,  description: 'axe-core a11y audit' },
+  { id: 'regression-testing', label: 'Regression Testing',  default: false,  description: 'Baseline diff testing against previous runs' },
 ];
 
 const TOOLS = [
-  { id: 'claude-code', label: 'Claude Code',     description: 'Adds .claude/commands/qa.md' },
-  { id: 'cursor',      label: 'Cursor',          description: 'Adds .cursorrules stub' },
-  { id: 'copilot',     label: 'GitHub Copilot',  description: 'Adds .github/copilot-instructions.md' },
-  { id: 'windsurf',    label: 'Windsurf',         description: 'Manual — reference agents/qae.md' },
-  { id: 'none',        label: 'None / Other',     description: 'Skip tool integration stubs' },
+  { id: 'claude-code', label: 'Claude Code',    description: 'Creates .claude/commands/ slash commands' },
+  { id: 'cursor',      label: 'Cursor',         description: 'Creates .cursor/rules/ MDC rules' },
+  { id: 'copilot',     label: 'GitHub Copilot', description: 'Creates .github/agents/ + .github/prompts/' },
+  { id: 'windsurf',    label: 'Windsurf',        description: 'Creates .windsurf/rules/ Markdown rules' },
+  { id: 'none',        label: 'None / Other',    description: 'Skip AI tool integration' },
 ];
 
 const LANGUAGES = [
-  { id: 'English', label: 'English (en)' },
-  { id: 'Arabic',  label: 'Arabic (ar)' },
-  { id: 'French',  label: 'French (fr)' },
-  { id: 'Spanish', label: 'Spanish (es)' },
+  { id: 'English', label: 'English' },
+  { id: 'Arabic',  label: 'Arabic'  },
+  { id: 'French',  label: 'French'  },
+  { id: 'Spanish', label: 'Spanish' },
 ];
 
 const REPORTING_CODES = { English: 'en', Arabic: 'ar', French: 'fr', Spanish: 'es' };
 
+// ── Main install flow ─────────────────────────────────────────────────────────
 export async function runInstall(flags = {}) {
-  console.log(BANNER);
+  printBanner();
 
-  // ── Detect existing install ─────────────────────────────────────────────────
-  const defaultDir = 'ai-qa-framework';
-  const existingDirs = [defaultDir, 'AI-QA-Framework', 'ai-qa-framework'].filter(d => existsSync(join(process.cwd(), d, 'config.yaml')));
+  // ── Detect existing install ────────────────────────────────────────────────
+  const defaultDir    = 'ai-qa-framework';
+  const existingDirs  = [defaultDir, 'AI-QA-Framework'].filter(d => existsSync(join(process.cwd(), d, 'config.yaml')));
 
   if (existingDirs.length > 0 && !flags.yes) {
     warn(`Existing installation detected at: ./${existingDirs[0]}/`);
     const action = await select('What would you like to do?', [
-      { label: 'Quick Update — refresh files, keep your config.yaml', id: 'update' },
-      { label: 'Modify Install — change modules, tools, or directory', id: 'modify' },
-      { label: 'Fresh Install — overwrite everything',                 id: 'fresh' },
+      { id: 'update', label: 'Quick Update',   description: 'Refresh files, keep your config.yaml' },
+      { id: 'modify', label: 'Modify Install', description: 'Change modules, tools, or directory' },
+      { id: 'fresh',  label: 'Fresh Install',  description: 'Overwrite everything' },
     ]);
-    if (action.label.startsWith('Quick Update')) {
-      return runQuickUpdate(existingDirs[0]);
-    }
+    if (action.id === 'update') return runQuickUpdate(existingDirs[0]);
   }
 
-  // ── Step 1: Install directory ───────────────────────────────────────────────
+  // ── Step 1: Directory ──────────────────────────────────────────────────────
   section('Step 1 of 6 — Installation Directory');
   const installDir = flags.directory || flags.yes
     ? (flags.directory || defaultDir)
     : await ask('Where should the framework be installed?', defaultDir);
   const targetDir = resolve(process.cwd(), installDir);
-  info(`Installing to: ${targetDir}`);
+  info(`Installing to: ${c.cyan}${targetDir}${c.reset}`);
 
-  // ── Step 2: Project config ──────────────────────────────────────────────────
+  // ── Step 2: Project config ─────────────────────────────────────────────────
   section('Step 2 of 6 — Project Configuration');
 
-  let detectedProjectName = 'MyProject';
-  let detectedUserName = 'Your Name';
+  let detectedProject = 'MyProject';
+  let detectedUser    = 'Your Name';
   try {
     const hostPkg = join(process.cwd(), 'package.json');
-    if (existsSync(hostPkg)) detectedProjectName = JSON.parse(readFileSync(hostPkg, 'utf8')).name || detectedProjectName;
+    if (existsSync(hostPkg)) detectedProject = JSON.parse(readFileSync(hostPkg, 'utf8')).name || detectedProject;
   } catch { /* ignore */ }
   try {
-    detectedUserName = execSync('git config user.name', { stdio: ['pipe','pipe','pipe'] }).toString().trim() || detectedUserName;
+    const { execSync } = await import('node:child_process');
+    detectedUser = execSync('git config user.name', { stdio: ['pipe','pipe','pipe'] }).toString().trim() || detectedUser;
   } catch { /* ignore */ }
 
-  const projectName = flags.yes ? detectedProjectName : await ask('Project name', detectedProjectName);
-  const userName    = flags.yes ? detectedUserName    : await ask('Your name',    detectedUserName);
+  const projectName = flags.yes ? detectedProject : await ask('Project name', detectedProject);
+  const userName    = flags.yes ? detectedUser    : await ask('Your name',    detectedUser);
 
   const commLang = flags.language
     ? LANGUAGES.find(l => l.id.toLowerCase() === flags.language.toLowerCase())?.id || 'English'
     : flags.yes ? 'English'
-    : (await select('Communication language (Claude speaks to you in)', LANGUAGES)).id;
+    : (await select('Communication language  (Rayan speaks to you in)', LANGUAGES)).id;
 
   const reportLang = flags.reportingLanguage
     ? flags.reportingLanguage
     : flags.yes ? REPORTING_CODES[commLang]
-    : (await select('Reporting language (test cases, bug reports, QA summaries)', LANGUAGES)).id === commLang
-      ? REPORTING_CODES[commLang]
-      : REPORTING_CODES[(await select('Reporting language', LANGUAGES)).id];
+    : REPORTING_CODES[(await select('Reporting language  (test cases and reports)', LANGUAGES)).id];
 
-  const testModeChoice = flags.yes ? { id: 'headed' } : await select('Test execution mode', [
-    { id: 'headed',   label: 'Headed',   description: 'Browser window visible — watch tests run (recommended for dev)' },
-    { id: 'headless', label: 'Headless', description: 'No browser window — faster, better for CI' },
-  ]);
+  const testModeChoice = flags.yes
+    ? { id: 'headed' }
+    : await select('Test execution mode', [
+        { id: 'headed',   label: 'Headed',   description: 'Browser visible — watch tests run (recommended)' },
+        { id: 'headless', label: 'Headless', description: 'No browser window — faster, good for CI' },
+      ]);
 
-  // ── Step 3: AI tool integration ─────────────────────────────────────────────
+  // ── Step 3: AI tools ───────────────────────────────────────────────────────
   section('Step 3 of 6 — AI Tool Integration');
   const selectedTools = flags.tools
     ? flags.tools.split(',').map(t => t.trim())
     : flags.yes ? ['claude-code']
-    : (await checkbox('Which AI tools do you use? (select all that apply)', TOOLS, false)).map(t => t.id);
+    : (await checkbox('Which AI tools do you use?', TOOLS, false)).map(t => t.id);
 
-  // ── Step 4: Module selection ────────────────────────────────────────────────
+  // ── Step 4: Modules ────────────────────────────────────────────────────────
   section('Step 4 of 6 — Module Selection');
   const selectedModules = flags.modules
     ? ['core', ...flags.modules.split(',').map(m => m.trim())]
     : flags.yes ? MODULES.map(m => m.id)
     : (await checkbox('Which modules do you want to install?', MODULES, false)).map(m => m.id);
 
-  // ── Step 5: Install ─────────────────────────────────────────────────────────
+  // ── Step 5: Install ────────────────────────────────────────────────────────
   section('Step 5 of 6 — Installing');
 
   const answers = {
@@ -132,52 +159,51 @@ export async function runInstall(flags = {}) {
     installDir,
   };
 
-  info('Copying framework files…');
+  // Copy files (synchronous, fast)
+  let sp = createSpinner('Copying framework files…');
   copyFramework(targetDir, selectedModules);
-  ok('Framework files copied');
+  sp.succeed('Framework files copied');
 
-  info('Writing config.yaml…');
+  sp = createSpinner('Writing configuration…');
   writeConfig(targetDir, answers);
-  ok('config.yaml written');
-
-  info('Writing manifest…');
   writeManifest(targetDir, version, selectedModules);
-  ok('_config/manifest.yaml written');
+  sp.succeed('config.yaml and manifest written');
 
   if (answers.tools.length > 0) {
-    info('Writing AI tool integration stubs…');
+    sp = createSpinner(`Writing AI tool stubs for: ${answers.tools.join(', ')}…`);
     writeToolStubs(answers.tools, installDir);
-    ok(`Tool stubs written for: ${answers.tools.join(', ')}`);
+    sp.succeed(`Tool stubs written for: ${c.cyan}${answers.tools.join(', ')}${c.reset}`);
   }
 
-  info('Installing npm dependencies…');
+  // npm install (async so spinner animates)
+  sp = createSpinner('Installing npm dependencies…');
   try {
-    execSync('npm install', { cwd: targetDir, stdio: 'inherit' });
-    ok('Dependencies installed');
-  } catch {
-    warn('npm install failed — run it manually: cd ' + installDir + ' && npm install');
+    await runCmd('npm', ['install'], targetDir);
+    sp.succeed('npm dependencies installed');
+  } catch (e) {
+    sp.warn(`npm install failed — run manually: ${c.dim}cd ${installDir} && npm install${c.reset}`);
   }
 
-  info('Installing Playwright browser (chromium)…');
+  // Playwright browser (async)
+  sp = createSpinner('Installing Playwright browser (chromium)…');
   try {
-    execSync('npx playwright install chromium', { cwd: targetDir, stdio: 'inherit' });
-    ok('Playwright chromium installed');
+    await runCmd('npx', ['playwright', 'install', 'chromium'], targetDir);
+    sp.succeed('Playwright chromium ready');
   } catch {
-    warn('Playwright install failed — run manually: cd ' + installDir + ' && npx playwright install chromium');
+    sp.warn(`Playwright install failed — run manually: ${c.dim}cd ${installDir} && npx playwright install chromium${c.reset}`);
   }
 
-  // ── Step 6: /AIQA-Init — create .github/agents/ and .github/prompts/ ────────
-  section('Step 6 of 6 — Initializing AI Tool Integration (/AIQA-Init)');
-  info('Creating .github/agents/ and .github/prompts/ files…');
+  // ── Step 6: /AIQA-Init ─────────────────────────────────────────────────────
+  section('Step 6 of 6 — AI Tool Integration Files  (/AIQA-Init)');
+  sp = createSpinner('Creating integration files…');
   try {
     const initResults = runInit(installDir, answers.tools);
     const created = initResults.filter(r => r.status === 'created');
     const skipped = initResults.filter(r => r.status === 'skipped');
-    created.forEach(r => ok(r.path));
-    skipped.forEach(r => info(`Skipped (already exists): ${r.path}`));
-    ok(`/AIQA-Init complete — ${created.length} file(s) created, ${skipped.length} skipped`);
+    sp.succeed(`/AIQA-Init complete — ${c.green}${created.length} created${c.reset}, ${c.dim}${skipped.length} skipped${c.reset}`);
+    created.forEach(r => ok(`  ${c.dim}${r.path}${c.reset}`));
   } catch (e) {
-    warn('/AIQA-Init failed: ' + e.message);
+    sp.warn('/AIQA-Init failed: ' + e.message);
     warn('Run /AIQA-Init manually inside your AI tool after activation.');
   }
 
@@ -185,25 +211,23 @@ export async function runInstall(flags = {}) {
   printPostInstall(installDir, answers);
 }
 
+// ── Quick update ──────────────────────────────────────────────────────────────
 async function runQuickUpdate(installDir) {
   section('Quick Update');
   const targetDir = resolve(process.cwd(), installDir);
-  info('Refreshing framework files (your config.yaml is preserved)…');
 
   const savedConfig = existsSync(join(targetDir, 'config.yaml'))
     ? readFileSync(join(targetDir, 'config.yaml'), 'utf8')
     : null;
 
+  let sp = createSpinner('Refreshing framework files…');
   copyFramework(targetDir);
-
   if (savedConfig) {
-    const { writeFileSync } = await import('node:fs');
     writeFileSync(join(targetDir, 'config.yaml'), savedConfig);
-    ok('config.yaml preserved');
   }
-
   writeManifest(targetDir, version, ['core']);
-  ok(`Updated to v${version}`);
+  sp.succeed(`Updated to ${c.magenta}v${version}${c.reset} — config.yaml preserved`);
+
   closeRL();
-  console.log('\n  Done. Run `cd ' + installDir + ' && npm run detect` to re-detect your project.\n');
+  console.log(`\n  ${c.dim}Run ${c.cyan}cd ${installDir} && npm run detect${c.reset}${c.dim} to re-detect your project.${c.reset}\n`);
 }
