@@ -1,0 +1,4 @@
+{ "id": "bug-fixing", "name": "Bug Fixing & Verification", "version": "1.0.0",
+  "description": "Fix each open bug in bug-reports/ by editing source code, then retest that single test. One fix attempt per bug.",
+  "outputs": { "report": "bug-reports/BUG-XXXX.md (updated with fix status)" },
+  "mcp": { "tool": "qa.fix_bugs" } }
