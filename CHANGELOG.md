@@ -6,6 +6,18 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [2.10.1] — 2026-05-18
+
+### Fixed
+
+#### Agent no longer skips fix/record steps after a test failure
+- **Root cause:** `skills/test-execution/prompt.md` and `workflows/full-workflow/instructions.xml` described the failure-handling sequence as passive guidance — the agent could see "Move to next test" and jump there without completing the fix, bug-report, and retest steps.
+- **Fix — `prompt.md`:** Step 2c completely rewritten as a hard 6-step **FAILURE PROTOCOL** (F1–F6) with an explicit `⛔ HARD STOP` gate at entry and `✋ GATE` checkpoints after each sub-step (Diagnose, Fix, Record Bug, Retest, Append Outcome, Update Checklist). The agent cannot advance to the next test until the F6 gate is passed.
+- **Fix — `full-workflow/instructions.xml`:** Phase 5 STEP C replaced with the same F1–F6 structure and `<critical>` loop rule. Post-loop quality checklist expanded with check `P5-8` (bug report count must equal failure count) and explicit remediation for any skipped step discovered at review time.
+- **Fix — `agents/qae.md`:** Added a new `<r>` rule at the Rayan agent-persona level that names all six failure-protocol steps explicitly and states they are non-negotiable and cannot be skipped or batched.
+
+---
+
 ## [2.10.0] — 2026-05-18
 
 ### Added

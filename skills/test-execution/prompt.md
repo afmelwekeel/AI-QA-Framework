@@ -159,36 +159,73 @@ Display: `📋 Found {N} tests to execute.`
 
 ### Step 2 — Per-Test Execution Loop
 
+> **LOOP RULE — READ BEFORE STARTING:**
+> Process tests one at a time. When a test fails you enter the **FAILURE PROTOCOL** (Steps F1–F6 below).
+> **You CANNOT advance to the next test until the FAILURE PROTOCOL is fully complete.**
+> Skipping any step — for any reason — is not permitted.
+
 For each `{test_name}` in `{test_list}`:
 
+---
+
 #### 2a — Run the Single Test
+
 ```bash
 npx playwright test --headed --grep "{test_name}" {suite_name}.spec.js
 ```
-- Always headed (browser visible)
-- SlowMo: 60ms
-- Capture exit code
+- Always headed (browser visible), SlowMo: 60ms
+- Capture the exit code: `0` = PASS, non-zero = FAIL
 
-#### 2b — If the Test PASSES (exit code 0)
-- Update test-checklist.md: mark `{test_name}` as ✅ Passed
-- Log: `✅ PASS — {test_name}`
-- Continue to next test.
+---
 
-#### 2c — If the Test FAILS (exit code ≠ 0)
+#### 2b — PASS path (exit code 0)
 
-**Diagnose:**
-1. Read the error message and stack trace from the JUnit output or console
-2. Read the spec file around the failing line
-3. Read the Page Object file(s) referenced in the stack trace
-4. Classify the failure:
-   - **Test Bug** — wrong selector, wrong assertion value, wrong URL, missing `await`, bad test setup → fix the spec file or page object
-   - **Source Bug** — the application itself behaves incorrectly (missing element, wrong API response, broken navigation) → fix the application source
+1. Mark `{test_name}` as ✅ Passed in `test-checklist.md`
+2. Append to execution log: `✅ PASS — {test_name}`
+3. Increment `{pass_count}` by 1
+4. → **Advance to next test**
 
-**Apply the Fix:**
-- Edit the failing file with the minimal change that corrects the root cause
-- Do NOT refactor unrelated code
+---
 
-**Record the Bug immediately** — create `bug-reports/BUG-{next_bug_id:04d}.md`:
+#### 2c — FAILURE PROTOCOL (exit code ≠ 0)
+
+> ⛔ **HARD STOP.**
+> A test just failed. You are now inside the FAILURE PROTOCOL.
+> **You MUST complete Steps F1 → F2 → F3 → F4 → F5 → F6 in order.**
+> **You CANNOT advance to the next test until Step F6 is done.**
+> There are no exceptions. Do not summarise. Do not skip. Do not batch.
+
+---
+
+##### F1 — DIAGNOSE
+
+1. Read the full error message and stack trace from the console output or `reports/junit.xml`
+2. Read the spec file lines around the failing assertion or action
+3. Read every Page Object file referenced in the stack trace
+4. Classify the failure — pick ONE:
+   - **TEST BUG** — wrong selector, wrong assertion value, wrong URL path, missing `await`, incorrect test setup → you will fix the spec file or page object
+   - **SOURCE BUG** — the application itself is broken (missing element, wrong API response, broken navigation) → you will fix the application source code
+
+> ✋ **F1 GATE:** You have identified the error message, the failing line, and the failure type.
+> Do not proceed to F2 until this is done.
+
+---
+
+##### F2 — FIX
+
+1. Open the file that contains the root cause (spec, page object, or application source)
+2. Apply the **minimal** change that fixes the root cause — one targeted edit
+3. Do NOT refactor, rename, or clean up anything unrelated to this failure
+4. Save the file
+
+> ✋ **F2 GATE:** The fix has been written to disk.
+> Confirm: the changed file is saved before proceeding to F3.
+
+---
+
+##### F3 — RECORD THE BUG REPORT
+
+Create the file `{output_folder}/{story_id}/bug-reports/BUG-{next_bug_id:04d}.md` with this exact content:
 
 ```markdown
 # BUG-{XXXX} — {test_name}
@@ -204,7 +241,7 @@ npx playwright test --headed --grep "{test_name}" {suite_name}.spec.js
 | **Bug ID** | `BUG-{XXXX}` |
 | **عنوان المشكلة** | {test_name} |
 | **نوع الخطأ** | خطأ في ملف الاختبار / خطأ في الكود المصدري |
-| **الملف المُعدَّل** | {path_of_file_that_was_fixed} |
+| **الملف المُعدَّل** | {path_of_the_file_you_edited_in_F2} |
 | **مستوى الخطورة** | حرجة / عالية / متوسطة / منخفضة |
 | **الأولوية** | عالية / متوسطة / منخفضة |
 
@@ -213,20 +250,20 @@ npx playwright test --headed --grep "{test_name}" {suite_name}.spec.js
 ## وصف الخطأ
 
 ```
-{error_message}
+{full_error_message_from_F1}
 ```
 
 ---
 
 ## تشخيص السبب الجذري
 
-{specific_root_cause_analysis — NOT "unknown error"}
+{specific root cause from F1 — never write "unknown error" or "test failed"}
 
 ---
 
 ## الإصلاح المُطبَّق
 
-{description of what was changed and why}
+{description of the fix you applied in F2}
 
 ```javascript
 // قبل الإصلاح (Before):
@@ -244,47 +281,76 @@ npx playwright test --headed --grep "{test_name}" {suite_name}.spec.js
 <summary>عرض سجل التتبع</summary>
 
 ```
-{stack_trace}
+{full_stack_trace}
 ```
 
 </details>
 ```
 
-Increment `{next_bug_id}` by 1.
+Then increment `{next_bug_id}` by 1.
 
-**Retest the Fix:**
+> ✋ **F3 GATE:** `BUG-{XXXX}.md` exists on disk and contains all required sections.
+> Confirm the file was created before proceeding to F4.
+
+---
+
+##### F4 — RETEST
+
+Run the same test again to verify the fix from F2:
+
 ```bash
 npx playwright test --headed --grep "{test_name}" {suite_name}.spec.js
 ```
 
-**Append the retest outcome to the bug report:**
+Capture the exit code: `0` = fix worked, non-zero = fix did not work.
 
-If PASS:
+> ✋ **F4 GATE:** The retest has run and you have the exit code.
+> Do not proceed to F5 without this.
+
+---
+
+##### F5 — APPEND RETEST OUTCOME TO BUG REPORT
+
+Open the bug report created in F3 and **append** one of these sections:
+
+**If F4 exit code = 0 (FIXED):**
 ```markdown
 ---
 
 ## ✅ تم الإصلاح — اجتاز الاختبار بعد الإصلاح
 
-> تم التحقق بنجاح في: {timestamp}
+> تم التحقق بنجاح في: {current_timestamp}
 ```
 
-If still FAIL:
+**If F4 exit code ≠ 0 (STILL FAILING):**
 ```markdown
 ---
 
 ## ❌ لا يزال فاشلاً — يحتاج مراجعة
 
-> تمت إعادة الاختبار في: {timestamp} — لا يزال يفشل.
-> ما تمت محاولته: {description_of_attempted_fix}
+> تمت إعادة الاختبار في: {current_timestamp} — لا يزال يفشل.
+> ما تمت محاولته: {description_of_the_fix_from_F2}
 ```
 
-**Update checklist:**
-- Fixed → ✅ Passed in test-checklist.md
-- Still failing → ❌ Failed in test-checklist.md
+> ✋ **F5 GATE:** The retest outcome section is now appended inside `BUG-{XXXX}.md`.
+> Confirm the file contains the outcome before proceeding to F6.
 
-**Log to execution summary:** `🔧 FIXED — {test_name} | BUG-{XXXX} | {fix_type}` or `❌ OPEN — {test_name} | BUG-{XXXX}`
+---
 
-Move to next test.
+##### F6 — UPDATE CHECKLIST AND LOG
+
+1. Update `test-checklist.md`:
+   - If F4 passed → mark `{test_name}` as ✅ Passed
+   - If F4 still failed → mark `{test_name}` as ❌ Failed
+2. Update counters:
+   - F4 passed → increment `{fixed_inline_count}` by 1
+   - F4 still failed → increment `{still_open_count}` by 1
+3. Append to execution log:
+   - Fixed → `🔧 FIXED — {test_name} | BUG-{XXXX} | {fix_type}`
+   - Open  → `❌ OPEN  — {test_name} | BUG-{XXXX}`
+
+> ✅ **FAILURE PROTOCOL COMPLETE.**
+> All six steps are done. You may now advance to the next test.
 
 ---
 
@@ -314,14 +380,22 @@ Create or update `bug-reports/INDEX.md` with a table of every bug recorded this 
 
 ---
 
-## Rules (STRICT)
-- **Pre-flight is MANDATORY** — NEVER skip Step 0.5, even for a single test run
-- **Fix before run** — if blockers exist after pre-flight, fix them ALL before executing any test
-- ALWAYS run headed — browser must be visible
-- Fix ONE test at a time — never batch multiple test fixes in one edit
-- Record the bug report BEFORE retesting (so it exists even if retest also fails)
+## Rules (NON-NEGOTIABLE)
+
+### On test failure — the ONLY allowed sequence is F1 → F2 → F3 → F4 → F5 → F6
+- **NEVER advance to the next test after a failure until all six steps are complete**
+- **NEVER skip F2 (fix)** — even if the fix is uncertain, apply your best fix and mark it in the bug report
+- **NEVER skip F3 (bug report)** — the bug report must be created BEFORE retesting, so it exists even if retest also fails
+- **NEVER skip F4 (retest)** — you must verify whether your fix worked; do not assume it did
+- **NEVER skip F5 (append outcome)** — the bug report is incomplete without the retest result
+- **NEVER batch** — do not run all tests and then loop back to fix failures; process each test fully before moving to the next
+
+### General rules
+- Pre-flight (Step 0.5) is MANDATORY — never skip it, even for a single-test run
+- If pre-flight blockers exist, fix them ALL before running any test
+- Always run headed — the browser must be visible during execution
 - Root cause must be specific — never write "unknown error" or "test failed"
-- If uncertain whether it's a test bug or source bug, lean toward test bug first; if unsure, ask the user
+- If uncertain whether it is a test bug or source bug, lean toward test bug first; if still unsure, ask the user
 - Do NOT retry a failed fix more than once — log as ❌ Still Open and move on
-- Never invent test results — always check actual exit code / JUnit output
-- Warnings from pre-flight (non-blockers) are noted in the execution summary but do not block execution
+- Never invent test results — always check the actual exit code or JUnit XML output
+- Pre-flight warnings (non-blockers) are noted in the summary but do not block execution

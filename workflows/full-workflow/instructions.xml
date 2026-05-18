@@ -303,57 +303,92 @@ Reply:
     <action>Display: "📋 Found {N} tests — running each individually with inline fix on failure."</action>
 
     <!-- ── 5.2 Per-test loop ── -->
+    <critical>
+      LOOP RULE: Process tests ONE AT A TIME.
+      When a test FAILS you enter the FAILURE PROTOCOL (F1→F2→F3→F4→F5→F6).
+      You CANNOT advance to the next test until ALL SIX FAILURE PROTOCOL STEPS are complete.
+      NEVER skip any step. NEVER batch failures. NEVER move on without a bug report AND a retest.
+    </critical>
+
     <action>FOR EACH {test_name} IN {test_list}:
 
-      STEP A — Run the single test:
+      ═══ STEP A — Run the single test ═══
         Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs run-tests --suite "{suite_name}" --mode single --testName "{test_name}"
         Capture: exit code (0 = pass, non-zero = fail)
 
-      STEP B — If PASS:
+      ═══ STEP B — If PASS (exit code 0) ═══
         - Increment {pass_count} by 1
-        - Update test-checklist.md: mark {test_name} as ✅ Passed
+        - Mark {test_name} as ✅ Passed in test-checklist.md
         - Append to {execution_log}: "✅ PASS — {test_name}"
-        - Continue to next test
+        → Advance to next test
 
-      STEP C — If FAIL:
-        [Diagnose]
-        - Read the error message and stack trace from the JUnit output or console
-        - Read the spec file around the failing line
-        - Read the Page Object file(s) referenced in the stack trace
-        - Classify: TEST BUG (wrong selector / assertion / URL / missing await / bad setup)
-                 OR SOURCE BUG (application behaves incorrectly)
+      ═══ STEP C — If FAIL (exit code ≠ 0) — FAILURE PROTOCOL ═══
 
-        [Fix]
-        - Edit the file that contains the root cause (spec, page object, or app source)
-        - Minimal change only — do NOT refactor unrelated code
+        ⛔ HARD STOP. Complete F1 through F6 IN ORDER before touching the next test.
 
-        [Record Bug — create {output_folder}/{story_id}/bug-reports/BUG-{next_bug_id:04d}.md]
-        Write the bug report with:
-          - Bug ID: BUG-{next_bug_id:04d}
-          - Test name, error message, stack trace
-          - نوع الخطأ: خطأ في ملف الاختبار OR خطأ في الكود المصدري
-          - الملف المُعدَّل: {path_of_file_edited}
-          - مستوى الخطورة: based on error type (timeout/crash=حرجة, assertion/404=عالية, UI=متوسطة)
-          - تشخيص السبب الجذري: specific, not "unknown error"
-          - الإصلاح المُطبَّق: description of fix + before/after code snippet
-          - سجل التتبع الكامل: full stack trace in collapsible section
-        Increment {next_bug_id} by 1
+        ── F1: DIAGNOSE ──────────────────────────────────────────
+        1. Read the full error message + stack trace from console or reports/junit.xml
+        2. Read the spec file lines around the failing assertion or action
+        3. Read every Page Object file referenced in the stack trace
+        4. Classify as:
+             TEST BUG  — wrong selector / assertion / URL / missing await / bad setup
+                         → fix the spec or page object
+             SOURCE BUG — application behaves incorrectly (missing element, wrong API, broken nav)
+                         → fix the application source
+        ✋ F1 GATE: error message identified, failing line known, failure type classified.
 
-        [Retest]
+        ── F2: FIX ───────────────────────────────────────────────
+        1. Open the file that contains the root cause
+        2. Apply the MINIMAL change that fixes the root cause — one targeted edit
+        3. Do NOT refactor, rename, or touch anything unrelated to this failure
+        4. Save the file to disk
+        ✋ F2 GATE: the fix is saved on disk. Confirm before proceeding.
+
+        ── F3: CREATE BUG REPORT ─────────────────────────────────
+        Create file: {output_folder}/{story_id}/bug-reports/BUG-{next_bug_id:04d}.md
+        Required sections (ALL must be present):
+          • Bug ID, test name, error type (خطأ في ملف الاختبار / خطأ في الكود المصدري)
+          • الملف المُعدَّل: path of the file edited in F2
+          • مستوى الخطورة: timeout/crash=حرجة | assertion/404=عالية | UI=متوسطة
+          • وصف الخطأ: full error message (verbatim, not summarised)
+          • تشخيص السبب الجذري: specific root cause (NEVER "unknown error")
+          • الإصلاح المُطبَّق: description + before/after code snippet
+          • سجل التتبع: full stack trace in &lt;details&gt; block
+        Then increment {next_bug_id} by 1.
+        ✋ F3 GATE: BUG-{XXXX}.md exists on disk with all required sections. Confirm before proceeding.
+
+        ── F4: RETEST ────────────────────────────────────────────
+        Run the same test again to verify the fix from F2:
         Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs run-tests --suite "{suite_name}" --mode single --testName "{test_name}"
+        Capture exit code.
+        ✋ F4 GATE: retest has run and exit code is captured. Do not proceed without it.
 
-        [Record Retest Outcome — append to the bug report]
-        If retest PASSES:
-          - Append "## ✅ تم الإصلاح — اجتاز الاختبار بعد الإصلاح\n> تم التحقق في: {timestamp}"
-          - Mark test as ✅ Passed in test-checklist.md
+        ── F5: APPEND RETEST OUTCOME ─────────────────────────────
+        Open BUG-{XXXX}.md created in F3 and APPEND one of these sections:
+
+        If F4 exit code = 0 (FIXED):
+          ## ✅ تم الإصلاح — اجتاز الاختبار بعد الإصلاح
+          > تم التحقق بنجاح في: {current_timestamp}
+
+        If F4 exit code ≠ 0 (STILL FAILING):
+          ## ❌ لا يزال فاشلاً — يحتاج مراجعة
+          > تمت إعادة الاختبار في: {current_timestamp} — لا يزال يفشل.
+          > ما تمت محاولته: {description_of_fix_from_F2}
+
+        ✋ F5 GATE: retest outcome section is appended inside BUG-{XXXX}.md. Confirm before proceeding.
+
+        ── F6: UPDATE CHECKLIST AND LOG ──────────────────────────
+        If F4 passed:
+          - Mark {test_name} as ✅ Passed in test-checklist.md
           - Increment {fixed_inline_count} by 1
-          - Append to {execution_log}: "🔧 FIXED — {test_name} | BUG-{XXXX} | {fix_type}"
-        If retest still FAILS:
-          - Append "## ❌ لا يزال فاشلاً — يحتاج مراجعة\n> ما تمت محاولته: {attempted_fix}"
-          - Mark test as ❌ Failed in test-checklist.md
+          - Append to {execution_log}: "🔧 FIXED — {test_name} | BUG-{next_bug_id - 1} | {fix_type}"
+        If F4 still failed:
+          - Mark {test_name} as ❌ Failed in test-checklist.md
           - Increment {still_open_count} by 1
-          - Append to {execution_log}: "❌ OPEN — {test_name} | BUG-{XXXX}"
-          - Do NOT retry — log and move on
+          - Append to {execution_log}: "❌ OPEN — {test_name} | BUG-{next_bug_id - 1}"
+          - Do NOT retry — one fix attempt only
+
+        ✅ FAILURE PROTOCOL COMPLETE. All six steps done. Advance to next test.
 
       END FOR EACH
     </action>
@@ -378,19 +413,21 @@ Reply:
       </artifact-checklist>
       <quality-checklist>
         <check id="P5-1">Every test in {test_list} was actually executed — no test silently skipped</check>
-        <check id="P5-2">Every failed test has a corresponding BUG-XXXX.md in bug-reports/</check>
-        <check id="P5-3">Every bug report has a specific root cause — NOT "unknown error"</check>
-        <check id="P5-4">Every bug report contains the fix that was applied (before/after code)</check>
-        <check id="P5-5">Every bug report has a retest outcome appended (✅ Fixed or ❌ Still Open)</check>
-        <check id="P5-6">test-checklist.md reflects final state (fixed tests show ✅, unfixable show ❌)</check>
+        <check id="P5-2">Every failed test has a corresponding BUG-XXXX.md in bug-reports/ — ZERO undocumented failures</check>
+        <check id="P5-3">Every bug report has a specific root cause — NOT "unknown error" or "test failed"</check>
+        <check id="P5-4">Every bug report contains the fix that was applied (before/after code snippet)</check>
+        <check id="P5-5">Every bug report has a retest outcome appended (✅ Fixed OR ❌ Still Open) — the section must be present even if the fix failed</check>
+        <check id="P5-6">test-checklist.md reflects final state — fixed tests show ✅, unfixed show ❌, no test still shows ⏳ Pending</check>
         <check id="P5-7">Final JUnit XML exists and is non-empty</check>
+        <check id="P5-8">Number of BUG-XXXX.md files in bug-reports/ equals the number of tests that failed at any point during the loop — count must match</check>
       </quality-checklist>
       <fix-if-needed>
-        P5-1 → re-run any missing tests individually
-        P5-2 → create a bug report for any undocumented failure
-        P5-3/P5-4 → re-read the stack trace and add specific root cause + fix description
-        P5-5 → append the retest outcome section to any bug report missing it
-        P5-6 → manually update checklist entries that are still showing ⏳ Pending
+        P5-1 → re-run any missing tests individually using --mode single
+        P5-2/P5-8 → for every failed test without a bug report: create BUG-XXXX.md now (re-read the JUnit XML for error details)
+        P5-3 → re-read the stack trace for each report with vague root cause and rewrite it specifically
+        P5-4 → add the before/after code fix to any report missing it
+        P5-5 → for every bug report missing the retest outcome: run the test again now and append the result
+        P5-6 → update any checklist entry still showing ⏳ Pending based on the JUnit XML results
         P5-7 → re-run the final full suite to regenerate JUnit XML
       </fix-if-needed>
     </review>
