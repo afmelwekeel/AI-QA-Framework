@@ -221,8 +221,9 @@ function analyzeStoryPrompt(fw, _) {
   return `${header(fw)}
 ${skillRef(fw, 'user-story-analysis')}
 5. Load and execute the workflow at {project-root}/${fw}/workflows/analyze-story/
-6. If a story file path was provided as an argument, use it directly; otherwise ask the user for the story file path
-7. Output acceptance criteria, test scenarios, edge cases, and risk assessment`;
+6. If one or more story file paths were provided as arguments, use them directly; otherwise ask the user for the story file path(s) — multiple paths may be provided separated by spaces
+7. Read ALL provided story files; merge their acceptance criteria, scenarios, and edge cases into one unified set before proceeding
+8. Output merged acceptance criteria, test scenarios, edge cases, and risk assessment`;
 }
 
 function analyzeProjectPrompt(fw, _) {
@@ -237,17 +238,19 @@ ${skillRef(fw, 'project-analysis')}
 function generateTestCasesPrompt(fw, _) {
   return `${header(fw)}
 ${skillRef(fw, 'test-case-generation')}
-5. If a story file path was provided as an argument, use it directly; otherwise ask the user for the story file path
-6. Generate Arabic XLSX + MD test cases covering: positive, negative, edge, security, permission scenarios
-7. Output to {output_folder}/{story-id}/test-cases/`;
+5. If one or more story file paths were provided as arguments, use them directly; otherwise ask the user for the story file path(s) — multiple paths may be provided separated by spaces
+6. Read ALL provided story files; merge their acceptance criteria and scenarios into one unified set
+7. Generate Arabic XLSX + MD test cases covering: positive, negative, edge, security, permission scenarios — derived from the merged story content
+8. Output to {output_folder}/{story-id}/test-cases/`;
 }
 
 function generateE2EPrompt(fw, _) {
   return `${header(fw)}
 ${skillRef(fw, 'playwright-generation')}
 5. Load and execute the workflow at {project-root}/${fw}/workflows/generate-e2e/
-6. If a story file path was provided as an argument, use it directly; otherwise ask the user for the story file path
-7. Generate JavaScript Playwright POM + spec files → output to {output_folder}/{story-id}/e2e/`;
+6. If one or more story file paths were provided as arguments, use them directly; otherwise ask the user for the story file path(s) — multiple paths may be provided separated by spaces
+7. Read ALL provided story files; merge their acceptance criteria to ensure full E2E coverage across all stories
+8. Generate JavaScript Playwright POM + spec files → output to {output_folder}/{story-id}/e2e/`;
 }
 
 function generateTestDataPrompt(fw, _) {
@@ -287,8 +290,9 @@ function fullWorkflowPrompt(fw, _) {
   return `${header(fw)}
 ${skillRef(fw, 'full-workflow')}
 5. Load and execute the workflow at {project-root}/${fw}/workflows/full-workflow/
-6. If a story file path was provided as an argument, use it directly; otherwise ask the user for the story file path
-7. Execute all 9 phases in order:
+6. If one or more story file paths were provided as arguments, use them directly; otherwise ask the user for the story file path(s) — multiple paths may be provided separated by spaces
+7. Read ALL provided story files; merge their acceptance criteria, scenarios, and edge cases into one unified set before starting Phase 1
+8. Execute all 9 phases in order:
    Phase 0: Project Analysis — auto-detect stack, URLs, auth
    Phase 1: Story Analysis — extract AC, scenarios, edge cases
    Phase 2: Test Case Generation — XLSX + MD → /test-cases/

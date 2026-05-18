@@ -8,22 +8,18 @@
   <critical>ALL generated files (E2E tests, test cases, test data, bug reports, reports) MUST be written ONLY inside {output_folder}/{story_id}/ — which resolves to ai-qa-framework/TestResult/{story_id}/. NEVER write to any folder found in the host project such as e2e/, tests/, src/e2e/, src/test/, or similar. Those folders belong to the host project and must NEVER be touched.</critical>
   <critical>SELF-REVIEW RULE: After every phase, execute the phase's review checklist before proceeding. Fix all failures before moving to the next phase.</critical>
 
-  <step n="1" goal="Resolve story file and suite name">
-    <check if="{story_file} is provided by user">
-      <action>Use provided story file path directly</action>
-      <action>Derive {story_id} from the filename (e.g., "1-1-opt-in-link-generation" from "1-1-opt-in-link-generation.md")</action>
-      <action>Derive {suite_name} from {story_id} if not provided</action>
-      <action>Read {story_file} fully and store {ac_count} = number of acceptance criteria</action>
-      <goto anchor="phase_0" />
+  <step n="1" goal="Resolve story files and suite name">
+    <check if="{story_files} is NOT provided">
+      <ask>Please provide the path(s) to the user story file(s). You may provide multiple paths separated by spaces (e.g., docs/stories/1-1-feature.md docs/stories/1-2-feature.md):</ask>
+      <action>Store the provided value as {story_files}</action>
     </check>
-
-    <check if="{story_file} is NOT provided">
-      <ask>Please provide the path to the user story file (e.g., docs/stories/1-1-feature.md):</ask>
-      <action>Store user-provided path as {story_file}</action>
-      <action>Derive {story_id} from the filename</action>
-      <action>Derive {suite_name} from {story_id}</action>
-      <action>Read {story_file} fully and store {ac_count} = number of acceptance criteria</action>
-    </check>
+    <action>Parse {story_files} into a list — split on spaces or commas, trim whitespace, filter empty entries</action>
+    <action>Derive {story_id} from the FIRST story filename (e.g., "1-1-opt-in-link-generation" from "1-1-opt-in-link-generation.md")</action>
+    <action>Derive {suite_name} from {story_id} if not provided</action>
+    <action>Read ALL story files completely; merge their acceptance criteria, scenarios, and edge cases into one unified set</action>
+    <action>Store {ac_count} = TOTAL number of unique acceptance criteria across ALL stories</action>
+    <action>If multiple stories provided, display: "Loaded {story_count} stories — {ac_count} total ACs merged"</action>
+    <goto anchor="phase_0" />
   </step>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -59,7 +55,7 @@
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <step n="3" anchor="phase_1" goal="Phase 1 — Analyze Story">
     <action>Execute skill: user-story-analysis</action>
-    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-story --story "{story_file}"</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-story --stories "{story_files}"</action>
 
     <review>
       <artifact-checklist>
@@ -67,15 +63,15 @@
       </artifact-checklist>
       <quality-checklist>
         <check id="P1-1">Story AST JSON file exists and is valid parseable JSON</check>
-        <check id="P1-2">AST acceptance_criteria array has exactly {ac_count} items — every AC from the story must be present</check>
-        <check id="P1-3">Each AC matches the original story text — no omissions, no paraphrasing that loses meaning</check>
+        <check id="P1-2">AST acceptance_criteria array has exactly {ac_count} items — every AC from ALL provided stories must be present</check>
+        <check id="P1-3">Each AC matches the original text from its source story — no omissions, no paraphrasing that loses meaning</check>
         <check id="P1-4">At least 2 positive scenarios defined</check>
         <check id="P1-5">At least 1 negative scenario per AC</check>
         <check id="P1-6">Edge cases section is not empty</check>
         <check id="P1-7">Security scenarios section covers unauthorised access and input injection</check>
       </quality-checklist>
       <fix-if-needed>
-        P1-2/P1-3 → re-read {story_file} and add any missing ACs to the AST
+        P1-2/P1-3 → re-read ALL story files in {story_files} and add any missing ACs to the AST
         P1-4/P1-5 → add missing positive/negative scenarios
         P1-6 → add boundary, empty-input, and special-character edge cases
         P1-7 → add auth bypass and injection security scenarios
@@ -90,7 +86,7 @@
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <step n="4" anchor="phase_2" goal="Phase 2 — Generate Test Cases">
     <action>Execute skill: test-case-generation</action>
-    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-test-cases --story "{story_file}"</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-test-cases --stories "{story_files}"
 
     <review>
       <artifact-checklist>
@@ -99,7 +95,7 @@
       </artifact-checklist>
       <quality-checklist>
         <check id="P2-1">Both XLSX and MD files exist at the correct paths</check>
-        <check id="P2-2">Every AC from {story_file} has at least one positive test case — total positive tests ≥ {ac_count}</check>
+        <check id="P2-2">Every AC from ALL provided stories has at least one positive test case — total positive tests ≥ {ac_count}</check>
         <check id="P2-3">Every AC has at least one negative test case covering invalid/rejected input</check>
         <check id="P2-4">Edge case test cases are present (boundary values, empty inputs, max-length, special characters)</check>
         <check id="P2-5">Each test case has: ID, title, preconditions, numbered steps, expected result — no field is blank</check>
@@ -125,7 +121,7 @@
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <step n="5" anchor="phase_3" goal="Phase 3 — Generate E2E Tests">
     <action>Execute skill: playwright-generation</action>
-    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-e2e --suite "{suite_name}" --story "{story_file}"</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-e2e --suite "{suite_name}" --stories "{story_files}"</action>
 
     <review>
       <artifact-checklist>

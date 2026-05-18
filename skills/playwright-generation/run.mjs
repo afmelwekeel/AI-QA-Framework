@@ -20,7 +20,7 @@ export default async function run(ctx) {
   const safe = suite.replace(/[^a-z0-9-_]/gi, '-').toLowerCase();
 
   let ast = null;
-  if (ctx.args?.story) ast = (await analyzeStory(ctx)).ast;
+  if (ctx.args?.story || ctx.args?.stories) ast = (await analyzeStory(ctx)).ast;
 
   const e2eRoot  = ctx.paths?.e2e  ?? join(FRAMEWORK_ROOT, 'e2e');
   const pagesDir = join(e2eRoot, 'pages');

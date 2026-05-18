@@ -73,15 +73,20 @@ Each step MUST be a numbered, self-contained human instruction. Write at least 4
 
 ### Step 1 — Run the skill script
 
-Execute the test-case generation script which produces both XLSX and MD:
+Execute the test-case generation script which produces both XLSX and MD. You may pass one or more story file paths — all stories are merged before generation:
 ```bash
-node "AI-QA-FRAMEWORK/skills/test-case-generation/run.mjs" "<story-file-path>"
+node "AI-QA-FRAMEWORK/skills/test-case-generation/run.mjs" "<story-file-path>" ["<story-file-path-2>" ...]
 ```
 
 On Windows (PowerShell):
 ```powershell
-node "AI-QA-FRAMEWORK/skills/test-case-generation/run.mjs" "<story-file-path>"
+node "AI-QA-FRAMEWORK/skills/test-case-generation/run.mjs" "<story-file-path>" "<story-file-path-2>"
 ```
+
+When multiple stories are provided:
+- All acceptance criteria are merged (duplicates de-duplicated)
+- The story_id is derived from the first story's filename
+- The output files reflect the combined content of all stories
 
 This writes two output files:
 - `TestResult/test-cases-<story-id>.xlsx` — RTL Arabic Excel workbook (17 columns, colored, filtered)

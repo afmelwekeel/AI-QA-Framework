@@ -33,7 +33,10 @@ export default async function run(ctx) {
   console.log('\n' + '═'.repeat(60));
   console.log('   🚀 AI QA Framework v2 — Full Workflow (9 Phases)');
   console.log('═'.repeat(60));
-  console.log(`   Story  : ${ctx.args?.story ?? '(not provided)'}`);
+  const storyDisplay = ctx.args?.stories?.length > 1
+    ? `${ctx.args.stories.length} stories: ${ctx.args.stories.join(', ')}`
+    : (ctx.args?.story ?? '(not provided)');
+  console.log(`   Story  : ${storyDisplay}`);
   console.log(`   Suite  : ${ctx.args?.suite ?? '(auto-detect)'}`);
   console.log(`   Headed : ${ctx.args?.headed !== 'false' ? 'YES — browser will open' : 'headless'}`);
   console.log('═'.repeat(60) + '\n');
@@ -48,11 +51,11 @@ export default async function run(ctx) {
 
   // ── Phase 1: Story Analysis ───────────────────────────────────────────────
   let ast = null;
-  if (ctx.args?.story) {
+  if (ctx.args?.story || ctx.args?.stories) {
     const result = await runPhase('user-story-analysis', ctx, trace);
     if (result.ok) {
       ast = result.data?.ast;
-      // Derive suite name from story if not provided
+      // Derive suite name from first story if not provided
       if (!ctx.args.suite && ast?.id) {
         const derivedSuite = ast.id;
         // Re-derive paths so all phases write under TestResult/{derivedSuite}/
@@ -63,11 +66,11 @@ export default async function run(ctx) {
       }
     }
   } else {
-    skipPhase('user-story-analysis', 'No --story provided', trace);
+    skipPhase('user-story-analysis', 'No --story or --stories provided', trace);
   }
 
   // ── Phase 2: Test Case Generation ────────────────────────────────────────
-  if (ast || ctx.args?.story) {
+  if (ast || ctx.args?.story || ctx.args?.stories) {
     await runPhase('test-case-generation', ctx, trace);
   } else {
     skipPhase('test-case-generation', 'No story or AST available', trace);

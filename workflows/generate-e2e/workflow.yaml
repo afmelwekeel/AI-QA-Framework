@@ -11,6 +11,6 @@ default_browser: "{config_source}:default_browser"
 installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/generate-e2e"
 instructions: "{installed_path}/instructions.xml"
 
-story_file: ""
+story_files: ""    # Space- or comma-separated paths to one or more story files
 suite_name: ""
-story_id: ""
+story_id: ""       # Derived from first story filename

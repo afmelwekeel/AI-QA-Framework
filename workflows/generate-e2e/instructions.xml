@@ -5,19 +5,20 @@
   <critical>Tests run in {test_mode} mode using {default_browser}</critical>
   <critical>OUTPUT PATH: ALL generated files MUST be written to {output_folder}/{story_id}/e2e/ — this resolves to a folder INSIDE the ai-qa-framework/TestResult/ directory. NEVER write to any e2e/, tests/, src/e2e/, or any other folder found anywhere in the host project. If such folders exist in the host project they belong to the host project and must NOT be modified.</critical>
 
-  <step n="1" goal="Resolve suite name and story">
+  <step n="1" goal="Resolve suite name and story files">
     <check if="{suite_name} is NOT provided">
       <ask>Please provide the suite name (e.g., opt-in-link-generation):</ask>
       <action>Store as {suite_name}</action>
     </check>
 
-    <check if="{story_file} is NOT provided">
-      <ask>Please provide the story file path (optional — press Enter to skip):</ask>
-      <action>Store as {story_file} if provided</action>
+    <check if="{story_files} is NOT provided">
+      <ask>Please provide the story file path(s) — optional, press Enter to skip. Multiple paths may be provided separated by spaces:</ask>
+      <action>Store as {story_files} if provided; leave empty if user skips</action>
     </check>
 
-    <action>Derive {story_id} from {suite_name} or {story_file} filename</action>
-    <action>If {story_file} is provided, read it fully and store the acceptance criteria count as {ac_count}</action>
+    <action>Derive {story_id} from {suite_name} or the FIRST filename in {story_files}</action>
+    <action>If {story_files} is provided: parse into a list, read ALL story files completely, merge their acceptance criteria into one unified set, store {ac_count} = total unique ACs</action>
+    <action>If {story_files} is NOT provided: set {ac_count} = 0 and proceed with suite name only</action>
   </step>
 
   <step n="2" goal="Check test users before generation">
@@ -36,7 +37,7 @@
   </step>
 
   <step n="3" goal="Execute E2E generation skill">
-    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-e2e --suite "{suite_name}" --story "{story_file}"</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-e2e --suite "{suite_name}" --stories "{story_files}"</action>
     <action>Skill generates:
       - Page Object file: {output_folder}/{story_id}/e2e/pages/{suite_name}.page.js
       - Spec file: {output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js
@@ -61,7 +62,7 @@
         <check id="E2E-4">All locators use `this.page.locator()` or Playwright locator methods — no raw CSS selectors as strings outside locator calls</check>
         <check id="E2E-5">Spec file imports the Page Object using a relative path pointing to the pages/ folder</check>
         <check id="E2E-6">Spec file uses `test.describe` and individual `test()` blocks — not bare function calls</check>
-        <check id="E2E-7">If {story_file} was provided: the number of test cases in the spec covers ALL {ac_count} acceptance criteria — at minimum one positive test per AC</check>
+        <check id="E2E-7">If {story_files} was provided: the number of test cases in the spec covers ALL {ac_count} acceptance criteria from ALL provided stories — at minimum one positive test per AC</check>
         <check id="E2E-8">Each AC has at least one negative test case (invalid input, missing field, auth failure, etc.)</check>
         <check id="E2E-9">No hardcoded base URLs in `page.goto()` — must use `baseURL` from Playwright config or config.yaml</check>
         <check id="E2E-10">No `page.waitForTimeout()` with arbitrary delays — use `page.waitForSelector()` or `expect().toBeVisible()` instead</check>

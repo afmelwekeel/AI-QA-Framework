@@ -26,23 +26,33 @@ const PROJECT_ROOT   = resolve(FRAMEWORK_ROOT, '..');
 const CONFIG_PATH = join(FRAMEWORK_ROOT, 'core', 'project.config.json');
 
 // --- minimal arg parser -------------------------------------------------
-// Supports both:
+// Supports:
 //   --key value flags  (e.g. --story path/to/story.md --suite login)
-//   positional arg     (e.g. full-workflow path/to/story.md)  → treated as --story
+//   --stories "path1 path2"  → parsed into args.stories (string array)
+//   positional args    (e.g. full-workflow a.md b.md)  → collected into args.stories
+// For backward-compat: if only one story, args.story is also set.
 function parseArgs(argv) {
   const [, , cmd, ...rest] = argv;
   const args = {};
+  const positionals = [];
   for (let i = 0; i < rest.length; i++) {
     const t = rest[i];
     if (t.startsWith('--')) {
       const key = t.slice(2);
       const val = rest[i + 1] && !rest[i + 1].startsWith('--') ? rest[++i] : true;
       args[key] = val;
-    } else if (!args.story) {
-      // First positional = story path (convenience shorthand)
-      args.story = t;
+    } else {
+      positionals.push(t);
     }
   }
+  // Resolve --stories flag (space/comma-separated string) or positional args into stories array
+  if (args.stories) {
+    args.stories = String(args.stories).split(/[\s,]+/).map(s => s.trim()).filter(Boolean);
+  } else if (positionals.length > 0) {
+    args.stories = positionals;
+  }
+  if (args.stories?.length === 1) args.story = args.stories[0];
+  if (args.story && !args.stories) args.stories = [args.story];
   return { cmd, args };
 }
 

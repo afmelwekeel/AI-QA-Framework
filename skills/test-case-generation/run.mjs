@@ -70,7 +70,9 @@ async function loadAst(ctx) {
       : resolve(ctx.paths?.project ?? FRAMEWORK_ROOT, ctx.args.ast);
     return JSON.parse(await readFile(p, 'utf8'));
   }
-  if (!ctx.args?.story) throw new Error('Provide --story <path> or --ast <path>');
+  if (!ctx.args?.story && !ctx.args?.stories) {
+    throw new Error('Provide --story <path>, --stories "<path1> <path2>", or --ast <path>');
+  }
   const result = await analyzeStory(ctx);
   return result.ast;
 }
