@@ -71,26 +71,37 @@ Each step MUST be a numbered, self-contained human instruction. Write at least 4
 
 ## Output Steps (MUST follow in order):
 
-### Step 1 — Run the skill script
+### Step 0 — Resolve story files and suite name
 
-Execute the test-case generation script which produces both XLSX and MD. You may pass one or more story file paths — all stories are merged before generation:
+Before running anything:
+1. Parse all provided story file paths into a list (split on spaces/commas). If none provided, ask the user.
+2. Derive `{story_id}` from the **first** story filename (strip the path and extension, e.g. `1-1-login-flow`).
+3. Set `{suite_name}` = `{story_id}` if not explicitly provided by the user.
+4. Read ALL story files and count total unique acceptance criteria → `{ac_count}`.
+5. Display: "📖 Processing {story_count} story file(s) — {ac_count} total ACs — suite: `{suite_name}`"
+
+### Step 1 — Run the skill via orchestrator
+
+Always run through the **orchestrator** (not the skill script directly) so the output lands in the correct `TestResult/{suite_name}/` folder:
+
 ```bash
-node "AI-QA-FRAMEWORK/skills/test-case-generation/run.mjs" "<story-file-path>" ["<story-file-path-2>" ...]
+node "AI-QA-FRAMEWORK/core/orchestrator.mjs" generate-test-cases --suite "{suite_name}" --stories "{story_file_1} {story_file_2} ..."
 ```
 
 On Windows (PowerShell):
 ```powershell
-node "AI-QA-FRAMEWORK/skills/test-case-generation/run.mjs" "<story-file-path>" "<story-file-path-2>"
+node "AI-QA-FRAMEWORK/core/orchestrator.mjs" generate-test-cases --suite "{suite_name}" --stories "{story_file_1} {story_file_2}"
 ```
 
 When multiple stories are provided:
 - All acceptance criteria are merged (duplicates de-duplicated)
-- The story_id is derived from the first story's filename
-- The output files reflect the combined content of all stories
+- The suite / folder name is derived from the first story's filename
+- The output files reflect the combined content of ALL stories
 
-This writes two output files:
-- `TestResult/test-cases-<story-id>.xlsx` — RTL Arabic Excel workbook (17 columns, colored, filtered)
-- `TestResult/test-cases-<story-id>.md`   — Markdown grouped by test type
+Output files are written to **`TestResult/{suite_name}/test-cases/`**:
+- `TestResult/{suite_name}/test-cases/{story_id}.xlsx` — RTL Arabic Excel workbook (17 columns, colored, filtered)
+- `TestResult/{suite_name}/test-cases/{story_id}.md`   — Markdown grouped by test type
+- `TestResult/{suite_name}/test-cases/{story_id}.csv`  — CSV export
 
 ### Step 2 — Review the generated output
 
@@ -98,11 +109,12 @@ Open the MD file and verify:
 - All 17 columns are present
 - Steps are numbered and human-readable (not vague)
 - At least 1 positive + 1 negative per AC
+- Coverage spans ALL `{ac_count}` ACs across ALL provided stories
 - Security and permission cases present if auth is involved
 
 ### Step 3 — Confirm Output
 
-Report both file paths to the user and summarize: total test cases, breakdown by test type, and any ACs that have only 1 coverage scenario (flag as risk).
+Report all three file paths to the user and summarize: total test cases, breakdown by test type, and any ACs with only 1 coverage scenario (flag as risk).
 
 ---
 

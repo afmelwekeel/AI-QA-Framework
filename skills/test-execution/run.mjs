@@ -13,6 +13,11 @@ const FRAMEWORK_ROOT = join(__dirname, '..', '..');
  * Runs Playwright tests from /e2e/tests/ using playwright.config.js.
  * Browser opens in headed mode — visible like a real QA engineer.
  * Captures: screenshots, videos, traces, console errors, network errors.
+ *
+ * Modes:
+ *   default  — run all tests (or a single suite) and return results
+ *   list     — list all test names without running them (ctx.args.mode === 'list')
+ *   single   — run one test by name via --grep (ctx.args.testName)
  */
 export default async function run(ctx) {
   const cwd = FRAMEWORK_ROOT;  // Run from framework root — uses playwright.config.js
@@ -30,11 +35,23 @@ export default async function run(ctx) {
     throw new Error(`No e2e tests found at ${e2eTestsDir}. Run @qa generate-e2e first.`);
   }
 
+  const mode     = ctx.args?.mode ?? 'default';
   const headed   = ctx.args?.headed !== 'false' && ctx.args?.headed !== false;
   const suite    = ctx.args?.suite;
   const safeSuite = suite ? String(suite).replace(/[^a-z0-9-_]/gi, '-').toLowerCase() : null;
   const slowMo   = ctx.args?.slowmo ?? '60';
 
+  // ── List mode: enumerate all test names without running ───────────────────
+  if (mode === 'list') {
+    return await listTests(safeSuite, cwd);
+  }
+
+  // ── Single mode: run one test by exact name via --grep ────────────────────
+  if (mode === 'single' && ctx.args?.testName) {
+    return await runSingleNamedTest(ctx.args.testName, safeSuite, headed, slowMo, cwd);
+  }
+
+  // ── Default mode: run full suite ──────────────────────────────────────────
   const playwrightArgs = ['playwright', 'test'];
   if (headed) playwrightArgs.push('--headed');
   if (safeSuite) {
@@ -154,6 +171,76 @@ async function updateChecklist(checklistPath, junitPath) {
 
   await writeFile(checklistPath, withProgress, 'utf8');
 }
+
+// ─── List tests (no-run) ──────────────────────────────────────────────────────
+
+/**
+ * Run `npx playwright test --list` and return the parsed test names.
+ * Used by the AI per-test loop to know which tests to iterate over.
+ */
+async function listTests(safeSuite, cwd) {
+  const args = ['playwright', 'test', '--list'];
+  if (safeSuite) args.push(`${safeSuite}\\.spec\\.js`);
+
+  const lines = await captureCmd('npx', args, cwd);
+  // Playwright --list output format: "  · <test name>"  or  "    <test name>"
+  const tests = lines
+    .filter(l => /^\s+·?\s+\S/.test(l))
+    .map(l => l.replace(/^\s+·?\s+/, '').trim())
+    .filter(Boolean);
+
+  console.log(`\n📋 Found ${tests.length} test(s) in suite '${safeSuite ?? 'all'}':`);
+  tests.forEach((t, i) => console.log(`   ${i + 1}. ${t}`));
+
+  return { tests, count: tests.length, suite: safeSuite ?? 'all' };
+}
+
+// ─── Run a single test by name ────────────────────────────────────────────────
+
+/**
+ * Run exactly one test by name using --grep, return exit code + pass/fail.
+ * Used by the AI per-test fix loop to verify individual fixes.
+ */
+async function runSingleNamedTest(testName, safeSuite, headed, slowMo, cwd) {
+  const safeTestName = testName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const args = ['playwright', 'test'];
+  if (headed) args.push('--headed');
+  args.push(`--grep=${safeTestName}`);
+  if (safeSuite) args.push(`${safeSuite}\\.spec\\.js`);
+
+  const env = {
+    ...process.env,
+    QA_SLOWMO: slowMo,
+    ...(safeSuite && { QA_SUITE: safeSuite }),
+  };
+
+  console.log(`\n▶ Running single test: "${testName}"`);
+  const exitCode = await runCmd('npx', args, cwd, env);
+  const passed = exitCode === 0;
+  console.log(`   ${passed ? '✅ Passed' : '❌ Failed'} — exit code ${exitCode}`);
+
+  return { exitCode, passed, testName };
+}
+
+// ─── Capture stdout helper ────────────────────────────────────────────────────
+
+function captureCmd(cmd, args, cwd) {
+  return new Promise((resolve) => {
+    const isWin = process.platform === 'win32';
+    const lines = [];
+    const child = spawn(
+      isWin ? `${cmd}.cmd` : cmd,
+      args,
+      { cwd, shell: isWin, env: process.env },
+    );
+    child.stdout?.on('data', d => lines.push(...String(d).split('\n')));
+    child.stderr?.on('data', d => lines.push(...String(d).split('\n')));
+    child.on('exit', () => resolve(lines));
+    child.on('error', () => resolve(lines));
+  });
+}
+
+// ─── Command runner ───────────────────────────────────────────────────────────
 
 function runCmd(cmd, args, cwd, env) {
   return new Promise((resolve) => {

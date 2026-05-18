@@ -16,7 +16,7 @@
 import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { dirname, resolve, join } from 'node:path';
+import { dirname, resolve, join, basename, extname } from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -130,6 +130,13 @@ async function main() {
   }
 
   const config = await loadConfig();
+
+  // Auto-derive suite from first story filename if --suite not provided.
+  // Ensures every command that receives stories writes to TestResult/{suite}/
+  // with the correct folder structure, even when --suite is omitted.
+  if (!args.suite && args.stories?.length > 0) {
+    args.suite = basename(args.stories[0], extname(args.stories[0]));
+  }
 
   // Resolve suite-scoped output root: TestResult/{suite}/
   const TEST_RESULT_ROOT = join(FRAMEWORK_ROOT, 'TestResult');

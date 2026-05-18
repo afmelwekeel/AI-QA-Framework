@@ -213,39 +213,119 @@
   </step>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- PHASE 5                                                         -->
+  <!-- PHASE 5 — Per-Test Fix & Record Loop                           -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <step n="7" anchor="phase_5" goal="Phase 5 — Execute Tests">
-    <action>Execute skill: test-execution</action>
-    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs run-tests --suite "{suite_name}" --headed {test_mode == "headed"}</action>
-    <action>Browser opens visually in {test_mode} mode using {default_browser}</action>
-    <action>Capture screenshots, videos, traces, JUnit XML</action>
-    <action>Save all artifacts to {output_folder}/{story_id}/</action>
+  <step n="7" anchor="phase_5" goal="Phase 5 — Execute Tests (Per-Test Fix Loop)">
+    <critical>Run tests ONE AT A TIME. After each failure: diagnose → fix → record bug → retest → then move to the next test. NEVER batch-run all tests and report results without fixing failures inline.</critical>
+
+    <!-- ── 5.0 Prepare ── -->
+    <action>Ensure {output_folder}/{story_id}/bug-reports/ folder exists (create if missing)</action>
+    <action>Count existing BUG-XXXX.md files in bug-reports/ → store as {next_bug_id} (start at count+1)</action>
+    <action>Initialize {execution_log} = [] (list of per-test outcomes for the summary)</action>
+    <action>Initialize counters: {pass_count}=0, {fixed_inline_count}=0, {still_open_count}=0</action>
+
+    <!-- ── 5.1 List all tests ── -->
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs run-tests --suite "{suite_name}" --mode list</action>
+    <action>Parse the output to extract the ordered list of test names → {test_list}</action>
+    <action>Display: "📋 Found {N} tests — running each individually with inline fix on failure."</action>
+
+    <!-- ── 5.2 Per-test loop ── -->
+    <action>FOR EACH {test_name} IN {test_list}:
+
+      STEP A — Run the single test:
+        Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs run-tests --suite "{suite_name}" --mode single --testName "{test_name}"
+        Capture: exit code (0 = pass, non-zero = fail)
+
+      STEP B — If PASS:
+        - Increment {pass_count} by 1
+        - Update test-checklist.md: mark {test_name} as ✅ Passed
+        - Append to {execution_log}: "✅ PASS — {test_name}"
+        - Continue to next test
+
+      STEP C — If FAIL:
+        [Diagnose]
+        - Read the error message and stack trace from the JUnit output or console
+        - Read the spec file around the failing line
+        - Read the Page Object file(s) referenced in the stack trace
+        - Classify: TEST BUG (wrong selector / assertion / URL / missing await / bad setup)
+                 OR SOURCE BUG (application behaves incorrectly)
+
+        [Fix]
+        - Edit the file that contains the root cause (spec, page object, or app source)
+        - Minimal change only — do NOT refactor unrelated code
+
+        [Record Bug — create {output_folder}/{story_id}/bug-reports/BUG-{next_bug_id:04d}.md]
+        Write the bug report with:
+          - Bug ID: BUG-{next_bug_id:04d}
+          - Test name, error message, stack trace
+          - نوع الخطأ: خطأ في ملف الاختبار OR خطأ في الكود المصدري
+          - الملف المُعدَّل: {path_of_file_edited}
+          - مستوى الخطورة: based on error type (timeout/crash=حرجة, assertion/404=عالية, UI=متوسطة)
+          - تشخيص السبب الجذري: specific, not "unknown error"
+          - الإصلاح المُطبَّق: description of fix + before/after code snippet
+          - سجل التتبع الكامل: full stack trace in collapsible section
+        Increment {next_bug_id} by 1
+
+        [Retest]
+        Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs run-tests --suite "{suite_name}" --mode single --testName "{test_name}"
+
+        [Record Retest Outcome — append to the bug report]
+        If retest PASSES:
+          - Append "## ✅ تم الإصلاح — اجتاز الاختبار بعد الإصلاح\n> تم التحقق في: {timestamp}"
+          - Mark test as ✅ Passed in test-checklist.md
+          - Increment {fixed_inline_count} by 1
+          - Append to {execution_log}: "🔧 FIXED — {test_name} | BUG-{XXXX} | {fix_type}"
+        If retest still FAILS:
+          - Append "## ❌ لا يزال فاشلاً — يحتاج مراجعة\n> ما تمت محاولته: {attempted_fix}"
+          - Mark test as ❌ Failed in test-checklist.md
+          - Increment {still_open_count} by 1
+          - Append to {execution_log}: "❌ OPEN — {test_name} | BUG-{XXXX}"
+          - Do NOT retry — log and move on
+
+      END FOR EACH
+    </action>
+
+    <!-- ── 5.3 Update bug INDEX ── -->
+    <action>Create or update {output_folder}/{story_id}/bug-reports/INDEX.md with a table of every bug recorded in this session (Bug ID | Test | نوع الخطأ | الخطورة | الحالة)</action>
+
+    <!-- ── 5.4 Final full run for JUnit XML ── -->
+    <action>Run the full suite once to produce the canonical JUnit XML for Phase 6:
+      Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs run-tests --suite "{suite_name}"
+      This captures the final state (with all fixes applied) in junit.xml
+    </action>
+
+    <!-- ── 5.5 Update checklist header ── -->
+    <action>Update the header table in test-checklist.md with final counts: Passed, Fixed-Inline (count as Passed), Still Failing, and overall status</action>
 
     <review>
       <artifact-checklist>
-        <file path="{output_folder}/{story_id}/test-results.xml" required="true">JUnit XML results</file>
-        <file path="{output_folder}/{story_id}/screenshots/"     required="false">Screenshots folder</file>
-        <file path="{output_folder}/{story_id}/test-checklist.md" required="true">Test checklist — must now show ✅/❌ for each test that ran</file>
+        <file path="{output_folder}/{story_id}/reports/junit.xml"   required="true">Final JUnit XML — reflects all fixes applied</file>
+        <file path="{output_folder}/{story_id}/test-checklist.md"   required="true">Updated with ✅/❌ for every test that ran</file>
+        <file path="{output_folder}/{story_id}/bug-reports/"        required="false">Bug reports — one per failure encountered during the loop</file>
       </artifact-checklist>
       <quality-checklist>
-        <check id="P5-1">Test execution actually ran — results file exists and is not empty</check>
-        <check id="P5-2">Pass rate is a real calculated value — NOT a placeholder</check>
-        <check id="P5-3">Every test in the spec file appears in the results (no tests were silently skipped)</check>
-        <check id="P5-4">Failed tests have error messages and stack traces captured</check>
-        <check id="P5-5">Screenshots exist for any failed test</check>
-        <check id="P5-6">test-checklist.md has been updated — each test item now shows ✅ Passed, ❌ Failed, or ⏭️ Skipped; Progress table shows correct counts</check>
+        <check id="P5-1">Every test in {test_list} was actually executed — no test silently skipped</check>
+        <check id="P5-2">Every failed test has a corresponding BUG-XXXX.md in bug-reports/</check>
+        <check id="P5-3">Every bug report has a specific root cause — NOT "unknown error"</check>
+        <check id="P5-4">Every bug report contains the fix that was applied (before/after code)</check>
+        <check id="P5-5">Every bug report has a retest outcome appended (✅ Fixed or ❌ Still Open)</check>
+        <check id="P5-6">test-checklist.md reflects final state (fixed tests show ✅, unfixable show ❌)</check>
+        <check id="P5-7">Final JUnit XML exists and is non-empty</check>
       </quality-checklist>
       <fix-if-needed>
-        P5-1 → if execution failed to start, diagnose the error (missing dependency, wrong path) and retry
-        P5-3 → if tests were skipped, investigate skip reason and resolve
-        P5-4 → if error details are missing, re-run the specific failing tests with verbose output
-        P5-6 → if the checklist was not auto-updated, read the JUnit XML and manually update each checkbox in test-checklist.md
+        P5-1 → re-run any missing tests individually
+        P5-2 → create a bug report for any undocumented failure
+        P5-3/P5-4 → re-read the stack trace and add specific root cause + fix description
+        P5-5 → append the retest outcome section to any bug report missing it
+        P5-6 → manually update checklist entries that are still showing ⏳ Pending
+        P5-7 → re-run the final full suite to regenerate JUnit XML
       </fix-if-needed>
     </review>
-    <output>✅ Phase 5 complete — tests executed</output>
-    <output>📊 Pass rate: {pass_rate}% (gate: {min_pass_rate}%)</output>
-    <output>📋 Test checklist updated: {output_folder}/{story_id}/test-checklist.md</output>
+
+    <output>✅ Phase 5 complete — per-test execution loop finished</output>
+    <output>📊 Results: {pass_count} passed | {fixed_inline_count} fixed inline | {still_open_count} still open</output>
+    <output>📋 Test checklist: {output_folder}/{story_id}/test-checklist.md</output>
+    <output>🐛 Bug reports: {output_folder}/{story_id}/bug-reports/ ({next_bug_id - 1} report(s))</output>
   </step>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->

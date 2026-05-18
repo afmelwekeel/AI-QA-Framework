@@ -25,7 +25,8 @@
   </step>
 
   <step n="3" goal="Execute story analysis skill">
-    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-story --story "{story_file}"</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-story --suite "{story_id}" --stories "{story_files}"</action>
+    <action>Pass ALL story file paths (not just the first) so the Node.js skill merges every story's acceptance criteria into the unified AST</action>
     <action>The skill emits a structured JSON AST saved to reports/story-asts/{story_id}.json</action>
   </step>
 
