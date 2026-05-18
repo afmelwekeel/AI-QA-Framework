@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
+﻿import { existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -204,7 +204,7 @@ export async function runUpgrade(flags = {}) {
   let toolsToRefresh = detectedTools;
   if (!flags.yes && detectedTools.length > 0) {
     const refresh = await confirm(
-      `Refresh AI tool command files for: ${c.cyan}${detectedTools.join(', ')}${c.reset}?\n  ${c.dim}This adds any new commands (e.g. /AIQA-FixBugs). Existing files are skipped unless forced.${c.reset}`,
+      `Refresh AI tool command files for: ${c.cyan}${detectedTools.join(', ')}${c.reset}?\n  ${c.dim}This adds any new commands (e.g. /aiqa-fixbugs). Existing files are skipped unless forced.${c.reset}`,
       true
     );
     if (!refresh) toolsToRefresh = [];
@@ -263,7 +263,7 @@ function printPostUpgrade(installDir, newVersion, oldVersion) {
   console.log(line(`   ${c.bold}${c.white}NEXT STEPS${c.reset}`));
   console.log(blank);
   console.log(step(1, `Re-activate Rayan in your AI tool (reload the agent file)`));
-  console.log(step(2, `Run ${c.cyan}/AIQA-Init${c.reset} to register any new commands`));
+  console.log(step(2, `Run ${c.cyan}/aiqa-init${c.reset} to register any new commands`));
   console.log(step(3, `Check changelog: ${c.dim}https://github.com/afmelwekeel/AI-QA-Framework/releases${c.reset}`));
   console.log(blank);
   console.log(rule);

@@ -1,6 +1,6 @@
-# QAE Agent — Persistent Preferences
+﻿# QAE Agent — Persistent Preferences
 # This file is auto-updated by the Rayan agent across sessions.
-# Edit manually or via /AIQA-Preferences to change defaults.
+# Edit manually or via /aiqa-preferences to change defaults.
 
 ## Reporting
 - Language: en (English)

@@ -1,4 +1,4 @@
-# AI-QA-Framework
+﻿# AI-QA-Framework
 
 > Universal AI QA Automation Framework — project-agnostic, enterprise-grade.
 
@@ -84,11 +84,11 @@ Once the framework is installed, run commands from inside `./ai-qa-framework/`:
 
 Or tell Rayan directly in your AI tool:
 ```
-/AIQA-FullWorkflow ./docs/stories/feature-login.md
-/AIQA-FixBugs
-/AIQA-AnalyzeProject
-/AIQA-SecurityScan
-/AIQA-AccessibilityScan
+/aiqa-fullworkflow ./docs/stories/feature-login.md
+/aiqa-fixbugs
+/aiqa-analyzeproject
+/aiqa-securityscan
+/aiqa-accessibilityscan
 ```
 
 ---
@@ -106,7 +106,7 @@ The upgrade command:
 - **Preserves** your `config.yaml` (project name, language, DB config, test users — never overwritten)
 - **Copies** the new framework files (skills, agents, workflows, templates)
 - **Updates** npm dependencies inside the framework folder
-- **Refreshes** AI tool command files (adds any new commands like `/AIQA-FixBugs`)
+- **Refreshes** AI tool command files (adds any new commands like `/aiqa-fixbugs`)
 - Shows a clear before/after version summary
 
 ```bash

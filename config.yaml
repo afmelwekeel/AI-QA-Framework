@@ -1,4 +1,4 @@
-# AI QA Framework Configuration
+﻿# AI QA Framework Configuration
 # Version: 2.0.0
 # Docs: https://github.com/afmelwekeel/AI-QA-Framework
 #
@@ -47,6 +47,6 @@ db_users_table: "users"            # table or collection that holds test account
 db_username_column: "email"        # column for username / email
 db_password_column: "password"     # column for password
 
-# Saved test users — populated by /AIQA-FetchTestUsers
+# Saved test users — populated by /aiqa-fetchtestusers
 # Format: { role, username, password, notes }
 test_users: []

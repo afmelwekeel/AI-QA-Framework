@@ -1,9 +1,9 @@
-import { c } from './prompts.mjs';
+﻿import { c } from './prompts.mjs';
 
 export function printPostInstall(installDir, answers) {
   const tool = answers.tools[0] || null;
   const toolMap = {
-    'claude-code': `Run ${c.cyan}/AIQA-Init${c.reset} in Claude Code`,
+    'claude-code': `Run ${c.cyan}/aiqa-init${c.reset} in Claude Code`,
     'cursor':      `Reference ${c.cyan}./${installDir}/agents/qae.md${c.reset} in Cursor`,
     'copilot':     `In Copilot Chat say ${c.cyan}@workspace load ${installDir}/agents/qae.md${c.reset}`,
     'windsurf':    `Reference ${c.cyan}./${installDir}/agents/qae.md${c.reset} in Windsurf`,

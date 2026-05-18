@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, existsSync, writeFileSync, readFileSync } from 'node:fs';
+﻿import { cpSync, mkdirSync, existsSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -110,7 +110,7 @@ db_username_column: "${answers.dbUsernameColumn || 'email'}"
 db_password_column: "${answers.dbPasswordColumn || 'password'}"
 `
     : `# No database connection configured.
-# Run /AIQA-FetchTestUsers to connect a database or provide users manually at any time.
+# Run /aiqa-fetchtestusers to connect a database or provide users manually at any time.
 db_connection_string: ""
 db_users_table: "users"
 db_username_column: "email"
@@ -157,7 +157,7 @@ block_on_high: true
 
 # ── Test Data & Database ──────────────────────────────────────────────────────
 ${dbSection}
-# Saved test users — populated by /AIQA-FetchTestUsers (from DB query or entered manually).
+# Saved test users — populated by /aiqa-fetchtestusers (from DB query or entered manually).
 # Format per entry: { role: "admin", username: "user@example.com", password: "Pass@123", notes: "" }
 test_users: []
 `;

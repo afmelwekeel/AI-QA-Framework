@@ -1,4 +1,4 @@
-<workflow>
+﻿<workflow>
   <critical>Communicate in {communication_language}</critical>
   <critical>NEVER display plain-text passwords in output — always mask as ****</critical>
   <critical>After collecting or fetching users, ALWAYS save them to config.yaml test_users before completing</critical>
@@ -217,11 +217,11 @@
       Total: {selected_users.length} user(s) saved.
 
       These users will be used automatically when Rayan needs test credentials during:
-      - /AIQA-GenerateE2E
-      - /AIQA-FullWorkflow (Phase 3 & Phase 5)
+      - /aiqa-generatee2e
+      - /aiqa-fullworkflow (Phase 3 & Phase 5)
       - Any command that requires authentication test data
 
-      To update users at any time, run: /AIQA-FetchTestUsers
+      To update users at any time, run: /aiqa-fetchtestusers
     </output>
   </step>
 </workflow>

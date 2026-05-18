@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+﻿import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -218,18 +218,18 @@ export async function runInstall(flags = {}) {
     sp.warn(`Playwright install failed — run manually: ${c.dim}cd ${installDir} && npx playwright install chromium${c.reset}`);
   }
 
-  // ── Step 6: /AIQA-Init ─────────────────────────────────────────────────────
-  section('Step 6 of 6 — AI Tool Integration Files  (/AIQA-Init)');
+  // ── Step 6: /aiqa-init ─────────────────────────────────────────────────────
+  section('Step 6 of 6 — AI Tool Integration Files  (/aiqa-init)');
   sp = createSpinner('Creating integration files…');
   try {
     const initResults = runInit(installDir, answers.tools);
     const created = initResults.filter(r => r.status === 'created');
     const skipped = initResults.filter(r => r.status === 'skipped');
-    sp.succeed(`/AIQA-Init complete — ${c.green}${created.length} created${c.reset}, ${c.dim}${skipped.length} skipped${c.reset}`);
+    sp.succeed(`/aiqa-init complete — ${c.green}${created.length} created${c.reset}, ${c.dim}${skipped.length} skipped${c.reset}`);
     created.forEach(r => ok(`  ${c.dim}${r.path}${c.reset}`));
   } catch (e) {
-    sp.warn('/AIQA-Init failed: ' + e.message);
-    warn('Run /AIQA-Init manually inside your AI tool after activation.');
+    sp.warn('/aiqa-init failed: ' + e.message);
+    warn('Run /aiqa-init manually inside your AI tool after activation.');
   }
 
   closeRL();

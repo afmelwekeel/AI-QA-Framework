@@ -1,8 +1,8 @@
-import { mkdirSync, existsSync, writeFileSync } from 'node:fs';
+﻿import { mkdirSync, existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
- * Run /AIQA-Init for each selected tool.
+ * Run /aiqa-init for each selected tool.
  * Creates agent + prompt files in the correct folder per tool:
  *   github-copilot → .github/agents/  + .github/prompts/
  *   claude-code    → .claude/commands/
@@ -19,17 +19,17 @@ export function runInit(installDir, tools = []) {
   // ── Always: .github/agents/ + .github/prompts/ (Copilot + universal baseline)
   writeFiles(root, buildGithubFiles(installDir), results);
 
-  // ── Claude Code: .claude/commands/AIQA-*.md (slash commands)
+  // ── Claude Code: .claude/commands/aiqa-*.md (slash commands)
   if (tools.includes('claude-code')) {
     writeFiles(root, buildClaudeFiles(installDir), results);
   }
 
-  // ── Cursor: .cursor/rules/AIQA-*.mdc
+  // ── Cursor: .cursor/rules/aiqa-*.mdc
   if (tools.includes('cursor')) {
     writeFiles(root, buildCursorFiles(installDir), results);
   }
 
-  // ── Windsurf: .windsurf/rules/AIQA-*.md
+  // ── Windsurf: .windsurf/rules/aiqa-*.md
   if (tools.includes('windsurf')) {
     writeFiles(root, buildWindsurfFiles(installDir), results);
   }
@@ -75,7 +75,7 @@ You must fully embody this agent's persona and follow all activation instruction
 `,
     },
     {
-      path: '.github/prompts/AIQA-Help.prompt.md',
+      path: '.github/prompts/aiqa-help.prompt.md',
       content: promptFile(fw, 'Show full AI QA Framework command menu and quick-start guide', `
 1. Load {project-root}/${fw}/config.yaml and store ALL fields as session variables
 2. Load the full agent file from {project-root}/${fw}/agents/qae.md to establish Rayan's persona
@@ -83,62 +83,62 @@ You must fully embody this agent's persona and follow all activation instruction
 4. Show current configuration summary: project, language, browser, output folder, min pass rate
 5. Wait for user input`),
     },
-    { path: '.github/prompts/AIQA-AnalyzeStory.prompt.md',   content: analyzeStoryPrompt(fw, 'prompt') },
-    { path: '.github/prompts/AIQA-AnalyzeProject.prompt.md', content: analyzeProjectPrompt(fw, 'prompt') },
-    { path: '.github/prompts/AIQA-GenerateE2E.prompt.md',    content: generateE2EPrompt(fw, 'prompt') },
-    { path: '.github/prompts/AIQA-RunTests.prompt.md',       content: runTestsPrompt(fw, 'prompt') },
-    { path: '.github/prompts/AIQA-GenerateReport.prompt.md', content: generateReportPrompt(fw, 'prompt') },
-    { path: '.github/prompts/AIQA-FullWorkflow.prompt.md',   content: fullWorkflowPrompt(fw, 'prompt') },
-    { path: '.github/prompts/AIQA-FixBugs.prompt.md',        content: fixBugsPrompt(fw, 'prompt') },
-    { path: '.github/prompts/AIQA-SecurityScan.prompt.md',   content: securityScanPrompt(fw, 'prompt') },
-    { path: '.github/prompts/AIQA-AccessibilityScan.prompt.md', content: accessibilityPrompt(fw, 'prompt') },
-    { path: '.github/prompts/AIQA-ListSkills.prompt.md',     content: listSkillsPrompt(fw, 'prompt') },
-    { path: '.github/prompts/AIQA-ListWorkflows.prompt.md',  content: listWorkflowsPrompt(fw, 'prompt') },
-    { path: '.github/prompts/AIQA-Reset.prompt.md',          content: resetPrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-analyzestory.prompt.md',   content: analyzeStoryPrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-analyzeproject.prompt.md', content: analyzeProjectPrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-generatee2e.prompt.md',    content: generateE2EPrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-runtests.prompt.md',       content: runTestsPrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-generatereport.prompt.md', content: generateReportPrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-fullworkflow.prompt.md',   content: fullWorkflowPrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-fixbugs.prompt.md',        content: fixBugsPrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-securityscan.prompt.md',   content: securityScanPrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-accessibilityscan.prompt.md', content: accessibilityPrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-listskills.prompt.md',     content: listSkillsPrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-listworkflows.prompt.md',  content: listWorkflowsPrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-reset.prompt.md',          content: resetPrompt(fw, 'prompt') },
   ];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Claude Code — .claude/commands/AIQA-*.md (npx slash commands)
+// Claude Code — .claude/commands/aiqa-*.md (npx slash commands)
 // ─────────────────────────────────────────────────────────────────────────────
 function buildClaudeFiles(fw) {
   return [
     {
-      path: '.claude/commands/AIQA-Init.md',
-      content: `# /AIQA-Init
+      path: '.claude/commands/aiqa-init.md',
+      content: `# /aiqa-init
 Load ${fw}/agents/qae.md and activate Rayan the Senior AI QA Engineer.
 Follow all steps in the <activation> section of the agent file.`,
     },
-    { path: '.claude/commands/AIQA-Help.md',              content: claudeCmd('AIQA-Help',              fw, 'Show the full Rayan QA command menu', analyzeStoryPrompt(fw, 'claude')) },
-    { path: '.claude/commands/AIQA-AnalyzeStory.md',      content: claudeCmd('AIQA-AnalyzeStory',      fw, 'Analyze a user story — extract acceptance criteria, scenarios and risk', analyzeStoryPrompt(fw, 'claude')) },
-    { path: '.claude/commands/AIQA-AnalyzeProject.md',    content: claudeCmd('AIQA-AnalyzeProject',    fw, 'Auto-detect project stack, URLs, auth flow', analyzeProjectPrompt(fw, 'claude')) },
-    { path: '.claude/commands/AIQA-GenerateE2E.md',       content: claudeCmd('AIQA-GenerateE2E',       fw, 'Generate Playwright E2E tests (POM) + XLSX test cases', generateE2EPrompt(fw, 'claude')) },
-    { path: '.claude/commands/AIQA-RunTests.md',          content: claudeCmd('AIQA-RunTests',          fw, 'Run Playwright tests in headed browser', runTestsPrompt(fw, 'claude')) },
-    { path: '.claude/commands/AIQA-GenerateReport.md',    content: claudeCmd('AIQA-GenerateReport',    fw, 'Generate QA summary report (HTML + XLSX + MD)', generateReportPrompt(fw, 'claude')) },
-    { path: '.claude/commands/AIQA-FullWorkflow.md',      content: claudeCmd('AIQA-FullWorkflow',      fw, 'Run the full 9-phase QA pipeline end-to-end', fullWorkflowPrompt(fw, 'claude')) },
-    { path: '.claude/commands/AIQA-FixBugs.md',          content: claudeCmd('AIQA-FixBugs',           fw, 'Fix all open bugs in bug-reports/ and retest each one', fixBugsPrompt(fw, 'claude')) },
-    { path: '.claude/commands/AIQA-SecurityScan.md',      content: claudeCmd('AIQA-SecurityScan',      fw, 'OWASP-style security scan', securityScanPrompt(fw, 'claude')) },
-    { path: '.claude/commands/AIQA-AccessibilityScan.md', content: claudeCmd('AIQA-AccessibilityScan', fw, 'WCAG 2.1 AA accessibility audit', accessibilityPrompt(fw, 'claude')) },
-    { path: '.claude/commands/AIQA-ListSkills.md',        content: claudeCmd('AIQA-ListSkills',        fw, 'List all available QA skills', listSkillsPrompt(fw, 'claude')) },
-    { path: '.claude/commands/AIQA-ListWorkflows.md',     content: claudeCmd('AIQA-ListWorkflows',     fw, 'List all available QA workflows', listWorkflowsPrompt(fw, 'claude')) },
-    { path: '.claude/commands/AIQA-Reset.md',             content: claudeCmd('AIQA-Reset',             fw, 'Reset all test outputs for a fresh cycle', resetPrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-help.md',              content: claudeCmd('aiqa-help',              fw, 'Show the full Rayan QA command menu', analyzeStoryPrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-analyzestory.md',      content: claudeCmd('aiqa-analyzestory',      fw, 'Analyze a user story — extract acceptance criteria, scenarios and risk', analyzeStoryPrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-analyzeproject.md',    content: claudeCmd('aiqa-analyzeproject',    fw, 'Auto-detect project stack, URLs, auth flow', analyzeProjectPrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-generatee2e.md',       content: claudeCmd('aiqa-generatee2e',       fw, 'Generate Playwright E2E tests (POM) + XLSX test cases', generateE2EPrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-runtests.md',          content: claudeCmd('aiqa-runtests',          fw, 'Run Playwright tests in headed browser', runTestsPrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-generatereport.md',    content: claudeCmd('aiqa-generatereport',    fw, 'Generate QA summary report (HTML + XLSX + MD)', generateReportPrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-fullworkflow.md',      content: claudeCmd('aiqa-fullworkflow',      fw, 'Run the full 9-phase QA pipeline end-to-end', fullWorkflowPrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-fixbugs.md',          content: claudeCmd('aiqa-fixbugs',           fw, 'Fix all open bugs in bug-reports/ and retest each one', fixBugsPrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-securityscan.md',      content: claudeCmd('aiqa-securityscan',      fw, 'OWASP-style security scan', securityScanPrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-accessibilityscan.md', content: claudeCmd('aiqa-accessibilityscan', fw, 'WCAG 2.1 AA accessibility audit', accessibilityPrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-listskills.md',        content: claudeCmd('aiqa-listskills',        fw, 'List all available QA skills', listSkillsPrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-listworkflows.md',     content: claudeCmd('aiqa-listworkflows',     fw, 'List all available QA workflows', listWorkflowsPrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-reset.md',             content: claudeCmd('aiqa-reset',             fw, 'Reset all test outputs for a fresh cycle', resetPrompt(fw, 'claude')) },
   ];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Cursor — .cursor/rules/AIQA-*.mdc
+// Cursor — .cursor/rules/aiqa-*.mdc
 // ─────────────────────────────────────────────────────────────────────────────
 function buildCursorFiles(fw) {
   const commands = [
-    { name: 'AIQA-AnalyzeStory',      desc: 'Analyze user story',       body: analyzeStoryPrompt(fw, 'cursor') },
-    { name: 'AIQA-AnalyzeProject',    desc: 'Auto-detect project stack', body: analyzeProjectPrompt(fw, 'cursor') },
-    { name: 'AIQA-GenerateE2E',       desc: 'Generate Playwright tests', body: generateE2EPrompt(fw, 'cursor') },
-    { name: 'AIQA-RunTests',          desc: 'Run Playwright tests',      body: runTestsPrompt(fw, 'cursor') },
-    { name: 'AIQA-GenerateReport',    desc: 'Generate QA report',        body: generateReportPrompt(fw, 'cursor') },
-    { name: 'AIQA-FullWorkflow',      desc: 'Full 9-phase QA pipeline',  body: fullWorkflowPrompt(fw, 'cursor') },
-    { name: 'AIQA-FixBugs',          desc: 'Fix bugs and retest each',  body: fixBugsPrompt(fw, 'cursor') },
-    { name: 'AIQA-SecurityScan',      desc: 'OWASP security scan',       body: securityScanPrompt(fw, 'cursor') },
-    { name: 'AIQA-AccessibilityScan', desc: 'Accessibility audit',       body: accessibilityPrompt(fw, 'cursor') },
+    { name: 'aiqa-analyzestory',      desc: 'Analyze user story',       body: analyzeStoryPrompt(fw, 'cursor') },
+    { name: 'aiqa-analyzeproject',    desc: 'Auto-detect project stack', body: analyzeProjectPrompt(fw, 'cursor') },
+    { name: 'aiqa-generatee2e',       desc: 'Generate Playwright tests', body: generateE2EPrompt(fw, 'cursor') },
+    { name: 'aiqa-runtests',          desc: 'Run Playwright tests',      body: runTestsPrompt(fw, 'cursor') },
+    { name: 'aiqa-generatereport',    desc: 'Generate QA report',        body: generateReportPrompt(fw, 'cursor') },
+    { name: 'aiqa-fullworkflow',      desc: 'Full 9-phase QA pipeline',  body: fullWorkflowPrompt(fw, 'cursor') },
+    { name: 'aiqa-fixbugs',          desc: 'Fix bugs and retest each',  body: fixBugsPrompt(fw, 'cursor') },
+    { name: 'aiqa-securityscan',      desc: 'OWASP security scan',       body: securityScanPrompt(fw, 'cursor') },
+    { name: 'aiqa-accessibilityscan', desc: 'Accessibility audit',       body: accessibilityPrompt(fw, 'cursor') },
   ];
   return commands.map(c => ({
     path: `.cursor/rules/${c.name}.mdc`,
@@ -152,19 +152,19 @@ ${c.body}`,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Windsurf — .windsurf/rules/AIQA-*.md
+// Windsurf — .windsurf/rules/aiqa-*.md
 // ─────────────────────────────────────────────────────────────────────────────
 function buildWindsurfFiles(fw) {
   const commands = [
-    { name: 'AIQA-AnalyzeStory',      body: analyzeStoryPrompt(fw, 'windsurf') },
-    { name: 'AIQA-AnalyzeProject',    body: analyzeProjectPrompt(fw, 'windsurf') },
-    { name: 'AIQA-GenerateE2E',       body: generateE2EPrompt(fw, 'windsurf') },
-    { name: 'AIQA-RunTests',          body: runTestsPrompt(fw, 'windsurf') },
-    { name: 'AIQA-GenerateReport',    body: generateReportPrompt(fw, 'windsurf') },
-    { name: 'AIQA-FullWorkflow',      body: fullWorkflowPrompt(fw, 'windsurf') },
-    { name: 'AIQA-FixBugs',          body: fixBugsPrompt(fw, 'windsurf') },
-    { name: 'AIQA-SecurityScan',      body: securityScanPrompt(fw, 'windsurf') },
-    { name: 'AIQA-AccessibilityScan', body: accessibilityPrompt(fw, 'windsurf') },
+    { name: 'aiqa-analyzestory',      body: analyzeStoryPrompt(fw, 'windsurf') },
+    { name: 'aiqa-analyzeproject',    body: analyzeProjectPrompt(fw, 'windsurf') },
+    { name: 'aiqa-generatee2e',       body: generateE2EPrompt(fw, 'windsurf') },
+    { name: 'aiqa-runtests',          body: runTestsPrompt(fw, 'windsurf') },
+    { name: 'aiqa-generatereport',    body: generateReportPrompt(fw, 'windsurf') },
+    { name: 'aiqa-fullworkflow',      body: fullWorkflowPrompt(fw, 'windsurf') },
+    { name: 'aiqa-fixbugs',          body: fixBugsPrompt(fw, 'windsurf') },
+    { name: 'aiqa-securityscan',      body: securityScanPrompt(fw, 'windsurf') },
+    { name: 'aiqa-accessibilityscan', body: accessibilityPrompt(fw, 'windsurf') },
   ];
   return commands.map(c => ({
     path: `.windsurf/rules/${c.name}.md`,
@@ -215,7 +215,7 @@ function runTestsPrompt(fw, _) {
 3. Execute: node {project-root}/${fw}/core/orchestrator.mjs run-tests
 4. Monitor execution — capture screenshots, videos, console errors, and network errors
 5. Report pass/fail summary and flag any failures for bug analysis
-6. If pass rate is below {min_pass_rate}%, automatically suggest running /AIQA-GenerateReport`;
+6. If pass rate is below {min_pass_rate}%, automatically suggest running /aiqa-generatereport`;
 }
 
 function generateReportPrompt(fw, _) {
@@ -256,7 +256,7 @@ function fixBugsPrompt(fw, _) {
    g. If exit code ≠ 0 → append ❌ لا يزال فاشلاً block with description of what was tried — then move on
    RULE: one fix attempt per bug. No retrying failed fixes.
 5. After all bugs processed, print a summary table: Bug ID | Fix Applied | Retest Result
-6. Run /AIQA-GenerateReport to update the QA dashboard with fix statuses`;
+6. Run /aiqa-generatereport to update the QA dashboard with fix statuses`;
 }
 
 function securityScanPrompt(fw, _) {
@@ -283,7 +283,7 @@ function listSkillsPrompt(fw, _) {
 function listWorkflowsPrompt(fw, _) {
   return `${header(fw)}
 3. Read {project-root}/${fw}/_config/workflow-manifest.csv
-4. Display all available workflows: Workflow | Description | Phases | CLI Command | /AIQA-* command`;
+4. Display all available workflows: Workflow | Description | Phases | CLI Command | /aiqa-* command`;
 }
 
 function resetPrompt(fw, _) {
