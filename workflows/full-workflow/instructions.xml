@@ -165,6 +165,42 @@
       </fix-if-needed>
     </review>
     <output>✅ Phase 3 complete — E2E files verified: correct path, JavaScript, all ACs covered, assertions present</output>
+
+    <!-- ── URL Review Checkpoint (MANDATORY — hard stop) ── -->
+    <user-review>
+      <action>Extract all unique URL paths from every `page.goto()` call in the generated spec file</action>
+      <action>Display the following to the user and WAIT for confirmation before proceeding to Phase 4:
+
+╔══════════════════════════════════════════════════════════════════╗
+║   🔗 URL Review Required — {suite_name}.spec.js                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+The following URLs will be used during test execution.
+Please review them carefully — wrong URLs will cause every test to fail.
+
+[List every unique URL path found in page.goto() calls, e.g.]
+  1. /auth/login
+  2. /dashboard
+  3. /settings/profile
+
+❓ Questions to check:
+  • Are these the correct routes for your application?
+  • Is the base URL in config.yaml pointing to the right environment?
+  • Are there any typos or paths that don't exist yet?
+
+Reply:
+  ✅ "OK" / "correct" / "looks good" → proceed to Phase 4
+  ✏️  Describe what is wrong (e.g. "login route is /login not /auth/login") → I will fix it first
+      </action>
+      <action>WAIT for user response — do NOT start Phase 4 until user confirms</action>
+      <action>If user reports corrections:
+        1. Apply every URL correction to the spec file
+        2. Show the updated list of URLs
+        3. Ask: "I've updated the URLs. Does this look correct now?"
+        4. WAIT for final confirmation
+        5. Repeat until user says OK
+      </action>
+    </user-review>
   </step>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -210,6 +246,43 @@
       </fix-if-needed>
     </review>
     <output>✅ Phase 4 complete — test data verified: 3 files generated, realistic values, edge cases and security payloads included</output>
+
+    <!-- ── Test Data Review Checkpoint (MANDATORY — hard stop) ── -->
+    <user-review>
+      <action>For EACH of the 3 generated data files ({suite_name}-valid.json, {suite_name}-edge.json, {suite_name}-security.json):
+
+        1. Display the FULL file content to the user inside a code block
+        2. Show this message and WAIT:
+
+╔══════════════════════════════════════════════════════════════════╗
+║   📋 Test Data Review — {file_name}                              ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Please review this data file before I run the tests.
+Wrong or missing values will cause test failures.
+
+❓ Things to check:
+  • Are field names correct for your application's forms/API?
+  • Are the values realistic for your domain (not generic "test123")?
+  • Are any credential values, IDs, or keys wrong?
+  • Should any REPLACE_WITH_REAL_PASSWORD be replaced with an actual value?
+  • Are the expected success/error messages correct for your system?
+
+Reply:
+  ✅ "OK" / "correct" / "looks good" → I will show you the next file
+  ✏️  Describe what is wrong → I will fix it and show you the corrected version
+
+        3. WAIT for user response — do NOT move to the next file until this one is confirmed
+        4. If user reports issues:
+             a. Apply all corrections to the file
+             b. Display the corrected full content
+             c. Ask: "I've applied your corrections. Does this look right now?"
+             d. WAIT for confirmation
+             e. Repeat until user says OK
+        5. Move to the next file
+      </action>
+      <action>Only after ALL 3 files are confirmed by the user → proceed to Phase 5</action>
+    </user-review>
   </step>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->

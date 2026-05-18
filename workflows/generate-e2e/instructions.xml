@@ -105,8 +105,46 @@
       - Checklist   : {output_folder}/{story_id}/test-checklist.md  ← track test progress here
 
       The checklist shows every test as [ ] unchecked. After running tests, each item will be marked ✅ or ❌.
-
-      **Next step:** Run [RT] Run Tests to execute these tests in {test_mode} mode.
     </output>
+
+    <!-- ── URL Review Checkpoint (MANDATORY — hard stop before running tests) ── -->
+    <step n="5" goal="URL Review — confirm all routes with the user before execution">
+      <action>Extract every unique URL path from all `page.goto()` calls in the generated spec file</action>
+      <action>Display the following and WAIT for user confirmation:
+
+╔══════════════════════════════════════════════════════════════════╗
+║   🔗 URL Review Required — {suite_name}.spec.js                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+The following URLs will be visited during test execution.
+Please confirm they are correct BEFORE running the tests —
+wrong paths will cause every navigation test to fail immediately.
+
+[List all unique page.goto() paths, e.g.]
+  1. /auth/login
+  2. /dashboard
+  3. /campaigns/new
+
+❓ Please check:
+  • Do these routes exist in your application?
+  • Is the base URL in config.yaml correct for your environment?
+  • Any route that uses a real ID or slug — is the format right?
+
+Reply:
+  ✅ "OK" / "correct" / "looks good" → I'm done, you can run the tests
+  ✏️  Tell me what's wrong (e.g. "/campaigns/new should be /campaign/create") → I'll fix it
+      </action>
+      <action>WAIT for user response — do NOT hand off to the next command until user confirms</action>
+      <action>If user reports URL corrections:
+        1. Edit the spec file and page object with the corrected routes
+        2. Show the updated URL list
+        3. Ask: "Updated. Anything else to correct?"
+        4. WAIT — repeat until user confirms OK
+      </action>
+      <output>
+        ✅ URLs confirmed by user.
+        **Next step:** Run [RT] Run Tests to execute these tests in {test_mode} mode.
+      </output>
+    </step>
   </step>
 </workflow>
