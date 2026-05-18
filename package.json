@@ -1,6 +1,6 @@
 {
   "name": "ai-qa-framework",
-  "version": "2.9.0",
+  "version": "2.10.0",
   "type": "module",
   "description": "Universal AI QA Automation Framework — project-agnostic, enterprise-grade. Install with npx ai-qa-framework install.",
   "license": "MIT",
@@ -70,7 +70,8 @@
     "bugs": "node ./core/orchestrator.mjs analyze-bugs",
     "report": "node ./core/orchestrator.mjs generate-report",
     "full": "node ./core/orchestrator.mjs full-workflow",
-    "show-report": "playwright show-report ./reports/playwright-html"
+    "show-report": "playwright show-report ./reports/playwright-html",
+    "fetch-test-users": "node ./core/orchestrator.mjs fetch-test-users"
   },
   "dependencies": {
     "exceljs": "^4.4.0"

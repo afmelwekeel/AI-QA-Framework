@@ -1,0 +1,19 @@
+{
+  "id": "fetch-test-users",
+  "name": "Fetch Test Users",
+  "description": "Read user stories to extract required roles, then fetch matching users from the configured database or collect them manually. Saves test users to config.yaml.",
+  "inputs": {
+    "story":  "optional — single story file path (backward-compat)",
+    "stories": "optional — one or more story file paths to extract roles from",
+    "role":   "optional — comma-separated role names to filter by (overrides story analysis)"
+  },
+  "outputs": {
+    "rolesNeeded": "string[] — roles extracted from user stories",
+    "usersFound":  "object[] — { role, username, password, notes } fetched from DB",
+    "source":      "db | no-db | db-error — how users were obtained",
+    "count":       "number of users fetched"
+  },
+  "mcp": {
+    "tool": "qa.fetch_test_users"
+  }
+}

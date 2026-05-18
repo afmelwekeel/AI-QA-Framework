@@ -3,6 +3,44 @@
   <critical>NEVER display plain-text passwords in output — always mask as ****</critical>
   <critical>After collecting or fetching users, ALWAYS save them to config.yaml test_users before completing</critical>
 
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- STEP 0 — Extract required roles from user stories (if provided)     -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <step n="0" anchor="extract-roles" goal="Identify roles needed for testing from user stories">
+    <check if="story file path(s) were provided as arguments">
+      <action>
+        For EACH story file provided:
+        1. Read the full content of the story file
+        2. Extract roles / actors using these patterns:
+             a) Formal declaration: "as a/an {role}" — capture the role noun phrase
+             b) Acceptance criteria keywords: scan for role names such as
+                admin, administrator, manager, supervisor, agent, editor, viewer,
+                guest, customer, owner, operator, employee, staff, reviewer, moderator, user
+             c) Permission statements: "only {role} can …", "{role} must …", "{role} should not …"
+        3. Normalise role names (e.g. "system administrator" → "admin", "regular user" → "user")
+        4. De-duplicate across all stories
+      </action>
+
+      <action>Store the deduplicated list as {required_roles}</action>
+
+      <output>
+        📋 Roles required by the user story/stories:
+        List each role as:  • {role}
+
+        These roles will be used to filter the database query so only relevant test accounts are returned.
+      </output>
+    </check>
+
+    <check if="no story files were provided">
+      <action>Set {required_roles} = [] (empty — no role filter, fetch all)</action>
+      <output>
+        ℹ️  No story files provided — the database query will return up to 50 users of any role.
+        Tip: pass story files to /aiqa-fetchtestusers to get role-targeted results.
+        Example: /aiqa-fetchtestusers path/to/story.md
+      </output>
+    </check>
+  </step>
+
   <step n="1" goal="Check existing test users and DB config">
     <action>Read {project-root}/AI-QA-FRAMEWORK/config.yaml</action>
     <action>Store: {db_connection_string}, {db_users_table}, {db_username_column}, {db_password_column}, {test_users}</action>
@@ -57,29 +95,49 @@
   <!-- ════════════════════════════════════════════════════════════════════ -->
   <!-- PATH A — Fetch from database                                         -->
   <!-- ════════════════════════════════════════════════════════════════════ -->
-  <step n="3" anchor="fetch-from-db" goal="Detect database type and run query">
+  <step n="3" anchor="fetch-from-db" goal="Detect database type and run role-targeted query">
     <action>
       Detect database type from {db_connection_string}:
-      - Contains "Server=" or "Data Source=" or "mssql" → SQL Server
+      - Contains "Server=" or "Data Source=" or "Initial Catalog=" or "mssql" → SQL Server
       - Starts with "postgresql://" or "postgres://"    → PostgreSQL
       - Starts with "mysql://"                          → MySQL
       - Starts with "mongodb://" or "mongodb+srv://"    → MongoDB
-      - Starts with "sqlite:" or ends with ".db"        → SQLite
+      - Starts with "sqlite:" or ends with ".db" / ".sqlite" → SQLite
       Store as {db_type}
     </action>
 
     <action>
-      Write a temporary Node.js script at {project-root}/AI-QA-FRAMEWORK/core/_tmp_fetch_users.mjs
+      PREFERRED APPROACH — Use the built-in skill (handles parameterisation automatically):
+
+        node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs fetch-test-users \
+             [--stories "story1.md story2.md"] \
+             [--role "admin,manager"]
+
+      Capture the JSON result (fields: rolesNeeded, usersFound, source, dbType, count, message).
+      If the skill returns source="db-error" or source="no-db", fall through to the manual script below.
+
+      FALLBACK — Write a temporary Node.js script at {project-root}/AI-QA-FRAMEWORK/core/_tmp_fetch_users.mjs
       that connects to the database using {db_connection_string} and queries:
-        SQL Server / PostgreSQL / MySQL / SQLite:
-          SELECT TOP 20 {db_username_column}, {db_password_column}, role
+
+        SQL Server:
+          SELECT TOP 50 {db_username_column}, {db_password_column}, {db_role_column}
           FROM {db_users_table}
-          (use LIMIT 20 for non-SQL-Server)
+          [WHERE {db_role_column} IN (role1, role2, …)]   ← add only if {required_roles} is not empty
+
+        PostgreSQL / MySQL / SQLite:
+          SELECT {db_username_column}, {db_password_column}, {db_role_column}
+          FROM {db_users_table}
+          [WHERE {db_role_column} IN (?, ?, …)]
+          LIMIT 50
+
         MongoDB:
-          db.getCollection('{db_users_table}').find({}).limit(20).toArray()
+          db.getCollection('{db_users_table}')
+            .find( {required_roles}.length ? { {db_role_column}: { $in: {required_roles} } } : {} )
+            .limit(50).toArray()
 
       The script must:
       - Use the appropriate Node.js driver (mssql / pg / mysql2 / mongodb / better-sqlite3)
+      - Use PARAMETERISED queries — NEVER string-concatenate role values
       - Output a JSON array to stdout: [{ username, password, role }]
       - Handle connection errors gracefully and output: { error: "message" }
     </action>

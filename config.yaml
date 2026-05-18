@@ -46,6 +46,7 @@ db_connection_string: ""           # e.g. "Server=localhost;Database=mydb;User I
 db_users_table: "users"            # table or collection that holds test accounts
 db_username_column: "email"        # column for username / email
 db_password_column: "password"     # column for password
+db_role_column: "role"             # column that stores the user role (admin / manager / user / …)
 
 # Saved test users — populated by /aiqa-fetchtestusers
 # Format: { role, username, password, notes }

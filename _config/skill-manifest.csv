@@ -12,3 +12,4 @@ id,name,description,phase,inputs,outputs,path,mcpTool
 "security-validation","Security Validation","OWASP-style validation pass on detected endpoints","N/A","none","security findings report","skills/security-validation","qa.security_scan"
 "accessibility-validation","Accessibility Validation","a11y audit on detected pages","N/A","none","accessibility report","skills/accessibility-validation","qa.accessibility_scan"
 "autonomous-testing","Autonomous Testing","Bounded plan→act→observe→reflect loop for autonomous QA","N/A","plan: optional","autonomous run trace","skills/autonomous-testing","qa.autonomous_run"
+"fetch-test-users","Fetch Test Users","Read user stories to extract required roles, then fetch matching users from DB (SQL Server / PostgreSQL / MySQL / MongoDB / SQLite) or collect manually. Saves to config.yaml.","0.5","story/stories: optional, role: optional","config.yaml test_users updated","skills/fetch-test-users","qa.fetch_test_users"

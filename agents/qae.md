@@ -282,16 +282,17 @@ tools: ['read', 'edit', 'search', 'execute']
 **FILE: `.github/prompts/aiqa-runtests.prompt.md`**
 ```
 ---
-description: 'Rayan — Run Playwright tests one-by-one: on each failure diagnose, fix, record bug report, retest, then continue'
+description: 'Rayan — Pre-flight review spec, fix all issues, then run tests one-by-one with inline fix loop'
 agent: 'agent'
 tools: ['read', 'edit', 'search', 'execute']
 ---
 1. Load {project-root}/AI-QA-FRAMEWORK/config.yaml and store ALL fields as session variables
 2. Load the full agent file from {project-root}/AI-QA-FRAMEWORK/agents/qae.md to establish Rayan's persona
-3. Load and follow the skill from {project-root}/AI-QA-FRAMEWORK/skills/test-execution/prompt.md exactly
-4. Per-test loop: list tests → run each individually → on failure: diagnose, fix, record BUG-XXXX.md, retest → next test
-5. After the loop: run full suite once for final JUnit XML; update test-checklist.md
-6. Print execution summary: passed / fixed-inline / still-open / bugs recorded
+3. Load and follow the skill from {project-root}/AI-QA-FRAMEWORK/skills/test-execution/prompt.md exactly — ALL steps in order
+4. Step 0.5 is MANDATORY: run pre-flight review on the spec file, fix ALL blockers and warnings before any test runs
+5. Per-test loop: list tests → run each individually → on failure: diagnose, fix, record BUG-XXXX.md, retest → next test
+6. After the loop: run full suite once for final JUnit XML; update test-checklist.md
+7. Print execution summary: preflight-fixes / passed / fixed-inline / still-open / bugs recorded
 ```
 
 ---
@@ -399,6 +400,30 @@ tools: ['read', 'search']
 
 ---
 
+**FILE: `.github/prompts/aiqa-fetchtestusers.prompt.md`**
+```
+---
+description: 'Rayan — Fetch test users from DB by role (story-driven) or collect manually, save to config.yaml'
+agent: 'agent'
+tools: ['read', 'edit', 'search', 'execute']
+---
+1. Load {project-root}/AI-QA-FRAMEWORK/config.yaml and store ALL fields as session variables
+2. Load the full agent file from {project-root}/AI-QA-FRAMEWORK/agents/qae.md to establish Rayan's persona
+3. Load and execute the workflow at {project-root}/AI-QA-FRAMEWORK/workflows/fetch-test-data/
+4. If story file path(s) were provided as arguments, pass them to the workflow so it can extract required roles
+5. Follow ALL steps in the workflow:
+   Step 0: Extract required roles from story files (if provided)
+   Step 1: Check existing test_users in config.yaml
+   Step 2: Ask — fetch from DB or manual entry
+   Step 3: If DB — run the fetch-test-users skill to query by role, present results for selection
+   Step 4: If manual — collect users one by one
+   Step 5: Save selected users to config.yaml test_users
+6. NEVER display passwords in plain text — always mask as ****
+7. Confirm saved users and show summary table
+```
+
+---
+
 **FILE: `.github/prompts/aiqa-reset.prompt.md`**
 ```
 ---
@@ -428,6 +453,7 @@ Created in .github/prompts/  (type /aiqa- to autocomplete all):
   [✅/⏭️] aiqa-runtests.prompt.md
   [✅/⏭️] aiqa-generatereport.prompt.md
   [✅/⏭️] aiqa-fullworkflow.prompt.md
+  [✅/⏭️] aiqa-fetchtestusers.prompt.md
   [✅/⏭️] aiqa-securityscan.prompt.md
   [✅/⏭️] aiqa-accessibilityscan.prompt.md
   [✅/⏭️] aiqa-listskills.prompt.md

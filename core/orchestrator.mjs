@@ -76,6 +76,9 @@ const COMMAND_TO_SKILL = {
   'accessibility-scan':    'accessibility-validation',
   'autonomous-run':        'autonomous-testing',
   'detect':                'project-analysis',
+  // Test user management
+  'fetch-test-users':      'fetch-test-users',
+  'get-test-users':        'fetch-test-users',
 };
 
 async function loadConfig() {
