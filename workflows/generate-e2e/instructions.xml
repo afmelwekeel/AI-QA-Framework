@@ -53,6 +53,9 @@
         <file path="{output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js" required="true">
           Playwright spec file — must exist at the exact path inside TestResult/
         </file>
+        <file path="{output_folder}/{story_id}/test-checklist.md" required="true">
+          Test execution checklist — one checkbox per test case; all unchecked at generation time; updated to ✅/❌ after each test run
+        </file>
       </artifact-checklist>
 
       <quality-checklist>
@@ -97,8 +100,11 @@
     </review>
     <output>
       ✅ E2E files generated and reviewed:
-      - Page Object: {output_folder}/{story_id}/e2e/pages/{suite_name}.page.js
-      - Spec: {output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js
+      - Page Object : {output_folder}/{story_id}/e2e/pages/{suite_name}.page.js
+      - Spec        : {output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js
+      - Checklist   : {output_folder}/{story_id}/test-checklist.md  ← track test progress here
+
+      The checklist shows every test as [ ] unchecked. After running tests, each item will be marked ✅ or ❌.
 
       **Next step:** Run [RT] Run Tests to execute these tests in {test_mode} mode.
     </output>

@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -59,15 +60,99 @@ export default async function run(ctx) {
   const status = exitCode === 0 ? '✅ All tests passed' : `❌ Tests finished with exit code ${exitCode}`;
   console.log(`\n${status}`);
 
-  const reportsDir = ctx.paths?.reports ?? join(cwd, 'reports');
+  const reportsDir   = ctx.paths?.reports ?? join(cwd, 'reports');
+  const junitPath    = join(reportsDir, 'junit.xml');
+  const suiteRoot    = ctx.paths?.suiteRoot ?? (safeSuite ? join(cwd, 'TestResult', safeSuite) : cwd);
+  const checklistPath = join(suiteRoot, 'test-checklist.md');
+
+  // Update the test checklist with actual pass/fail results from JUnit XML
+  if (existsSync(junitPath) && existsSync(checklistPath)) {
+    try {
+      await updateChecklist(checklistPath, junitPath);
+      console.log(`\n📋 Checklist updated: ${checklistPath}`);
+    } catch (e) {
+      console.warn(`⚠️  Could not update checklist: ${e.message}`);
+    }
+  }
 
   return {
     exitCode,
     headed,
     suite: suite ?? 'all',
     reportPath: join(reportsDir, 'playwright-html', 'index.html'),
-    junitPath:  join(reportsDir, 'junit.xml'),
+    junitPath,
+    checklistPath: existsSync(checklistPath) ? checklistPath : null,
   };
+}
+
+// ─── Checklist updater ────────────────────────────────────────────────────────
+
+/**
+ * Parse JUnit XML and update the test-checklist.md file.
+ * Marks each test as ✅ Passed, ❌ Failed, or ⏭️ Skipped.
+ */
+async function updateChecklist(checklistPath, junitPath) {
+  const xml      = await readFile(junitPath, 'utf8');
+  const content  = await readFile(checklistPath, 'utf8');
+
+  // Parse test results from JUnit XML
+  // <testcase name="TC-0001: title" ...>  — pass if no child failure/skipped element
+  const results = {};
+  const tcRx = /<testcase\s[^>]*name="([^"]+)"[^>]*>([\s\S]*?)<\/testcase>|<testcase\s[^>]*name="([^"]+)"[^>]*\/>/g;
+  let m;
+  while ((m = tcRx.exec(xml)) !== null) {
+    const name   = (m[1] ?? m[3]).trim();
+    const body   = m[2] ?? '';
+    const failed  = /<failure/i.test(body);
+    const skipped = /<skipped/i.test(body);
+    results[name] = failed ? 'fail' : skipped ? 'skip' : 'pass';
+  }
+
+  if (Object.keys(results).length === 0) return; // Nothing to update
+
+  // Update each checklist line
+  let passed = 0, failed = 0, skipped = 0, pending = 0;
+  const updatedLines = content.split('\n').map(line => {
+    const itemMatch = /^- \[[ x]\] `?([^`\s—]+)`?/.exec(line);
+    if (!itemMatch) return line;
+
+    const id = itemMatch[1];
+    // Find result by matching TC ID prefix in test name
+    const resultKey = Object.keys(results).find(k => k.startsWith(id));
+    const result = resultKey ? results[resultKey] : null;
+
+    if (!result) { pending++; return line; }
+
+    const testName = resultKey;
+    const [tcId, ...rest] = testName.split(':');
+    const desc = rest.join(':').trim();
+    const label = desc ? `\`${tcId.trim()}\` — ${desc}` : testName;
+
+    if (result === 'pass')   { passed++;  return `- [x] ${label} ✅ Passed`; }
+    if (result === 'fail')   { failed++;  return `- [x] ${label} ❌ Failed`; }
+    if (result === 'skip')   { skipped++; return `- [x] ${label} ⏭️ Skipped`; }
+    return line;
+  });
+
+  const total      = passed + failed + skipped + pending;
+  const overallStatus = failed > 0  ? '❌ Has failures'
+    : pending > 0 ? '🔄 In progress'
+    : '✅ Complete';
+  const date = new Date().toLocaleString('en-GB');
+
+  // Update the header table Status row
+  const withStatus = updatedLines.join('\n')
+    .replace(/\| \*\*Status\*\* \|.*\|/, `| **Status** | ${overallStatus} |`)
+    .replace(/\| \*\*Generated\*\* \|.*\|/, `| **Last run** | ${date} |`);
+
+  // Update the Progress table
+  const withProgress = withStatus
+    .replace(/\| ✅ Passed \|.*\|/,  `| ✅ Passed | ${passed} |`)
+    .replace(/\| ❌ Failed \|.*\|/,  `| ❌ Failed | ${failed} |`)
+    .replace(/\| ⏭️ Skipped \|.*\|/, `| ⏭️ Skipped | ${skipped} |`)
+    .replace(/\| ⏳ Pending \|.*\|/, `| ⏳ Pending | ${pending} |`);
+
+  await writeFile(checklistPath, withProgress, 'utf8');
 }
 
 function runCmd(cmd, args, cwd, env) {

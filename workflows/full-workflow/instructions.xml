@@ -127,6 +127,7 @@
       <artifact-checklist>
         <file path="{output_folder}/{story_id}/e2e/pages/{suite_name}.page.js" required="true">Page Object Model</file>
         <file path="{output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js"  required="true">Playwright spec</file>
+        <file path="{output_folder}/{story_id}/test-checklist.md"              required="true">Test execution checklist — one [ ] per test; updated to ✅/❌ after Phase 5</file>
       </artifact-checklist>
       <quality-checklist>
         <check id="P3-1">Both files exist at the correct paths INSIDE {output_folder}/{story_id}/e2e/ — NOT in any host project folder</check>
@@ -225,6 +226,7 @@
       <artifact-checklist>
         <file path="{output_folder}/{story_id}/test-results.xml" required="true">JUnit XML results</file>
         <file path="{output_folder}/{story_id}/screenshots/"     required="false">Screenshots folder</file>
+        <file path="{output_folder}/{story_id}/test-checklist.md" required="true">Test checklist — must now show ✅/❌ for each test that ran</file>
       </artifact-checklist>
       <quality-checklist>
         <check id="P5-1">Test execution actually ran — results file exists and is not empty</check>
@@ -232,15 +234,18 @@
         <check id="P5-3">Every test in the spec file appears in the results (no tests were silently skipped)</check>
         <check id="P5-4">Failed tests have error messages and stack traces captured</check>
         <check id="P5-5">Screenshots exist for any failed test</check>
+        <check id="P5-6">test-checklist.md has been updated — each test item now shows ✅ Passed, ❌ Failed, or ⏭️ Skipped; Progress table shows correct counts</check>
       </quality-checklist>
       <fix-if-needed>
         P5-1 → if execution failed to start, diagnose the error (missing dependency, wrong path) and retry
         P5-3 → if tests were skipped, investigate skip reason and resolve
         P5-4 → if error details are missing, re-run the specific failing tests with verbose output
+        P5-6 → if the checklist was not auto-updated, read the JUnit XML and manually update each checkbox in test-checklist.md
       </fix-if-needed>
     </review>
     <output>✅ Phase 5 complete — tests executed</output>
     <output>📊 Pass rate: {pass_rate}% (gate: {min_pass_rate}%)</output>
+    <output>📋 Test checklist updated: {output_folder}/{story_id}/test-checklist.md</output>
   </step>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->

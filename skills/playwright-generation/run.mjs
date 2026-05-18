@@ -5,6 +5,71 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import analyzeStory from '../user-story-analysis/run.mjs';
 
+// ─── Checklist helpers ────────────────────────────────────────────────────────
+
+/**
+ * Extract every test title from a generated Playwright spec string.
+ * Matches: test('TC-XXX: title', ...) and test("TC-XXX: title", ...)
+ */
+function extractTestNames(specContent) {
+  const rx = /test\s*\(\s*['"`]([^'"`]+)['"`]/g;
+  const names = [];
+  let m;
+  while ((m = rx.exec(specContent)) !== null) names.push(m[1]);
+  return names;
+}
+
+/**
+ * Write the initial test-checklist.md with all items unchecked.
+ */
+async function writeChecklist(checklistPath, testNames, ast, suiteName) {
+  const date  = new Date().toLocaleDateString('en-GB');
+  const title = ast?.title ?? suiteName;
+  const story = ast?.id    ?? suiteName;
+
+  const items = testNames.map(name => {
+    const [id, ...rest] = name.split(':');
+    const desc = rest.join(':').trim();
+    return desc
+      ? `- [ ] \`${id.trim()}\` — ${desc}`
+      : `- [ ] ${name}`;
+  });
+
+  const lines = [
+    `# Test Execution Checklist — ${story}`,
+    '',
+    `| Field | Value |`,
+    `|-------|-------|`,
+    `| **Story** | ${title} |`,
+    `| **Suite** | ${suiteName} |`,
+    `| **Generated** | ${date} |`,
+    `| **Status** | ⏳ Pending |`,
+    '',
+    '---',
+    '',
+    '## Test Cases',
+    '',
+    ...items,
+    '',
+    '---',
+    '',
+    '## Progress',
+    '',
+    `| | Count |`,
+    `|---|---|`,
+    `| Total | ${testNames.length} |`,
+    `| ✅ Passed | 0 |`,
+    `| ❌ Failed | 0 |`,
+    `| ⏭️ Skipped | 0 |`,
+    `| ⏳ Pending | ${testNames.length} |`,
+    '',
+    `*Updated by AI QA Framework after each test run.*`,
+  ];
+
+  await writeFile(checklistPath, lines.join('\n'), 'utf8');
+  return checklistPath;
+}
+
 const __dirname  = dirname(fileURLToPath(import.meta.url));
 const FRAMEWORK_ROOT = resolve(__dirname, '..', '..');
 
@@ -40,18 +105,27 @@ export default async function run(ctx) {
   // Write POM (never overwrite — let developer extend)
   if (!existsSync(pomFile))   await writeFile(pomFile,  pomTemplate(safe, ast), 'utf8');
   // Write spec (regenerate each time to stay in sync with story)
-  await writeFile(specFile, specTemplate(safe, ast, ctx.config), 'utf8');
+  const specContent = specTemplate(safe, ast, ctx.config);
+  await writeFile(specFile, specContent, 'utf8');
 
   // Write shared helpers only if they don't exist yet
   if (!existsSync(authFile))  await writeFile(authFile,  authHelper(ctx.config), 'utf8');
   if (!existsSync(utilFile))  await writeFile(utilFile,  utilsHelper(), 'utf8');
   if (!existsSync(instrFile)) await writeFile(instrFile, instrumentationHelper(), 'utf8');
 
-  console.log(`✅ E2E tests generated (JavaScript):`);
-  console.log(`   POM  : ${pomFile}`);
-  console.log(`   Spec : ${specFile}`);
+  // Write test checklist (one file per story — all items unchecked initially)
+  const suiteRoot      = ctx.paths?.suiteRoot ?? join(FRAMEWORK_ROOT, 'TestResult', safe);
+  await mkdir(suiteRoot, { recursive: true });
+  const checklistPath  = join(suiteRoot, 'test-checklist.md');
+  const testNames      = extractTestNames(specContent);
+  await writeChecklist(checklistPath, testNames, ast, safe);
 
-  return { pomFile, specFile, authFile, utilFile };
+  console.log(`✅ E2E tests generated (JavaScript):`);
+  console.log(`   POM       : ${pomFile}`);
+  console.log(`   Spec      : ${specFile}`);
+  console.log(`   Checklist : ${checklistPath}`);
+
+  return { pomFile, specFile, authFile, utilFile, checklistPath, testCount: testNames.length };
 }
 
 // ─── Page Object Model template ───────────────────────────────────────────────
