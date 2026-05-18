@@ -250,7 +250,14 @@ ${skillRef(fw, 'playwright-generation')}
 5. Load and execute the workflow at {project-root}/${fw}/workflows/generate-e2e/
 6. If one or more story file paths were provided as arguments, use them directly; otherwise ask the user for the story file path(s) — multiple paths may be provided separated by spaces
 7. Read ALL provided story files; merge their acceptance criteria to ensure full E2E coverage across all stories
-8. Generate JavaScript Playwright POM + spec files → output to {output_folder}/{story-id}/e2e/`;
+8. Generate JavaScript Playwright POM + spec files → output to {output_folder}/{story-id}/e2e/
+9. URL VALIDATION (mandatory after generating any spec file):
+   a. Extract every unique path from all page.goto() calls in the spec
+   b. Cross-reference each path against routes.pages in {project-root}/${fw}/core/project.config.json
+   c. For any path NOT in project.config.json: read the host project source to find the real route
+      (Next.js: pages/ or app/; React: src/**/routes* or App.*; Vue: src/router/; Angular: *-routing.module.*)
+   d. Replace any invented or wrong paths with the actual routes found in source
+   e. If a route cannot be confirmed, add a // TODO: verify route comment — never silently leave a guessed path`;
 }
 
 function generateTestDataPrompt(fw, _) {

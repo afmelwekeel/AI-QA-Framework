@@ -67,6 +67,18 @@
         <check id="E2E-9">No hardcoded base URLs in `page.goto()` — must use `baseURL` from Playwright config or config.yaml</check>
         <check id="E2E-10">No `page.waitForTimeout()` with arbitrary delays — use `page.waitForSelector()` or `expect().toBeVisible()` instead</check>
         <check id="E2E-11">Each test has meaningful assertions using `expect()` — not just navigation without assertions</check>
+        <check id="E2E-12">Every URL path used in `page.goto()` calls is a valid, reachable route:
+          a. Extract every unique path segment from all `page.goto()` calls in the spec (e.g., "/dashboard", "/auth/login")
+          b. Cross-reference each path against `routes.pages` in {project-root}/AI-QA-FRAMEWORK/core/project.config.json
+          c. For any path NOT found in project.config.json: read the host project source files to discover the correct route:
+             - Check Next.js: host-project/pages/ or host-project/app/ directory structure
+             - Check React Router: host-project/src/**/routes*, host-project/src/**/App.*, host-project/src/**/router.*
+             - Check Vue Router: host-project/src/router/index.*, host-project/src/router.*
+             - Check Angular: host-project/src/app/**/app-routing.module.*
+             - Check Express/NestJS: host-project/src/**/routes*, host-project/src/**/*.controller.*
+          d. Replace any unrecognized or incorrect URL paths with the correct ones found in source
+          e. If the correct path cannot be determined from source, add a TODO comment in the spec
+        </check>
       </quality-checklist>
 
       <fix-if-needed>
@@ -79,6 +91,7 @@
         - E2E-9 → replace hardcoded URLs with `baseURL` references
         - E2E-10 → replace arbitrary waits with proper Playwright waiters
         - E2E-11 → add missing assertions to each test
+        - E2E-12 → for each unrecognized URL path: read host project source (router files, pages/, app/) to find the real route; update the spec with the correct path
         After all fixes, re-read both files and confirm all checks pass.
       </fix-if-needed>
     </review>

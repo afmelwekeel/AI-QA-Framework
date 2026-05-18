@@ -140,6 +140,15 @@
         <check id="P3-9">No hardcoded base URLs — uses `baseURL` from config</check>
         <check id="P3-10">No arbitrary `page.waitForTimeout()` — uses proper Playwright waiters</check>
         <check id="P3-11">Every test has at least one `expect()` assertion</check>
+        <check id="P3-12">Every URL path in `page.goto()` calls is a valid, reachable route:
+          a. Extract every unique path segment from all `page.goto()` calls in the spec (e.g., "/dashboard", "/auth/login")
+          b. Cross-reference each path against `routes.pages` in {project-root}/AI-QA-FRAMEWORK/core/project.config.json
+          c. For any path NOT in project.config.json: read host project source to find the real route:
+             Next.js: pages/ or app/ directory structure; React Router: src/**/routes* or App.* files;
+             Vue Router: src/router/; Angular: app-routing.module.*; Express/Nest: routes* or *.controller.*
+          d. Replace incorrect/invented paths with the actual routes found in source
+          e. If a route cannot be confirmed, add a // TODO: verify route comment in the spec
+        </check>
       </quality-checklist>
       <fix-if-needed>
         P3-1 → move files to the correct path; remove any host project copies
@@ -150,6 +159,7 @@
         P3-9 → replace hardcoded URLs with baseURL
         P3-10 → replace arbitrary waits with proper waiters
         P3-11 → add assertions to tests that lack them
+        P3-12 → for each unrecognized URL path: read host project source files to find the real route; update the spec
         Save corrected files before proceeding to Phase 4.
       </fix-if-needed>
     </review>
