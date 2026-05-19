@@ -6,6 +6,19 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [2.11.7] — 2026-05-19
+
+### Enhanced
+
+#### `/aiqa-generatee2e` — Source code reading before E2E generation
+
+- **New Step 4 in `workflows/generate-e2e/instructions.xml`:** A mandatory source code analysis step now runs before any E2E file is written. The agent reads the actual host project source files (pages, components, router config) to extract real selectors, form fields, button text, `data-testid` / `data-cy` / `aria-label` attributes, navigation routes, and validation containers. Outputs a structured findings summary before proceeding.
+- **Enhanced Step 5 (was Step 4):** After the orchestrator generates the scaffold, the agent is now required to immediately rewrite both files using source findings — replacing all generic placeholder locators and `// TODO` comments with real, project-specific test code. Selector priority enforced: `getByTestId` > `getByRole` (exact text) > `getByLabel` > `getByText`.
+- **`skills/playwright-generation/prompt.md`:** Added a "Source Code Reading (MANDATORY)" section at the top with framework-aware file lookup patterns (Next.js pages/app router, React, Vue, Angular), extraction checklist, and strict rule: never write a selector not found in source — use `// TODO: verify selector` instead.
+- **Steps renumbered:** Old steps 4→5, 5→6, 6(nested)→7(nested), 7→8. All internal references updated.
+
+---
+
 ## [2.10.1] — 2026-05-18
 
 ### Fixed

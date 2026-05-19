@@ -1,7 +1,7 @@
 <workflow>
   <critical>Communicate in {communication_language}</critical>
   <critical>Execute ALL steps in exact order</critical>
-  <critical>MANDATORY FINAL STEP: The workflow is NOT complete until Step 7 has written the updated status to TestResult/test-suites.yml. The completion summary and "Next step" prompt are displayed ONLY inside Step 7, after the file is saved. Do NOT output "Phase 3 Complete" or any "Next step" before Step 7 finishes.</critical>
+  <critical>MANDATORY FINAL STEP: The workflow is NOT complete until Step 8 has written the updated status to TestResult/test-suites.yml. The completion summary and "Next step" prompt are displayed ONLY inside Step 8, after the file is saved. Do NOT output "Phase 3 Complete" or any "Next step" before Step 8 finishes.</critical>
   <critical>All generated test files must be JavaScript (not TypeScript)</critical>
   <critical>Tests run in {test_mode} mode using {default_browser}</critical>
   <critical>OUTPUT PATH: ALL generated files MUST be written to {output_folder}/{story_id}/e2e/ — this resolves to a folder INSIDE the ai-qa-framework/TestResult/ directory. NEVER write to any e2e/, tests/, src/e2e/, or any other folder found anywhere in the host project. If such folders exist in the host project they belong to the host project and must NOT be modified.</critical>
@@ -76,20 +76,99 @@ Run /aiqa-analyzestory --suite {suite_name} first.</output>
   </step>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- STEP 4 — Execute E2E generation skill                           -->
+  <!-- STEP 4 — Deep source code reading before generation             -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <step n="4" goal="Execute E2E generation skill">
-    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-e2e --suite "{suite_name}" --stories "{story_files}"</action>
-    <action>Skill generates:
-      - Page Object file: {output_folder}/{story_id}/e2e/pages/{suite_name}.page.js
-      - Spec file: {output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js
+  <step n="4" goal="Read host project source code to inform accurate E2E generation">
+    <critical>This step is MANDATORY. Do NOT skip it. E2E files generated without reading source code will contain wrong selectors, invented routes, and placeholder TODOs that fail at runtime.</critical>
+
+    <action>Read {project-root}/AI-QA-FRAMEWORK/core/project.config.json and extract:
+      - {base_url}       = environment.baseUrl
+      - {known_routes}   = routes.pages (all route → file path mappings)
+      - {framework_type} = project.framework (next, react, vue, angular, express, etc.)
+      - {src_root}       = project.srcRoot or "src" (default)
     </action>
+
+    <action>From the story ACs and suite name, identify which pages/routes this suite will test.
+      For each relevant route (from {known_routes} or inferred from ACs):
+        1. Determine the source file path based on {framework_type}:
+           - Next.js pages router : host-project/pages/{route}.jsx|tsx|js|ts
+           - Next.js app router   : host-project/app/{route}/page.jsx|tsx|js|ts
+           - React SPA            : host-project/{src_root}/**/components/** and host-project/{src_root}/**/pages/**
+           - Vue                  : host-project/{src_root}/**/views/** and host-project/{src_root}/**/components/**
+           - Angular              : host-project/{src_root}/app/**/*.component.ts|html
+        2. READ the source file completely — not just the first few lines
+        3. From each file, extract and record as {source_findings}:
+           a. Form fields: label text, input types, name/id attributes, placeholder text, aria-label values
+           b. Buttons: text content, aria-label, role, type attribute, data-testid values
+           c. Navigation links: href values, link text, router-link "to" props
+           d. Data-testid attributes: all `data-testid`, `data-cy`, `data-qa`, `aria-label` values found
+           e. Role attributes: elements with explicit `role=` attributes (dialog, alert, status, tab, etc.)
+           f. Validation messages: error element class names, aria-live regions, validation containers
+           g. API calls: fetch/axios URLs, endpoint paths used in this component
+           h. Conditional elements: elements shown/hidden based on state (loading spinners, error states, empty states)
+    </action>
+
+    <action>If a source file cannot be found for a route:
+      - Search for related components in {src_root}/**/components/**
+      - Search by route segment name (e.g., route "/login" → look for Login.jsx, LoginPage.tsx, login.vue, etc.)
+      - Read at least 2–3 related components before giving up
+      - If still not found: mark that route with ⚠️ SOURCE_NOT_FOUND and use best-effort placeholders with a TODO comment
+    </action>
+
+    <action>Also read the following structural files if they exist:
+      - host-project/src/router/index.* or host-project/src/router.* (Vue/React router definitions)
+      - host-project/src/**/App.* (root app file — often has route definitions)
+      - host-project/src/**/routes.* (route config files)
+      - host-project/playwright.config.* (existing Playwright config — extract baseURL, testDir if present)
+    </action>
+
+    <output>
+      📖 Source Code Analysis Complete:
+      ─────────────────────────────────
+      Framework : {framework_type}
+      Pages read: [list each file read]
+
+      Findings summary:
+      • Form fields found : [count and names]
+      • Buttons found     : [count and text values]
+      • data-testid attrs : [list]
+      • Routes confirmed  : [list of verified routes]
+      • ⚠️ Not found      : [any routes where source wasn't located]
+    </output>
   </step>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- STEP 5 — Self-review and URL confirmation                       -->
+  <!-- STEP 5 — Execute E2E generation using source findings           -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <step n="5" goal="Self-review — verify artifacts and test quality">
+  <step n="5" goal="Generate E2E files using source findings from Step 4">
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-e2e --suite "{suite_name}" --stories "{story_files}"</action>
+    <action>Skill generates the scaffold:
+      - Page Object file: {output_folder}/{story_id}/e2e/pages/{suite_name}.page.js
+      - Spec file: {output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js
+    </action>
+    <critical>IMMEDIATELY after the orchestrator writes the scaffold, you MUST rewrite both files
+    using {source_findings} from Step 4. Replace ALL placeholder content:
+
+    Page Object ({suite_name}.page.js):
+      - Replace every `page.locator('h1')` or generic placeholder locator with real selectors from {source_findings}
+      - Use selector priority: getByTestId (data-testid) > getByRole (with real name) > getByLabel (real label text) > getByText (real button/link text)
+      - Add a method for EVERY major user action identified in the source (fill form, click button, submit, navigate)
+      - Name methods after real actions (e.g., fillLoginForm, clickSubmitButton, selectRole) — not generic names
+
+    Spec file ({suite_name}.spec.js):
+      - Use real URL paths confirmed in {source_findings} — never invent paths
+      - Use real form field names and button texts in all interactions
+      - For each AC: write concrete steps that match the actual UI flow found in source code
+      - Replace all `// TODO: Implement steps` comments with actual test steps
+      - Assertions must target real elements: use the class names, roles, or data-testid values found in source
+      - Auth steps must use the real login route and real form selectors found in source
+    </critical>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 6 — Self-review and URL confirmation                       -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="6" goal="Self-review — verify artifacts and test quality">
     <review>
       <artifact-checklist>
         <file path="{output_folder}/{story_id}/e2e/pages/{suite_name}.page.js" required="true">
@@ -153,7 +232,7 @@ Run /aiqa-analyzestory --suite {suite_name} first.</output>
     </output>
 
     <!-- ── URL Review Checkpoint (MANDATORY — hard stop before running tests) ── -->
-    <step n="6" goal="URL Review — confirm all routes with the user before execution">
+    <step n="7" goal="URL Review — confirm all routes with the user before execution">
       <action>Extract every unique URL path from all `page.goto()` calls in the generated spec file</action>
       <action>Display the following and WAIT for user confirmation:
 
@@ -186,14 +265,14 @@ Reply:
         3. Ask: "Updated. Anything else to correct?"
         4. WAIT — repeat until user confirms OK
       </action>
-      <output>✅ URLs confirmed by user — updating suite registry (Step 7)...</output>
+      <output>✅ URLs confirmed by user — updating suite registry (Step 8)...</output>
     </step>
   </step>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- STEP 7 — Update TestResult/test-suites.yml  [MANDATORY]        -->
+  <!-- STEP 8 — Update TestResult/test-suites.yml  [MANDATORY]        -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <step n="7" goal="Update TestResult/test-suites.yml — mark generate-e2e done" mandatory="true">
+  <step n="8" goal="Update TestResult/test-suites.yml — mark generate-e2e done" mandatory="true">
     <critical>This step MUST execute. Do not skip it. The workflow is not complete until test-suites.yml is written.</critical>
     <action>Read TestResult/test-suites.yml</action>
     <action>Find the entry where name = {suite_name}</action>

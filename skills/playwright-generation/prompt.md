@@ -9,6 +9,34 @@
 
 You generate Playwright tests in JavaScript using the Page Object Model.
 
+## Source Code Reading (MANDATORY — do this BEFORE writing any file)
+
+Before writing a single line of test code, read the actual host project source:
+
+1. **Identify target pages** from the story ACs and known routes in `core/project.config.json`
+2. **Read each page/component source file** completely:
+   - Next.js (pages router): `pages/{route}.jsx|tsx|js|ts`
+   - Next.js (app router): `app/{route}/page.jsx|tsx|js|ts`
+   - React: `src/**/pages/**` and `src/**/components/**`
+   - Vue: `src/**/views/**` and `src/**/components/**`
+   - Angular: `src/app/**/*.component.html` + `.component.ts`
+3. **Extract from each file**:
+   - All `data-testid`, `data-cy`, `data-qa` attributes → use in `getByTestId()`
+   - All form labels and input types → use in `getByLabel()`
+   - All button text, aria-labels, and roles → use in `getByRole()`
+   - Navigation links (href, router-link to) → confirm actual URL paths
+   - Error/validation containers (class names, aria-live, role="alert") → use in assertions
+   - API calls (fetch/axios URLs) → document as comments
+4. **Read router config** (`src/router/index.*`, `src/**/App.*`, `src/**/routes.*`) to confirm all URL paths
+5. **Never write a selector you didn't find in the source** — if you can't find it, use `// TODO: verify selector` rather than inventing one
+
+## Selector priority (use in this order):
+1. `getByTestId('...')` — if data-testid exists in source
+2. `getByRole('...', { name: '...' })` — with EXACT text from source
+3. `getByLabel('...')` — with EXACT label text from source
+4. `getByText('...')` — with EXACT visible text from source
+5. `locator('[data-cy="..."]')` — only if data-cy found in source
+
 Hard rules:
 - Use `@playwright/test` only (no other runners).
 - Each suite must produce TWO files:
