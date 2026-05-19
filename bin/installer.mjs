@@ -12,63 +12,65 @@ const { version } = JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf
 
 // ── Banner ────────────────────────────────────────────────────────────────────
 function printBanner() {
-  const W = 56;
-  const center = (text, width) => {
-    const raw = text.replace(/\x1b\[[0-9;]*m/g, '');
-    const pad = Math.max(0, width - raw.length);
-    const l = Math.floor(pad / 2);
-    const ri = pad - l;
-    return ' '.repeat(l) + text + ' '.repeat(ri);
-  };
-
   const b  = c.blue;  const cy = c.cyan;  const ma = c.magenta;
   const bo = c.bold;  const di = c.dim;   const ye = c.yellow;
   const gr = c.green; const r  = c.reset;
 
-  // Fancy ninja kid — 26 visible chars wide, 15 rows
-  const nw = 26;
-  const p = (s) => s + ' '.repeat(Math.max(0, nw - s.replace(/\x1b\[[0-9;]*m/g, '').length));
-  const ninja = [
-    p(`  ${ma}✦${r} ${ye}✦${r} ${ma}✦${r} ${ye}✦${r} ${ma}✦${r} ${ye}✦${r} ${ma}✦${r} ${ye}✦${r} ${ma}✦${r}  `),
-    p(`    ${cy}▄▄████████████▄▄${r}    `),
-    p(`   ${cy}█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█${r}   `),
-    p(`   ${cy}█${r} ${ye}◈${r}            ${ye}◈${r} ${cy}█${r}   `),
-    p(`   ${cy}█${r}${b}  ▓▓▓▓▓▓▓▓▓▓▓▓  ${r}${cy}█${r}   `),
-    p(`   ${cy}▀████████████████▀${r}   `),
-    p(`   ${b}▄██████████████████▄${r}   `),
-    p(`  ${b}▐██${r}${gr}⚡${r}${b}████████████${r}${gr}⚡${r}${b}██▌${r}  `),
-    p(`  ${b}▐█████████████████████▌${r}  `),
-    p(`  ${b}▐██${r}${ye}★${r}${b}████████████${r}${ye}★${r}${b}██▌${r}  `),
-    p(`   ${b}▀██████████████████▀${r}   `),
-    p(`     ${di}▐███▌${r}     ${di}▐███▌${r}     `),
-    p(`     ${di}▐███▌${r}     ${di}▐███▌${r}     `),
-    p(`     ${di}▀▀▀▀▀${r}     ${di}▀▀▀▀▀${r}     `),
-    p(`  ${ma}✦${r}${cy}${bo}  ─── Rayan ───  ${r}${ma}✦${r}  `),
+  const W  = 56;            // box interior width
+  const NW = 15;            // ninja column visible width
+  const TW = W - NW - 1;   // text column = 40
+
+  // pad ninja string to exactly NW visible chars
+  const pn = (s) => s + ' '.repeat(Math.max(0, NW - s.replace(/\x1b\[[0-9;]*m/g, '').length));
+  // center text string within TW visible chars
+  const ct = (s) => {
+    const raw = s.replace(/\x1b\[[0-9;]*m/g, '');
+    const pad = Math.max(0, TW - raw.length);
+    const l = Math.floor(pad / 2);
+    return ' '.repeat(l) + s + ' '.repeat(pad - l);
+  };
+
+  // 13 rows, each NW=15 visible chars — ninja kid art
+  const ninjaRows = [
+    pn(``),
+    pn(`  ${cy}▄████████▄${r}  `),
+    pn(` ${cy}▐█${r}${ye}◉${r}${cy}      ${r}${ye}◉${r}${cy}█▌${r} `),
+    pn(` ${cy}▐█${r}${b} ▓▓▓▓▓▓ ${r}${cy}█▌${r} `),
+    pn(`  ${cy}▀████████▀${r}  `),
+    pn(` ${b}▄███████████▄${r} `),
+    pn(` ${b}▐█${gr}*${b}███████${gr}*${b}█▌${r} `),
+    pn(`${b}▐█████████████▌${r}`),
+    pn(` ${b}▐█${ye}*${b}███████${ye}*${b}█▌${r} `),
+    pn(` ${b}▀███████████▀${r} `),
+    pn(`  ${di}▐███▌${r} ${di}▐███▌${r}  `),
+    pn(`  ${di}▀▀▀▀▀${r} ${di}▀▀▀▀▀${r}  `),
+    pn(` ${ma}✦${r} ${cy}${bo}Rayan${r} ${ma}✦${r}  `),
   ];
 
-  // banner box spans rows 0-9; rows 10-14 stay empty so ninja legs show below
-  const bannerLines = [
-    `  ${b}╔${'═'.repeat(W)}╗${r}`,
-    `  ${b}║${r}${' '.repeat(W)}${b}║${r}`,
-    `  ${b}║${r}${center(`${cy}${bo}  ✦  AI-QA-Framework  ✦${r}`, W)}${b}║${r}`,
-    `  ${b}║${r}${center(`${ma}${bo}  v${version}${r}`, W)}${b}║${r}`,
-    `  ${b}║${r}${' '.repeat(W)}${b}║${r}`,
-    `  ${b}║${r}${center(`${di}Universal AI QA Automation${r}`, W)}${b}║${r}`,
-    `  ${b}║${r}${center(`${di}npx ai-qa-framework install${r}`, W)}${b}║${r}`,
-    `  ${b}║${r}${center(`${di}by Ahmed Al Wakeel${r}`, W)}${b}║${r}`,
-    `  ${b}║${r}${' '.repeat(W)}${b}║${r}`,
-    `  ${b}╚${'═'.repeat(W)}╝${r}`,
-    ``, ``, ``, ``, ``,
+  // 13 rows centered within TW=40 — text shifted 2 rows down for visual balance
+  const textRows = [
+    ct(``),
+    ct(``),
+    ct(`${cy}${bo}✦  AI-QA-Framework  ✦${r}`),
+    ct(`${ma}${bo}v${version}${r}`),
+    ct(``),
+    ct(`${di}Universal AI QA Automation${r}`),
+    ct(`${di}npx ai-qa-framework install${r}`),
+    ct(`${di}by Ahmed Al Wakeel${r}`),
+    ct(``),
+    ct(``),
+    ct(``),
+    ct(``),
+    ct(``),
   ];
 
-  console.log('');
-  const rows = Math.max(ninja.length, bannerLines.length);
-  for (let i = 0; i < rows; i++) {
-    const left  = ninja[i]       ?? ' '.repeat(nw);
-    const right = bannerLines[i] ?? '';
-    console.log(left + right);
+  console.log(`\n  ${b}╔${'═'.repeat(W)}╗${r}`);
+  for (let i = 0; i < ninjaRows.length; i++) {
+    const nl = ninjaRows[i];
+    const tl = textRows[i] ?? ' '.repeat(TW);
+    console.log(`  ${b}║${r}${nl}${di}│${r}${tl}${b}║${r}`);
   }
-  console.log('');
+  console.log(`  ${b}╚${'═'.repeat(W)}╝${r}\n`);
 }
 
 // ── Run a shell command with a spinner ───────────────────────────────────────
