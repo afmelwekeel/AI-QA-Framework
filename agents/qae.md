@@ -272,18 +272,50 @@ tools: ['read', 'edit', 'search', 'execute']
 
 ---
 
+**FILE: `.github/prompts/aiqa-generatetestcases.prompt.md`**
+```
+---
+description: 'Rayan — Generate Arabic XLSX + MD test cases for a suite (Phase 2)'
+agent: 'agent'
+tools: ['read', 'edit', 'search', 'execute']
+---
+1. Load {project-root}/AI-QA-FRAMEWORK/config.yaml and store ALL fields as session variables
+2. Load the full agent file from {project-root}/AI-QA-FRAMEWORK/agents/qae.md to establish Rayan's persona
+3. Load and execute the workflow at {project-root}/AI-QA-FRAMEWORK/workflows/generate-test-cases/
+4. If a suite name was provided as an argument, pass it to the workflow; otherwise the workflow will auto-detect the active suite from TestResult/test-suites.yml — do NOT ask the user for story file paths
+5. Follow ALL steps in the workflow: resolve suite → verify status → generate test cases → self-review → update test-suites.yml
+```
+
+---
+
 **FILE: `.github/prompts/aiqa-generatee2e.prompt.md`**
 ```
 ---
-description: 'Rayan — Generate E2E Playwright tests (JS POM) + Arabic XLSX test cases from a user story'
+description: 'Rayan — Scaffold JavaScript Playwright POM + spec for a suite (Phase 3)'
 agent: 'agent'
 tools: ['read', 'edit', 'search', 'execute']
 ---
 1. Load {project-root}/AI-QA-FRAMEWORK/config.yaml and store ALL fields as session variables
 2. Load the full agent file from {project-root}/AI-QA-FRAMEWORK/agents/qae.md to establish Rayan's persona
 3. Load and execute the workflow at {project-root}/AI-QA-FRAMEWORK/workflows/generate-e2e/
-4. If a story file path was provided as an argument, use it directly; otherwise ask the user for the story file path
-5. Follow ALL steps — generate Arabic XLSX test cases + JavaScript Playwright POM tests → output to {output_folder}/{story-id}/
+4. If a suite name was provided as an argument, pass it to the workflow; otherwise the workflow will auto-detect the active suite from TestResult/test-suites.yml — do NOT ask the user for story file paths
+5. Follow ALL steps in the workflow: resolve suite → verify status → generate Playwright POM + spec → URL validation → self-review → update test-suites.yml
+```
+
+---
+
+**FILE: `.github/prompts/aiqa-generatetestdata.prompt.md`**
+```
+---
+description: 'Rayan — Generate JSON test data (valid, edge, security) for a suite (Phase 4)'
+agent: 'agent'
+tools: ['read', 'edit', 'search', 'execute']
+---
+1. Load {project-root}/AI-QA-FRAMEWORK/config.yaml and store ALL fields as session variables
+2. Load the full agent file from {project-root}/AI-QA-FRAMEWORK/agents/qae.md to establish Rayan's persona
+3. Load and execute the workflow at {project-root}/AI-QA-FRAMEWORK/workflows/generate-test-data/
+4. If a suite name was provided as an argument, pass it to the workflow; otherwise the workflow will auto-detect the active suite from TestResult/test-suites.yml — do NOT ask the user for story file paths
+5. Follow ALL steps in the workflow: resolve suite → verify status → generate valid/edge/security JSON data → mandatory user review → update test-suites.yml
 ```
 
 ---
@@ -291,17 +323,34 @@ tools: ['read', 'edit', 'search', 'execute']
 **FILE: `.github/prompts/aiqa-runtests.prompt.md`**
 ```
 ---
-description: 'Rayan — Pre-flight review spec, fix all issues, then run tests one-by-one with inline fix loop'
+description: 'Rayan — Pre-flight review spec, fix all issues, then run tests one-by-one with inline fix loop (Phase 5)'
 agent: 'agent'
 tools: ['read', 'edit', 'search', 'execute']
 ---
 1. Load {project-root}/AI-QA-FRAMEWORK/config.yaml and store ALL fields as session variables
 2. Load the full agent file from {project-root}/AI-QA-FRAMEWORK/agents/qae.md to establish Rayan's persona
 3. Load and execute the workflow at {project-root}/AI-QA-FRAMEWORK/workflows/run-tests/
-4. Follow ALL steps in the workflow — pre-flight review is MANDATORY before any test runs
-5. Per-test loop: list tests → run each individually → on failure: diagnose, fix, record BUG-XXXX.md, retest → next test
-6. After the loop: run full suite once for final JUnit XML; update test-checklist.md
-7. Print execution summary: preflight-fixes / passed / fixed-inline / still-open / bugs recorded
+4. If a suite name was provided as an argument, pass it to the workflow; otherwise the workflow will auto-detect the active suite from TestResult/test-suites.yml — do NOT ask the user for story file paths
+5. Follow ALL steps in the workflow — pre-flight review is MANDATORY before any test runs
+6. Per-test loop: list tests → run each individually → on failure: diagnose, fix, record BUG-XXXX.md, retest → next test
+7. After the loop: run full suite once for final JUnit XML; update test-checklist.md
+8. Print execution summary: preflight-fixes / passed / fixed-inline / still-open / bugs recorded
+```
+
+---
+
+**FILE: `.github/prompts/aiqa-analyzebugs.prompt.md`**
+```
+---
+description: 'Rayan — Triage test failures → Arabic bug reports with severity + root-cause analysis (Phase 6)'
+agent: 'agent'
+tools: ['read', 'edit', 'search', 'execute']
+---
+1. Load {project-root}/AI-QA-FRAMEWORK/config.yaml and store ALL fields as session variables
+2. Load the full agent file from {project-root}/AI-QA-FRAMEWORK/agents/qae.md to establish Rayan's persona
+3. Load and execute the workflow at {project-root}/AI-QA-FRAMEWORK/workflows/analyze-bugs/
+4. If a suite name was provided as an argument, pass it to the workflow; otherwise the workflow will auto-detect the active suite from TestResult/test-suites.yml — do NOT ask the user for story file paths
+5. Follow ALL steps in the workflow: resolve suite → load test results → triage each failure → generate BUG-XXXX.md with RCA → update test-suites.yml
 ```
 
 ---
@@ -309,16 +358,15 @@ tools: ['read', 'edit', 'search', 'execute']
 **FILE: `.github/prompts/aiqa-generatereport.prompt.md`**
 ```
 ---
-description: 'Rayan — Generate Arabic QA summary report (HTML dashboard + XLSX + MD) from latest test run'
+description: 'Rayan — Generate Arabic QA summary report (HTML dashboard + XLSX + MD) from latest test run (Phase 7)'
 agent: 'agent'
 tools: ['read', 'edit', 'search', 'execute']
 ---
 1. Load {project-root}/AI-QA-FRAMEWORK/config.yaml and store ALL fields as session variables
 2. Load the full agent file from {project-root}/AI-QA-FRAMEWORK/agents/qae.md to establish Rayan's persona
 3. Load and execute the workflow at {project-root}/AI-QA-FRAMEWORK/workflows/generate-report/
-4. Follow ALL steps — generate HTML dashboard + XLSX + MD report in {reporting_language}
-5. Output artifacts to {output_folder}/{story-id}/reports/
-6. Display a summary of the report location and key metrics
+4. If a suite name was provided as an argument, pass it to the workflow; otherwise the workflow will auto-detect the active suite from TestResult/test-suites.yml — do NOT ask the user for story file paths
+5. Follow ALL steps in the workflow: resolve suite → aggregate results + bugs → generate HTML + XLSX + MD report → evaluate quality gate → update test-suites.yml
 ```
 
 ---
@@ -433,6 +481,118 @@ tools: ['read', 'edit', 'search', 'execute']
 
 ---
 
+**FILE: `.github/prompts/aiqa-analyzestory-validate.prompt.md`**
+```
+---
+description: 'Rayan — Validate Phase 1 output: story AST quality and AC coverage'
+agent: 'agent'
+tools: ['read', 'edit', 'search', 'execute']
+---
+1. Load {project-root}/AI-QA-FRAMEWORK/config.yaml and store ALL fields as session variables
+2. Load the full agent file from {project-root}/AI-QA-FRAMEWORK/agents/qae.md to establish Rayan's persona
+3. Load and execute the workflow at {project-root}/AI-QA-FRAMEWORK/workflows/analyzestory-validate/
+4. If a suite name was provided as an argument, pass it to the workflow; otherwise the workflow will auto-detect the active suite from TestResult/test-suites.yml — do NOT ask the user for story file paths
+5. Follow ALL steps in the workflow: resolve suite → validate story AST completeness and AC coverage → report issues by severity → ask what to fix
+```
+
+---
+
+**FILE: `.github/prompts/aiqa-generatetestcases-validate.prompt.md`**
+```
+---
+description: 'Rayan — Validate Phase 2 output: test case coverage, traceability, and quality'
+agent: 'agent'
+tools: ['read', 'edit', 'search', 'execute']
+---
+1. Load {project-root}/AI-QA-FRAMEWORK/config.yaml and store ALL fields as session variables
+2. Load the full agent file from {project-root}/AI-QA-FRAMEWORK/agents/qae.md to establish Rayan's persona
+3. Load and execute the workflow at {project-root}/AI-QA-FRAMEWORK/workflows/generatetestcases-validate/
+4. If a suite name was provided as an argument, pass it to the workflow; otherwise the workflow will auto-detect the active suite from TestResult/test-suites.yml — do NOT ask the user for story file paths
+5. Follow ALL steps in the workflow: resolve suite → validate test case coverage and quality → report issues by severity → ask what to fix
+```
+
+---
+
+**FILE: `.github/prompts/aiqa-generatee2e-validate.prompt.md`**
+```
+---
+description: 'Rayan — Validate Phase 3 output: Playwright POM and spec correctness'
+agent: 'agent'
+tools: ['read', 'edit', 'search', 'execute']
+---
+1. Load {project-root}/AI-QA-FRAMEWORK/config.yaml and store ALL fields as session variables
+2. Load the full agent file from {project-root}/AI-QA-FRAMEWORK/agents/qae.md to establish Rayan's persona
+3. Load and execute the workflow at {project-root}/AI-QA-FRAMEWORK/workflows/generatee2e-validate/
+4. If a suite name was provided as an argument, pass it to the workflow; otherwise the workflow will auto-detect the active suite from TestResult/test-suites.yml — do NOT ask the user for story file paths
+5. Follow ALL steps in the workflow: resolve suite → validate Playwright POM and spec → check URL validity → report issues by severity → ask what to fix
+```
+
+---
+
+**FILE: `.github/prompts/aiqa-generatetestdata-validate.prompt.md`**
+```
+---
+description: 'Rayan — Validate Phase 4 output: JSON test data field alignment and completeness'
+agent: 'agent'
+tools: ['read', 'edit', 'search', 'execute']
+---
+1. Load {project-root}/AI-QA-FRAMEWORK/config.yaml and store ALL fields as session variables
+2. Load the full agent file from {project-root}/AI-QA-FRAMEWORK/agents/qae.md to establish Rayan's persona
+3. Load and execute the workflow at {project-root}/AI-QA-FRAMEWORK/workflows/generatetestdata-validate/
+4. If a suite name was provided as an argument, pass it to the workflow; otherwise the workflow will auto-detect the active suite from TestResult/test-suites.yml — do NOT ask the user for story file paths
+5. Follow ALL steps in the workflow: resolve suite → validate JSON data file alignment with spec → report issues by severity → ask what to fix
+```
+
+---
+
+**FILE: `.github/prompts/aiqa-analyzebugs-validate.prompt.md`**
+```
+---
+description: 'Rayan — Validate Phase 6 output: bug report completeness and severity accuracy'
+agent: 'agent'
+tools: ['read', 'edit', 'search', 'execute']
+---
+1. Load {project-root}/AI-QA-FRAMEWORK/config.yaml and store ALL fields as session variables
+2. Load the full agent file from {project-root}/AI-QA-FRAMEWORK/agents/qae.md to establish Rayan's persona
+3. Load and execute the workflow at {project-root}/AI-QA-FRAMEWORK/workflows/analyzebugs-validate/
+4. If a suite name was provided as an argument, pass it to the workflow; otherwise the workflow will auto-detect the active suite from TestResult/test-suites.yml — do NOT ask the user for story file paths
+5. Follow ALL steps in the workflow: resolve suite → validate bug reports for completeness and severity → report issues by severity → ask what to fix
+```
+
+---
+
+**FILE: `.github/prompts/aiqa-generatereport-validate.prompt.md`**
+```
+---
+description: 'Rayan — Validate Phase 7 output: QA report accuracy, pass rate, and quality gate'
+agent: 'agent'
+tools: ['read', 'edit', 'search', 'execute']
+---
+1. Load {project-root}/AI-QA-FRAMEWORK/config.yaml and store ALL fields as session variables
+2. Load the full agent file from {project-root}/AI-QA-FRAMEWORK/agents/qae.md to establish Rayan's persona
+3. Load and execute the workflow at {project-root}/AI-QA-FRAMEWORK/workflows/generatereport-validate/
+4. If a suite name was provided as an argument, pass it to the workflow; otherwise the workflow will auto-detect the active suite from TestResult/test-suites.yml — do NOT ask the user for story file paths
+5. Follow ALL steps in the workflow: resolve suite → validate report accuracy, bug counts, pass rate → evaluate quality gate → report issues by severity → ask what to fix
+```
+
+---
+
+**FILE: `.github/prompts/aiqa-validate.prompt.md`**
+```
+---
+description: 'Rayan — Smart validator: auto-detects active suite phase and validates the right artifacts'
+agent: 'agent'
+tools: ['read', 'edit', 'search', 'execute']
+---
+1. Load {project-root}/AI-QA-FRAMEWORK/config.yaml and store ALL fields as session variables
+2. Load the full agent file from {project-root}/AI-QA-FRAMEWORK/agents/qae.md to establish Rayan's persona
+3. Load and execute the workflow at {project-root}/AI-QA-FRAMEWORK/workflows/validate/
+4. If a suite name was provided as an argument, pass it to the workflow; otherwise the workflow will auto-detect the active suite from TestResult/test-suites.yml — do NOT ask the user for story file paths
+5. Follow ALL steps in the workflow: resolve suite → read current status → dispatch to the correct phase validator → report issues by severity → ask what to fix
+```
+
+---
+
 **FILE: `.github/prompts/aiqa-reset.prompt.md`**
 ```
 ---
@@ -456,11 +616,21 @@ Created in .github/agents/:
 
 Created in .github/prompts/  (type /aiqa- to autocomplete all):
   [✅/⏭️] aiqa-help.prompt.md
-  [✅/⏭️] aiqa-analyzestory.prompt.md
   [✅/⏭️] aiqa-analyzeproject.prompt.md
+  [✅/⏭️] aiqa-analyzestory.prompt.md
+  [✅/⏭️] aiqa-analyzestory-validate.prompt.md
+  [✅/⏭️] aiqa-generatetestcases.prompt.md
+  [✅/⏭️] aiqa-generatetestcases-validate.prompt.md
   [✅/⏭️] aiqa-generatee2e.prompt.md
+  [✅/⏭️] aiqa-generatee2e-validate.prompt.md
+  [✅/⏭️] aiqa-generatetestdata.prompt.md
+  [✅/⏭️] aiqa-generatetestdata-validate.prompt.md
   [✅/⏭️] aiqa-runtests.prompt.md
+  [✅/⏭️] aiqa-analyzebugs.prompt.md
+  [✅/⏭️] aiqa-analyzebugs-validate.prompt.md
   [✅/⏭️] aiqa-generatereport.prompt.md
+  [✅/⏭️] aiqa-generatereport-validate.prompt.md
+  [✅/⏭️] aiqa-validate.prompt.md
   [✅/⏭️] aiqa-fullworkflow.prompt.md
   [✅/⏭️] aiqa-fetchtestusers.prompt.md
   [✅/⏭️] aiqa-securityscan.prompt.md

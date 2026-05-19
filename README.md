@@ -63,6 +63,7 @@ That's it. Rayan handles everything from stack detection to final report.
                                 |
                          [optional] /aiqa-analyzeproject-validate
                          Verify config accuracy; fix by severity
+                         (or use /aiqa-validate -- auto-detects phase)
                                 |
                                 v
 +------------------------------------------------------------------+
@@ -75,6 +76,7 @@ That's it. Rayan handles everything from stack detection to final report.
                                 |
                          [optional] /aiqa-analyzestory-validate
                          Verify AC completeness; fix by severity
+                         (or use /aiqa-validate -- auto-detects phase)
                                 |
                                 v
 +------------------------------------------------------------------+
@@ -88,6 +90,7 @@ That's it. Rayan handles everything from stack detection to final report.
                                 |
                          [optional] /aiqa-generatetestcases-validate
                          Verify coverage & quality; fix by severity
+                         (or use /aiqa-validate -- auto-detects phase)
                                 |
                                 v
 +------------------------------------------------------------------+
@@ -103,6 +106,7 @@ That's it. Rayan handles everything from stack detection to final report.
                                 |
                          [optional] /aiqa-generatee2e-validate
                          Verify POM, spec, URLs; fix by severity
+                         (or use /aiqa-validate -- auto-detects phase)
                                 |
                                 v
 +------------------------------------------------------------------+
@@ -119,6 +123,7 @@ That's it. Rayan handles everything from stack detection to final report.
                                 |
                          [optional] /aiqa-generatetestdata-validate
                          Verify data files & field names; fix by severity
+                         (or use /aiqa-validate -- auto-detects phase)
                                 |
                                 v
 +------------------------------------------------------------------+
@@ -144,6 +149,7 @@ That's it. Rayan handles everything from stack detection to final report.
                                 |
                          [optional] /aiqa-analyzebugs-validate
                          Verify report completeness; fix by severity
+                         (or use /aiqa-validate -- auto-detects phase)
                                 |
                                 v
 +------------------------------------------------------------------+
@@ -158,6 +164,7 @@ That's it. Rayan handles everything from stack detection to final report.
                                 |
                          [optional] /aiqa-generatereport-validate
                          Verify pass rate, bug count, quality gate
+                         (or use /aiqa-validate -- auto-detects phase)
                                 |
                                 v
                     [OK]  QA Cycle Complete

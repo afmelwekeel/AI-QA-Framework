@@ -74,9 +74,19 @@ Each step MUST be a numbered, self-contained human instruction. Write at least 4
 ### Step 0 — Resolve story files and suite name
 
 Before running anything:
-1. Parse all provided story file paths into a list (split on spaces/commas). If none provided, ask the user.
+1. Parse all provided story file paths into a list (split on spaces/commas).
+   - If **no story file paths** are provided AND **no `--suite`/`{story_files}` context** is available:
+     a. Read `TestResult/test-suites.yml`.
+     b. If the file does not exist or `active_suite` is empty → output:
+        `❌ No active suite found. Run /aiqa-analyzestory --suite <name> first, then retry.` and STOP.
+     c. Set `{suite_name}` = `active_suite` value.
+     d. Load `{story_files}` from the suite entry matching `{suite_name}`.
+   - If a `--suite <name>` argument **was** provided (and no explicit story paths):
+     a. Read `TestResult/test-suites.yml`, find the entry where `name = <suite>`.
+     b. If not found → output: `❌ Suite "<suite>" not found in TestResult/test-suites.yml. Run /aiqa-analyzestory --suite <suite> first.` and STOP.
+     c. Load `{story_files}` from that suite entry.
 2. Derive `{story_id}` from the **first** story filename (strip the path and extension, e.g. `1-1-login-flow`).
-3. Set `{suite_name}` = `{story_id}` if not explicitly provided by the user.
+3. Set `{suite_name}` = `{story_id}` if not explicitly provided.
 4. Read ALL story files and count total unique acceptance criteria → `{ac_count}`.
 5. Display: "📖 Processing {story_count} story file(s) — {ac_count} total ACs — suite: `{suite_name}`"
 
