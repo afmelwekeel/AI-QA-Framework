@@ -2,6 +2,7 @@
   <critical>Communicate in {communication_language}</critical>
   <critical>All bug report CONTENT must be in {reporting_language}</critical>
   <critical>Execute ALL steps in exact order — do NOT skip steps</critical>
+  <critical>MANDATORY FINAL STEP: The workflow is NOT complete until Step 6 has written the updated status to TestResult/test-suites.yml. The completion summary and "Next step" prompt are displayed ONLY inside Step 6, after the file is saved. Do NOT output "Phase 6 Complete" or any "Next step" before Step 6 finishes.</critical>
   <critical>Output base path: {output_folder}/{story_id}/bug-reports/</critical>
   <critical>SELF-REVIEW RULE: After generating bug reports, execute the quality checklist before reporting complete. Fix all failures.</critical>
 
@@ -124,7 +125,25 @@ Run /aiqa-runtests first to execute the tests before analyzing bugs.</output>
       Columns: Bug ID | عنوان المشكلة | نوع الخطأ | الخطورة | الأولوية | الحالة
     </action>
 
+    <output>✅ Bug reports verified and INDEX.md updated — updating suite registry (Step 6)...</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 6 — Update TestResult/test-suites.yml  [MANDATORY]        -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="6" goal="Update TestResult/test-suites.yml — mark analyze-bugs done" mandatory="true">
+    <critical>This step MUST execute. Do not skip it. The workflow is not complete until test-suites.yml is written.</critical>
+    <action>Read TestResult/test-suites.yml</action>
+    <action>Find the entry where name = {suite_name}</action>
+    <action>Update the entry:
+      - phases.analyze-bugs: done
+      - status: if current rank &lt; rank("bugs-analyzed") → set to "bugs-analyzed"; otherwise keep existing (never downgrade)
+      - updated: {current_date}
+    </action>
+    <action>Write the updated content back to TestResult/test-suites.yml</action>
     <output>
+      📋 test-suites.yml updated — suite "{suite_name}" → bugs-analyzed
+
       ✅ Phase 6 Complete — Bug Analysis Finished
 
       📁 {output_folder}/{story_id}/bug-reports/
@@ -142,20 +161,5 @@ Run /aiqa-runtests first to execute the tests before analyzing bugs.</output>
 
       Next step → /aiqa-generatereport to produce the QA summary (Phase 7)
     </output>
-  </step>
-
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- STEP 6 — Update TestResult/test-suites.yml                     -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <step n="6" goal="Update TestResult/test-suites.yml — mark analyze-bugs done">
-    <action>Read TestResult/test-suites.yml</action>
-    <action>Find the entry where name = {suite_name}</action>
-    <action>Update the entry:
-      - phases.analyze-bugs: done
-      - status: if current rank &lt; rank("bugs-analyzed") → set to "bugs-analyzed"; otherwise keep existing (never downgrade)
-      - updated: {current_date}
-    </action>
-    <action>Write the updated content back to TestResult/test-suites.yml</action>
-    <output>📋 test-suites.yml updated — suite "{suite_name}" → bugs-analyzed</output>
   </step>
 </workflow>

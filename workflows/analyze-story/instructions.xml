@@ -1,6 +1,7 @@
 <workflow>
   <critical>Communicate in {communication_language}</critical>
   <critical>Execute ALL steps in exact order</critical>
+  <critical>MANDATORY FINAL STEP: The workflow is NOT complete until Step 7 has written the suite entry to TestResult/test-suites.yml. The completion summary and "Next step" prompt are displayed ONLY inside Step 7, after the file is saved.</critical>
 
   <!-- STATUS ORDER (reference for all phase commands):
        1. story-analyzed
@@ -153,7 +154,8 @@ All subsequent commands will use this suite unless you pass a suite name explici
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <!-- STEP 7 — Create or update TestResult/test-suites.yml            -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <step n="7" goal="Create or update TestResult/test-suites.yml with this suite">
+  <step n="7" goal="Create or update TestResult/test-suites.yml with this suite" mandatory="true">
+    <critical>This step MUST execute. Do not skip it. The workflow is not complete until test-suites.yml is written.</critical>
     <action>
       Ensure TestResult/ folder exists (create if missing).
 

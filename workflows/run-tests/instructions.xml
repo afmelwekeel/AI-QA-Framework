@@ -2,6 +2,7 @@
   <critical>Communicate in {communication_language}</critical>
   <critical>Generate all bug reports in {reporting_language}</critical>
   <critical>Execute ALL steps in exact order — do NOT skip steps</critical>
+  <critical>MANDATORY FINAL STEP: The workflow is NOT complete until Step 9 has written the updated status to TestResult/test-suites.yml. The completion summary and "Next step" prompt are displayed ONLY inside Step 9, after the file is saved. Do NOT output "Phase 5 Complete" or any "Next step" before Step 9 finishes.</critical>
   <critical>PRE-FLIGHT IS MANDATORY: Run the full spec review checklist and fix ALL blockers BEFORE executing any test. Never run tests on a broken spec file.</critical>
   <critical>PER-TEST LOOP RULE: Process tests ONE AT A TIME. When a test fails you enter the FAILURE PROTOCOL (F1→F2→F3→F4→F5→F6). You CANNOT advance to the next test until ALL SIX steps are complete. NEVER skip any step. NEVER batch failures. NEVER move on without a bug report AND a retest.</critical>
   <critical>Output base path: {output_folder}/{story_id}/</critical>
@@ -314,7 +315,25 @@ Complete the missing phases first:
       </fix-if-needed>
     </review>
 
+    <output>✅ Execution artifacts verified — updating suite registry (Step 9)...</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 9 — Update TestResult/test-suites.yml  [MANDATORY]        -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="9" goal="Update TestResult/test-suites.yml — mark run-tests done" mandatory="true">
+    <critical>This step MUST execute. Do not skip it. The workflow is not complete until test-suites.yml is written.</critical>
+    <action>Read TestResult/test-suites.yml</action>
+    <action>Find the entry where name = {suite_name}</action>
+    <action>Update the entry:
+      - phases.run-tests: done
+      - status: if current rank &lt; rank("tests-executed") → set to "tests-executed"; otherwise keep existing (never downgrade)
+      - updated: {current_date}
+    </action>
+    <action>Write the updated content back to TestResult/test-suites.yml</action>
     <output>
+      📋 test-suites.yml updated — suite "{suite_name}" → tests-executed
+
       ✅ Phase 5 Complete — Test Execution Loop Finished
 
       ╔══════════════════════════════════════════════╗
@@ -334,20 +353,5 @@ Complete the missing phases first:
       Next step → /aiqa-analyzebugs to triage failures (Phase 6)
                 → /aiqa-generatereport for the QA summary (Phase 7)
     </output>
-  </step>
-
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- STEP 9 — Update TestResult/test-suites.yml                     -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <step n="9" goal="Update TestResult/test-suites.yml — mark run-tests done">
-    <action>Read TestResult/test-suites.yml</action>
-    <action>Find the entry where name = {suite_name}</action>
-    <action>Update the entry:
-      - phases.run-tests: done
-      - status: if current rank &lt; rank("tests-executed") → set to "tests-executed"; otherwise keep existing (never downgrade)
-      - updated: {current_date}
-    </action>
-    <action>Write the updated content back to TestResult/test-suites.yml</action>
-    <output>📋 test-suites.yml updated — suite "{suite_name}" → tests-executed</output>
   </step>
 </workflow>
