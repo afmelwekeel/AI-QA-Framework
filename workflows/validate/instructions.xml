@@ -1,0 +1,513 @@
+<workflow>
+  <critical>Communicate in {communication_language}</critical>
+  <critical>Execute ALL steps in exact order</critical>
+
+  <!--
+    PURPOSE: Smart phase validator.
+    Reads the active suite's current_status from TestResult/test-suites.yml,
+    then validates ONLY the artifacts that correspond to that exact phase.
+    Reports all issues classified by severity, then asks the user what to fix.
+
+    STATUS → ARTIFACTS VALIDATED:
+      story-analyzed        → AI-QA-FRAMEWORK/reports/story-asts/{suite_name}.json
+      test-cases-generated  → {output_folder}/{suite}/test-cases/{suite}-test-cases.xlsx + .md
+      e2e-generated         → {output_folder}/{suite}/e2e/pages/*.page.js + tests/*.spec.js
+      test-data-generated   → {output_folder}/{suite}/test-data/*.json (3 files)
+      tests-executed        → {output_folder}/{suite}/reports/junit.xml + test-checklist.md
+      bugs-analyzed         → {output_folder}/{suite}/bug-reports/BUG-*.md
+      report-generated      → {output_folder}/{suite}/reports/qa-report.{html,xlsx,md}
+
+    SEVERITY GUIDE (applies to all phases):
+      Critical — artifact missing, invalid, or zero items where required; blocks next phase
+      High     — coverage gaps or wrong data; next phase will fail or produce wrong results
+      Medium   — quality issues; reduces test value but tests may still run
+      Low      — language or style issues
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 1 — Resolve suite and read its current status              -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="1" goal="Resolve suite and load its current phase status">
+    <check if="suite name argument is provided">
+      <action>Set {suite_name} = the provided argument value</action>
+    </check>
+    <check if="no suite name argument is provided">
+      <action>Read TestResult/test-suites.yml</action>
+      <check if="file does not exist or active_suite is empty">
+        <output>❌ No active suite found. Run /aiqa-analyzestory --suite &lt;name&gt; first to create a suite.</output>
+        <action>STOP</action>
+      </check>
+      <action>Set {suite_name} = active_suite value from TestResult/test-suites.yml</action>
+    </check>
+
+    <action>Read TestResult/test-suites.yml and find the entry where name = {suite_name}</action>
+    <check if="suite entry not found">
+      <output>❌ Suite "{suite_name}" not found in TestResult/test-suites.yml.
+Run /aiqa-analyzestory --suite {suite_name} first to register it.</output>
+      <action>STOP</action>
+    </check>
+
+    <action>Load from suite entry:
+      - {story_id}        = {suite_name}
+      - {current_status}  = suite status field
+      - {story_files}     = list of story file paths
+    </action>
+
+    <check if="{current_status} is empty or not a valid status">
+      <output>❌ Suite "{suite_name}" has no valid status recorded in test-suites.yml.
+Re-run /aiqa-analyzestory --suite {suite_name} to initialize it.</output>
+      <action>STOP</action>
+    </check>
+
+    <output>
+📂 Suite      : {suite_name}
+📊 Status     : {current_status}
+🎯 Will validate: artifacts from the "{current_status}" phase
+    </output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 2 — Load the artifacts for the current phase               -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="2" goal="Load and inspect artifacts for the phase matching {current_status}">
+
+    <check if="{current_status} = story-analyzed">
+      <action>Read: AI-QA-FRAMEWORK/reports/story-asts/{suite_name}.json</action>
+      <action>Read all story files in {story_files} to count {expected_ac_count}</action>
+      <action>Attempt JSON parse of the AST file; record parse errors</action>
+      <action>Count {ac_count} = items in acceptance_criteria array if file is valid</action>
+      <output>📄 Artifact: AI-QA-FRAMEWORK/reports/story-asts/{suite_name}.json</output>
+    </check>
+
+    <check if="{current_status} = test-cases-generated">
+      <action>Read all story files in {story_files} to count {expected_ac_count}</action>
+      <action>Check: {output_folder}/{story_id}/test-cases/{story_id}-test-cases.xlsx</action>
+      <action>Read: {output_folder}/{story_id}/test-cases/{story_id}-test-cases.md (if exists) — extract test IDs and count tests by type</action>
+      <output>📄 Artifacts: {output_folder}/{story_id}/test-cases/</output>
+    </check>
+
+    <check if="{current_status} = e2e-generated">
+      <action>Read all story files in {story_files} to count {expected_ac_count}</action>
+      <action>Read: {output_folder}/{story_id}/e2e/pages/{suite_name}.page.js (if exists)</action>
+      <action>Read: {output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js (if exists) — extract page.goto() URLs and count test() blocks</action>
+      <action>Check: {output_folder}/{story_id}/test-checklist.md</action>
+      <output>📄 Artifacts: {output_folder}/{story_id}/e2e/</output>
+    </check>
+
+    <check if="{current_status} = test-data-generated">
+      <action>Read: {output_folder}/{story_id}/test-data/{suite_name}-valid.json (if exists) — attempt JSON parse</action>
+      <action>Read: {output_folder}/{story_id}/test-data/{suite_name}-edge.json (if exists) — attempt JSON parse</action>
+      <action>Read: {output_folder}/{story_id}/test-data/{suite_name}-security.json (if exists) — attempt JSON parse</action>
+      <action>Read config.yaml to load {test_users} for credential verification</action>
+      <action>If spec exists: read to extract field names used in testData references</action>
+      <output>📄 Artifacts: {output_folder}/{story_id}/test-data/</output>
+    </check>
+
+    <check if="{current_status} = tests-executed">
+      <action>Read: {output_folder}/{story_id}/reports/junit.xml (if exists) — count {total_tests}, {passed_tests}, {failed_tests}; compute {actual_pass_rate}</action>
+      <action>Read: {output_folder}/{story_id}/test-checklist.md (if exists)</action>
+      <action>Count BUG-*.md files in {output_folder}/{story_id}/bug-reports/ → {bug_report_count}</action>
+      <output>📄 Artifacts: junit.xml + test-checklist.md</output>
+    </check>
+
+    <check if="{current_status} = bugs-analyzed">
+      <action>Read: {output_folder}/{story_id}/reports/junit.xml — count {failed_test_count}</action>
+      <action>List all BUG-XXXX.md in {output_folder}/{story_id}/bug-reports/ → {bug_report_files}; read each completely</action>
+      <action>Count {bug_report_count} = number of BUG-*.md files</action>
+      <output>📄 Artifacts: {output_folder}/{story_id}/bug-reports/</output>
+    </check>
+
+    <check if="{current_status} = report-generated">
+      <action>Read: {output_folder}/{story_id}/reports/qa-report.html (if exists)</action>
+      <action>Read: {output_folder}/{story_id}/reports/qa-report.md (if exists) — extract stated pass rate and bug count</action>
+      <action>Check: {output_folder}/{story_id}/reports/qa-report.xlsx exists</action>
+      <action>Read junit.xml to compute {actual_pass_rate} and {total_tests}</action>
+      <action>Count {actual_bug_count} from bug-reports/ folder</action>
+      <output>📄 Artifacts: {output_folder}/{story_id}/reports/</output>
+    </check>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 3 — Run the quality checks for the active phase            -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="3" goal="Run phase-specific quality checks and collect issues with severity">
+    <action>Initialize {issues} = []</action>
+
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <!-- STATUS: story-analyzed → validate story AST                  -->
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <check if="{current_status} = story-analyzed">
+      <action>Run these checks — record each failure as { id, severity, description, detail }:
+
+        CRITICAL:
+        SA-1  Verify AI-QA-FRAMEWORK/reports/story-asts/{suite_name}.json exists and is valid parseable JSON
+        SA-2  acceptance_criteria array contains exactly {expected_ac_count} items — one per unique AC across ALL story files; list any missing ACs
+
+        HIGH:
+        SA-3  Each AC text matches the original verbatim text from its source story file — no paraphrasing
+        SA-4  At least 2 positive test scenarios are defined
+        SA-5  At least 1 negative test scenario defined per AC (minimum count: {expected_ac_count})
+
+        MEDIUM:
+        SA-6  Edge cases section is not empty — must include boundary values, empty input, max-length, special characters
+        SA-7  Security scenarios section covers at minimum: unauthorised access attempt AND input injection
+
+        LOW:
+        SA-8  Risks and Dependencies section is populated
+        SA-9  Data Needed section lists concrete values, not vague placeholders
+      </action>
+    </check>
+
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <!-- STATUS: test-cases-generated → validate test case files      -->
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <check if="{current_status} = test-cases-generated">
+      <action>Run these checks:
+
+        CRITICAL:
+        TC-1  Both XLSX and MD files exist at {output_folder}/{story_id}/test-cases/
+        TC-2  Every AC has at least one positive test case — total positives ≥ {expected_ac_count}; list uncovered ACs
+
+        HIGH:
+        TC-3  Every AC has at least one negative test case covering invalid or rejected input
+        TC-6  Every test case has all required fields populated — ID, title, description, preconditions, numbered steps, test data, expected result
+        TC-9  No duplicate test case IDs
+
+        MEDIUM:
+        TC-4  Edge case tests present: boundary values, empty inputs, max-length, special characters
+        TC-5  Security and permission tests present if story involves auth or roles
+        TC-7  No placeholder text ("[field]", "[value]", "TBD") in any step or data field
+        TC-8  Expected results are specific and measurable — not vague phrases like "يعمل بشكل صحيح"
+
+        LOW:
+        TC-10 All content is in {reporting_language}
+        TC-11 Test types cover applicable categories: وظيفي، تحقق، حد، أمان، صلاحيات
+      </action>
+    </check>
+
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <!-- STATUS: e2e-generated → validate Playwright files            -->
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <check if="{current_status} = e2e-generated">
+      <action>Run these checks:
+
+        CRITICAL:
+        E2E-1   Both .page.js and .spec.js exist inside {output_folder}/{story_id}/e2e/ — fail if in any host project folder
+        E2E-12  Every page.goto() URL path is a valid reachable route: extract all paths, cross-reference against project.config.json routes.pages and host project router files; flag any unverifiable path
+
+        HIGH:
+        E2E-7   Spec covers all {expected_ac_count} ACs — at least one positive test() per AC
+        E2E-8   Each AC has at least one negative test case
+        E2E-9   No hardcoded base URLs in page.goto() — must use baseURL from Playwright config
+        E2E-11  Each test() block contains at least one meaningful expect() assertion
+
+        MEDIUM:
+        E2E-2   Page Object uses JavaScript — no TypeScript syntax, no interface/type keywords
+        E2E-3   POM constructor accepts page and assigns this.page = page
+        E2E-4   All locators use this.page.locator() or Playwright locator methods
+        E2E-5   Spec imports Page Object via relative path to pages/ folder
+        E2E-6   Spec uses test.describe and individual test() blocks
+        E2E-10  No page.waitForTimeout() — use waitForSelector() or expect().toBeVisible()
+      </action>
+    </check>
+
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <!-- STATUS: test-data-generated → validate JSON data files       -->
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <check if="{current_status} = test-data-generated">
+      <action>Run these checks:
+
+        CRITICAL:
+        TD-1  All 3 JSON files exist: {suite_name}-valid.json, {suite_name}-edge.json, {suite_name}-security.json
+        TD-6  All 3 files are valid parseable JSON — no trailing commas, unquoted keys, or syntax errors
+
+        HIGH:
+        TD-3  valid.json credentials sourced from config.yaml test_users — NOT invented or hardcoded
+        TD-7  Field names in JSON match form fields / API keys used in the spec file — no mismatches
+
+        MEDIUM:
+        TD-2  valid.json has realistic domain-specific values — no generic "test123", "foo", "test@test.com"
+        TD-4  edge.json covers: empty strings, null, max-length, special characters, zero, negative numbers
+        TD-5  security.json contains: SQL injection (' OR '1'='1), XSS (&lt;script&gt;alert(1)&lt;/script&gt;), oversized inputs
+
+        LOW:
+        TD-8  Expected success/error messages match what the application actually returns
+      </action>
+    </check>
+
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <!-- STATUS: tests-executed → validate execution artifacts         -->
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <check if="{current_status} = tests-executed">
+      <action>Run these checks:
+
+        CRITICAL:
+        P5-1  junit.xml exists at {output_folder}/{story_id}/reports/junit.xml and is non-empty
+        P5-2  Every failed test in junit.xml has a corresponding BUG-XXXX.md — {bug_report_count} must equal {failed_test_count}
+
+        HIGH:
+        P5-3  Every bug report has a specific root cause — NOT "unknown error" or "test failed"
+        P5-4  Every bug report contains the fix applied (before/after code snippet)
+        P5-5  Every bug report has a retest outcome section (✅ Fixed or ❌ Still Open)
+
+        MEDIUM:
+        P5-6  test-checklist.md reflects final state — no test still shows ⏳ Pending
+        P5-8  Bug report count matches failed test count exactly
+
+        LOW:
+        (none specific at this phase)
+      </action>
+    </check>
+
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <!-- STATUS: bugs-analyzed → validate bug reports                  -->
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <check if="{current_status} = bugs-analyzed">
+      <action>Run these checks:
+
+        CRITICAL:
+        BG-1  One bug report per failed test in junit.xml — {bug_report_count} must equal {failed_test_count}
+        BG-2  Each report has all required fields: Bug ID, عنوان المشكلة, وصف المشكلة, خطوات إعادة المشكلة, النتيجة الحالية, النتيجة المتوقعة, مستوى الخطورة, الأولوية
+
+        HIGH:
+        BG-5  Root cause is SPECIFIC in every report — includes file path, line number, what went wrong; NOT generic text
+        BG-8  Bug IDs are unique and sequential (BUG-0001, BUG-0002, …) — no duplicates or gaps
+
+        MEDIUM:
+        BG-3  Each report includes evidence: screenshot/video/trace paths and console errors from junit.xml
+        BG-4  Severity correctly classified: حرجة / عالية / متوسطة / منخفضة — not everything rated حرجة
+        BG-6  Each report includes a concrete suggested fix based on the root cause
+
+        LOW:
+        BG-7  All bug report content is in {reporting_language}
+      </action>
+    </check>
+
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <!-- STATUS: report-generated → validate QA report files          -->
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <check if="{current_status} = report-generated">
+      <action>Run these checks:
+
+        CRITICAL:
+        QR-1  All 3 report files exist: qa-report.html, qa-report.xlsx, qa-report.md
+        QR-2  Pass rate in report matches {actual_pass_rate}% from junit.xml — not a placeholder
+        QR-3  Bug count in report matches {actual_bug_count} files in bug-reports/
+
+        HIGH:
+        QR-4  All {total_tests} test results are listed in the report — no tests omitted
+        QR-8  Quality gate result (PASSED / FAILED vs {min_pass_rate}% threshold) is clearly stated in all 3 formats
+
+        MEDIUM:
+        QR-6  HTML report is valid HTML — balanced tags, no broken structure
+        QR-7  MD report contains all required sections: executive summary, pass rate, failed tests, bug severity breakdown, next actions
+
+        LOW:
+        QR-5  All report content is in {reporting_language}
+      </action>
+    </check>
+
+    <action>Count {critical_count}, {high_count}, {medium_count}, {low_count} from collected {issues}</action>
+    <action>Set {total_issues} = sum of all counts</action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 4 — Present issues report and ask for fix choice           -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="4" goal="Present validation report and ask how to proceed">
+    <check if="{total_issues} = 0">
+      <output>
+✅ Validation Passed — Phase: {current_status}
+
+Suite  : {suite_name}
+Phase  : {current_status}
+Checks : all passed
+
+No issues found — artifacts are complete and accurate.
+      </output>
+      <action>STOP</action>
+    </check>
+
+    <output>
+╔══════════════════════════════════════════════════════════════════╗
+║   🔍 Validation Report                                           ║
+║   Suite  : {suite_name}                                          ║
+║   Phase  : {current_status}                                      ║
+╚══════════════════════════════════════════════════════════════════╝
+
+🔴 Critical ({critical_count}):
+(for each Critical issue: "  • {id} — {description}" + what was found / what is expected)
+(if none: "  None")
+
+🟠 High ({high_count}):
+(for each High issue: "  • {id} — {description}" + detail)
+(if none: "  None")
+
+🟡 Medium ({medium_count}):
+(for each Medium issue: "  • {id} — {description}")
+(if none: "  None")
+
+🔵 Low ({low_count}):
+(for each Low issue: "  • {id} — {description}")
+(if none: "  None")
+
+Total issues: {total_issues}
+    </output>
+
+    <ask>How would you like to proceed?
+  A) Fix ALL {total_issues} issue(s) — resolve every finding
+  B) Fix only Critical + High ({critical_count + high_count} issue(s)) — skip Medium and Low
+  C) Skip — keep the report, apply no fixes
+    </ask>
+    <action>Store user choice as {fix_choice}</action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 5 — Apply fixes for the active phase                       -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="5" goal="Apply fixes based on user choice and active phase">
+    <check if="{fix_choice} = C">
+      <output>⏭️  No fixes applied. Issues remain for suite "{suite_name}" at phase "{current_status}".</output>
+      <action>STOP</action>
+    </check>
+
+    <action>Determine issues to fix:
+      Choice A → fix ALL issues in {issues}
+      Choice B → fix only issues where severity = Critical or High
+    </action>
+
+    <!-- Fix actions dispatched by active phase -->
+
+    <check if="{current_status} = story-analyzed">
+      <action>For each selected issue:
+        SA-1 → re-run /aiqa-analyzestory --suite {suite_name} to regenerate the AST
+        SA-2 → re-read ALL {story_files}; extract every AC precisely; add missing items to acceptance_criteria array
+        SA-3 → look up exact original text for each paraphrased AC in the story files; replace with verbatim text
+        SA-4 → add positive scenarios covering the happy-path and an alternate success flow
+        SA-5 → for each AC missing a negative scenario: add one covering invalid input, missing field, or auth failure
+        SA-6 → add edge cases: empty input, max-length string, special chars (؟!@#), numeric boundaries
+        SA-7 → add security scenarios: SQL injection attempt, XSS payload (&lt;script&gt;alert(1)&lt;/script&gt;), auth bypass
+        SA-8 → populate risks/dependencies based on story context (third-party services, migration, RBAC)
+        SA-9 → replace vague placeholders with concrete values (e.g. "valid email" → "test@example.com")
+        Save corrected AST to AI-QA-FRAMEWORK/reports/story-asts/{suite_name}.json
+      </action>
+    </check>
+
+    <check if="{current_status} = test-cases-generated">
+      <action>For each selected issue:
+        TC-1 → re-run /aiqa-generatetestcases {suite_name} to regenerate missing files
+        TC-2 → generate at least one positive test case for each AC with zero coverage
+        TC-3 → add a negative test case for each AC missing one (invalid input + expected error)
+        TC-4 → add edge case tests: empty input, max-length, special chars (؟!@#)
+        TC-5 → add SQL injection, XSS, unauthenticated access, and RBAC denial test cases where story involves auth/roles
+        TC-6 → fill every blank field in every test case with accurate, story-specific content
+        TC-7 → replace all "[field]", "[value]", "TBD" with exact values from the story
+        TC-8 → rewrite vague expected results to state specific outcomes, UI changes, or API responses
+        TC-9 → renumber duplicate IDs sequentially (TC-0001, TC-0002, …)
+        TC-10 → translate non-{reporting_language} content to {reporting_language}
+        TC-11 → add test cases for missing applicable categories
+        Save corrected files.
+      </action>
+    </check>
+
+    <check if="{current_status} = e2e-generated">
+      <action>For each selected issue:
+        E2E-1  → if files missing: re-run /aiqa-generatee2e {suite_name}; if in wrong location: move to correct path inside TestResult/
+        E2E-2  → convert TypeScript syntax to plain JavaScript
+        E2E-3  → fix POM constructor to accept page and assign this.page = page
+        E2E-4  → replace raw CSS selector strings with proper this.page.locator() calls
+        E2E-5  → fix import path to use relative ../pages/{suite_name}.page.js
+        E2E-6  → wrap tests inside test.describe block; convert to test() blocks
+        E2E-7  → add a positive test() for each AC with no coverage
+        E2E-8  → add a negative test() for each AC missing one
+        E2E-9  → replace hardcoded base URLs with baseURL reference
+        E2E-10 → replace page.waitForTimeout() with expect(locator).toBeVisible() or waitForSelector()
+        E2E-11 → add at least one expect() assertion to each test that has none
+        E2E-12 → for each unverified URL path: read host project router files; update spec with verified path; add TODO comment if cannot determine
+        Save both .page.js and .spec.js.
+      </action>
+    </check>
+
+    <check if="{current_status} = test-data-generated">
+      <action>For each selected issue:
+        TD-1 → re-run /aiqa-generatetestdata {suite_name} to create missing files
+        TD-2 → replace generic placeholders with domain-specific realistic values
+        TD-3 → load credentials from config.yaml test_users; update valid.json with actual username(s); NEVER show passwords in plain text
+        TD-4 → add missing edge cases: empty strings, null, 256+ char string, special chars, zero, negatives
+        TD-5 → add SQL injection (' OR '1'='1--), XSS (&lt;script&gt;alert(1)&lt;/script&gt;), oversized input (10,000 chars) to security.json
+        TD-6 → fix JSON syntax errors; validate parse after fix
+        TD-7 → cross-reference field names with spec; rename mismatched keys; add missing keys
+        TD-8 → ask user for the correct expected success/error messages; update accordingly
+        Save all corrected files.
+      </action>
+    </check>
+
+    <check if="{current_status} = tests-executed">
+      <action>For each selected issue:
+        P5-1 → re-run the full suite to regenerate junit.xml: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs run-tests --suite "{suite_name}"
+        P5-2 → for each failure in junit.xml with no bug report: create BUG-XXXX.md now from the failure node
+        P5-3 → for each report with vague root cause: re-read stack trace; rewrite with file path, line number, specific error
+        P5-4 → for each report missing before/after code: add the fix that was applied
+        P5-5 → for each report missing retest outcome: re-run the test; append result to the report
+        P5-6 → update test-checklist.md: mark every test as ✅ or ❌ based on junit.xml; remove any ⏳ Pending
+        P5-8 → if bug count ≠ failed test count: create missing reports or remove incorrectly created ones
+        Save all modified files.
+      </action>
+    </check>
+
+    <check if="{current_status} = bugs-analyzed">
+      <action>For each selected issue:
+        BG-1 → for each failure in junit.xml with no bug report: create BUG-XXXX.md now; read the junit.xml failure node for details
+        BG-2 → for each report missing required fields: populate every blank field from the junit.xml failure node
+        BG-3 → check Playwright test-results/ for screenshots/videos/traces; add paths to reports; add console errors from junit.xml &lt;system-err&gt;
+        BG-4 → re-evaluate severity for each inflated/wrong classification using the heuristic: حرجة/عالية/متوسطة/منخفضة
+        BG-5 → rewrite vague RCA with: specific file path, line number, what exactly failed and why
+        BG-6 → add a concrete suggested fix to each report lacking one
+        BG-7 → translate non-{reporting_language} content to {reporting_language}
+        BG-8 → renumber duplicate/out-of-sequence IDs sequentially; update INDEX.md
+        Save all modified bug reports.
+      </action>
+    </check>
+
+    <check if="{current_status} = report-generated">
+      <action>For each selected issue:
+        QR-1 → re-run /aiqa-generatereport {suite_name} to regenerate any missing report file
+        QR-2 → recalculate pass rate from junit.xml; update the figure in all 3 report formats
+        QR-3 → recount bug-reports/ files; update the bug count in all 3 report formats
+        QR-4 → add any missing test results to the results table in HTML and MD; add rows to XLSX
+        QR-5 → translate non-{reporting_language} content to {reporting_language}
+        QR-6 → parse HTML; fix unclosed tags, mismatched elements, broken table structure
+        QR-7 → add missing MD sections: executive summary, pass rate, failed test list, severity breakdown, next actions
+        QR-8 → add quality gate result prominently: "✅ PASSED — {actual_pass_rate}% ≥ {min_pass_rate}%" or "❌ FAILED — ..."
+        Save all corrected report files.
+      </action>
+    </check>
+
+    <output>✍️  Fixes applied — suite "{suite_name}" | phase "{current_status}"</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 6 — Re-verify and show final status                        -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="6" goal="Re-verify fixed checks and report final status">
+    <action>Re-read all artifacts for the active phase</action>
+    <action>Re-run ONLY the checks that were targeted for fixing</action>
+
+    <output>
+📋 Validation Summary
+Suite  : {suite_name}
+Phase  : {current_status}
+
+(for each fixed check:)   ✅ {id} — resolved: {what was corrected}
+(for each still failing:)  ❌ {id} — still failing: {reason}
+(for each skipped check:)  ⏭️  {id} — skipped (outside selected fix scope)
+
+(if all targeted checks pass:)
+✅ All targeted issues resolved. Phase "{current_status}" artifacts are verified.
+
+(if some still fail:)
+⚠️ {remaining} issue(s) could not be fixed automatically.
+   Re-run the original phase command or edit the files manually, then run /aiqa-validate again.
+    </output>
+  </step>
+</workflow>

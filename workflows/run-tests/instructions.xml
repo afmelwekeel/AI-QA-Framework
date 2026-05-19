@@ -1,0 +1,353 @@
+<workflow>
+  <critical>Communicate in {communication_language}</critical>
+  <critical>Generate all bug reports in {reporting_language}</critical>
+  <critical>Execute ALL steps in exact order — do NOT skip steps</critical>
+  <critical>PRE-FLIGHT IS MANDATORY: Run the full spec review checklist and fix ALL blockers BEFORE executing any test. Never run tests on a broken spec file.</critical>
+  <critical>PER-TEST LOOP RULE: Process tests ONE AT A TIME. When a test fails you enter the FAILURE PROTOCOL (F1→F2→F3→F4→F5→F6). You CANNOT advance to the next test until ALL SIX steps are complete. NEVER skip any step. NEVER batch failures. NEVER move on without a bug report AND a retest.</critical>
+  <critical>Output base path: {output_folder}/{story_id}/</critical>
+
+  <!-- STATUS ORDER (reference):
+       1. story-analyzed  2. test-cases-generated  3. e2e-generated
+       4. test-data-generated  5. tests-executed  6. bugs-analyzed  7. report-generated -->
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 1 — Resolve suite from argument or active_suite            -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="1" goal="Resolve suite name from argument or active suite in test-suites.yml">
+    <check if="suite name argument is provided">
+      <action>Set {suite_name} = the provided argument value</action>
+    </check>
+    <check if="no suite name argument is provided">
+      <action>Read TestResult/test-suites.yml</action>
+      <check if="file does not exist or active_suite is empty">
+        <output>❌ No active suite found. Run /aiqa-analyzestory --suite &lt;name&gt; first, then retry.</output>
+        <action>STOP</action>
+      </check>
+      <action>Set {suite_name} = active_suite value from TestResult/test-suites.yml</action>
+    </check>
+    <action>Read TestResult/test-suites.yml and find the suite entry where name = {suite_name}</action>
+    <check if="suite entry not found">
+      <output>❌ Suite "{suite_name}" not found in TestResult/test-suites.yml.
+Run /aiqa-analyzestory --suite {suite_name} first to register it.</output>
+      <action>STOP</action>
+    </check>
+    <action>Load from suite entry:
+      - {story_id}        = {suite_name}
+      - {current_status}  = suite status field
+    </action>
+    <output>📂 Suite: {suite_name} | Status: {current_status}</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 2 — Verify suite is ready for Phase 5                     -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="2" goal="Verify suite has reached the minimum required status">
+    <!-- Minimum required: test-data-generated (rank 4) -->
+    <!-- Status ranks: story-analyzed=1, test-cases-generated=2, e2e-generated=3,
+         test-data-generated=4, tests-executed=5, bugs-analyzed=6, report-generated=7 -->
+    <check if="{current_status} rank is less than rank('test-data-generated')">
+      <!-- i.e., status is story-analyzed, test-cases-generated, or e2e-generated -->
+      <output>❌ Suite "{suite_name}" is not ready for test execution.
+Current status  : {current_status}
+Required status : test-data-generated (minimum)
+
+Complete the missing phases first:
+  - If e2e-generated  → run /aiqa-generatetestdata
+  - If story-analyzed → run /aiqa-generatee2e then /aiqa-generatetestdata</output>
+      <action>STOP</action>
+    </check>
+    <output>✅ Suite ready — status "{current_status}" satisfies minimum "test-data-generated"</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 3 — Prepare execution environment                          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="3" goal="Prepare execution environment">
+    <action>Confirm spec exists: {output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js — STOP and report error if missing</action>
+    <action>Confirm page object(s) exist: {output_folder}/{story_id}/e2e/pages/ — STOP and report error if missing</action>
+    <action>Confirm test data exists: {output_folder}/{story_id}/test-data/{suite_name}-valid.json — STOP and ask user to run /aiqa-generatetestdata if missing</action>
+    <action>Ensure {output_folder}/{story_id}/bug-reports/ folder exists (create if missing)</action>
+    <action>Count existing BUG-XXXX.md files in bug-reports/ → store as {next_bug_id} (start at count+1)</action>
+    <action>Initialize {execution_log} = [] (list of per-test outcomes)</action>
+    <action>Initialize counters: {pass_count}=0, {preflight_fixed}=0, {fixed_inline_count}=0, {still_open_count}=0</action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 4 — Pre-Execution Spec Review (MANDATORY)                  -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="4" goal="Pre-flight spec review — find and fix all issues before any test runs">
+    <critical>This step runs ONCE before the first test. Purpose: catch and fix problems that would cause false failures. A test failure caused by a broken spec is waste — fix the spec first.</critical>
+
+    <!-- 4a: Deterministic pre-flight engine -->
+    <action>Run deterministic pre-flight check:
+      Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs run-tests --mode review --suite "{suite_name}"
+      Read the JSON output — it reports [BLOCKER], [WARN], and [FIXED] items.
+    </action>
+
+    <!-- 4b: Read all files completely -->
+    <action>Read: {output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js (complete file)</action>
+    <action>Read: all .page.js files in {output_folder}/{story_id}/e2e/pages/</action>
+    <action>Read: {output_folder}/{story_id}/test-data/{suite_name}-valid.json</action>
+
+    <!-- 4c: Full review checklist -->
+    <review>
+      <quality-checklist>
+        <!-- CATEGORY 1 — File Structure and Imports -->
+        <check id="IM-1">Every import/require path resolves to a file that actually exists on disk</check>
+        <check id="IM-2">Page object class names match what is export-default-ed in the .page.js file</check>
+        <check id="IM-3">Test data is imported or loaded correctly (right path, right variable name)</check>
+        <check id="IM-4">No circular imports</check>
+
+        <!-- CATEGORY 2 — Test Data Consistency -->
+        <check id="TD-1">testData.baseUrl (or equivalent) matches the configured base URL in project.config.json</check>
+        <check id="TD-2">Every key accessed in the spec (testData.adminUser.email, testData.validInputs.name, etc.) exists in the test data JSON</check>
+        <check id="TD-3">User credentials come from testData or config.yaml test_users — NOT hardcoded strings</check>
+        <check id="TD-4">URL paths in testData (loginPath, dashboardPath, etc.) are correct for this project</check>
+        <check id="TD-5">No REPLACE_WITH_REAL_PASSWORD placeholder values — replace with real values from config.yaml test_users or ask the user</check>
+
+        <!-- CATEGORY 3 — Playwright API Correctness -->
+        <check id="PW-1">Every async Playwright call (page.click, page.fill, page.goto, locator.fill, etc.) is preceded by await</check>
+        <check id="PW-2">page.locator() is used instead of deprecated page.$() / page.$$()</check>
+        <check id="PW-3">page.waitForURL() or waitForLoadState() is used instead of page.waitForNavigation()</check>
+        <check id="PW-4">No page.waitForTimeout() for waits — use page.waitForSelector(), locator.waitFor(), or expect(locator).toBeVisible() instead</check>
+        <check id="PW-5">expect() assertions use @playwright/test expect, not Jest or Chai</check>
+        <check id="PW-6">Locators use stable selectors: getByRole, getByLabel, getByTestId, getByText, or locator('[data-testid="..."]') — not fragile nth-child or XPath unless unavoidable</check>
+
+        <!-- CATEGORY 4 — Test Structure -->
+        <check id="TS-1">No test.only() or describe.only() in the file</check>
+        <check id="TS-2">No unexplained test.skip()</check>
+        <check id="TS-3">Each test has a unique, descriptive name</check>
+        <check id="TS-4">beforeEach / afterEach hooks do not leave browser state dirty</check>
+        <check id="TS-5">Login steps appear in beforeEach, not duplicated in every test body</check>
+        <check id="TS-6">Tests are independent — no test depends on state left by a previous test</check>
+
+        <!-- CATEGORY 5 — Page Object Correctness -->
+        <check id="PO-1">Every method called on a page object in the spec actually exists in the page object class</check>
+        <check id="PO-2">Page object constructor receives page from Playwright fixtures correctly</check>
+        <check id="PO-3">All locators in page objects are defined before use</check>
+        <check id="PO-4">navigate()/goto() methods use this.page.goto(baseURL + path) — not hardcoded full URLs</check>
+
+        <!-- CATEGORY 6 — Authentication and Role Coverage -->
+        <check id="AU-1">Tests requiring login use credentials from testData or config.yaml test_users — not hardcoded</check>
+        <check id="AU-2">Every role mentioned in the user story has at least one test covering its permissions</check>
+        <check id="AU-3">Negative tests (wrong password, unauthorised role) use clearly invalid credentials</check>
+      </quality-checklist>
+
+      <fix-if-needed>
+        For every failed check, apply the minimal fix and state what changed:
+        IM-1 → correct the path; match exact filename and casing
+        IM-2 → update class name in import or in the page object
+        IM-3 → fix import path; verify key names match the JSON schema
+        TD-2 → add missing keys to the JSON; remove references to non-existent keys
+        TD-3 → replace hardcoded credentials with testData references
+        TD-5 → replace placeholder passwords with real values from config.yaml test_users
+        PW-1 → add missing await before each async call
+        PW-2/PW-3 → replace deprecated API calls
+        PW-4 → replace arbitrary waits with proper Playwright waiters
+        TS-1 → remove .only modifiers
+        TS-6 → add proper beforeEach setup
+        PO-1 → add missing method to the page object class
+        AU-1 → fix credential references
+        After all fixes, re-run the deterministic check to confirm blockers are resolved.
+        Do NOT run tests while any BLOCKER remains.
+      </fix-if-needed>
+    </review>
+
+    <output>
+      ✅ Pre-flight Review Complete — {suite_name}.spec.js
+
+        Issues found   : {issues_found}
+        Auto-fixed     : {auto_fixed}  (by pre-flight engine)
+        AI-fixed       : {ai_fixed}    (by this review)
+        Warnings left  : {warnings}    (non-blocking, noted)
+
+        Ready to execute {test_count} tests.
+    </output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 5 — List all tests                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="5" goal="List all tests in the suite">
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs run-tests --suite "{suite_name}" --mode list</action>
+    <action>Parse the output to extract the ordered list of test names → {test_list}</action>
+    <action>Display: "📋 Found {N} tests — running each individually with inline fix on failure."</action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 6 — Per-test execution loop                                -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="6" goal="Per-test execution loop with inline fix protocol">
+    <critical>
+      LOOP RULE: Process tests ONE AT A TIME.
+      When a test FAILS you enter the FAILURE PROTOCOL (F1→F2→F3→F4→F5→F6).
+      You CANNOT advance to the next test until ALL SIX FAILURE PROTOCOL STEPS are complete.
+      NEVER skip any step. NEVER batch failures. NEVER move on without a bug report AND a retest.
+    </critical>
+
+    <action>FOR EACH {test_name} IN {test_list}:
+
+      ═══ STEP A — Run the single test ═══
+        Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs run-tests --suite "{suite_name}" --mode single --testName "{test_name}"
+        Capture: exit code (0 = pass, non-zero = fail)
+
+      ═══ STEP B — If PASS (exit code 0) ═══
+        - Increment {pass_count} by 1
+        - Mark {test_name} as ✅ Passed in test-checklist.md
+        - Append to {execution_log}: "✅ PASS — {test_name}"
+        → Advance to next test
+
+      ═══ STEP C — If FAIL (exit code ≠ 0) — FAILURE PROTOCOL ═══
+
+        ⛔ HARD STOP. Complete F1 through F6 IN ORDER before touching the next test.
+
+        ── F1: DIAGNOSE ──────────────────────────────────────────
+        1. Read the full error message + stack trace from console or reports/junit.xml
+        2. Read the spec file lines around the failing assertion or action
+        3. Read every Page Object file referenced in the stack trace
+        4. Classify as:
+             TEST BUG  — wrong selector / assertion / URL / missing await / bad setup
+                         → fix the spec or page object
+             SOURCE BUG — application behaves incorrectly (missing element, wrong API, broken nav)
+                         → fix the application source
+        ✋ F1 GATE: error message identified, failing line known, failure type classified.
+
+        ── F2: FIX ───────────────────────────────────────────────
+        1. Open the file that contains the root cause
+        2. Apply the MINIMAL change that fixes the root cause — one targeted edit
+        3. Do NOT refactor, rename, or touch anything unrelated to this failure
+        4. Save the file to disk
+        ✋ F2 GATE: the fix is saved on disk. Confirm before proceeding.
+
+        ── F3: CREATE BUG REPORT ─────────────────────────────────
+        Create file: {output_folder}/{story_id}/bug-reports/BUG-{next_bug_id:04d}.md
+        Required sections (ALL must be present):
+          • Bug ID, test name, error type (خطأ في ملف الاختبار / خطأ في الكود المصدري)
+          • الملف المُعدَّل: path of the file edited in F2
+          • مستوى الخطورة: timeout/crash=حرجة | assertion/404=عالية | UI=متوسطة
+          • وصف الخطأ: full error message (verbatim, not summarised)
+          • تشخيص السبب الجذري: specific root cause (NEVER "unknown error")
+          • الإصلاح المُطبَّق: description + before/after code snippet
+          • سجل التتبع: full stack trace in &lt;details&gt; block
+        Then increment {next_bug_id} by 1.
+        ✋ F3 GATE: BUG-{XXXX}.md exists on disk with all required sections. Confirm before proceeding.
+
+        ── F4: RETEST ────────────────────────────────────────────
+        Run the same test again to verify the fix from F2:
+        Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs run-tests --suite "{suite_name}" --mode single --testName "{test_name}"
+        Capture exit code.
+        ✋ F4 GATE: retest has run and exit code is captured. Do not proceed without it.
+
+        ── F5: APPEND RETEST OUTCOME ─────────────────────────────
+        Open BUG-{XXXX}.md created in F3 and APPEND one of these sections:
+
+        If F4 exit code = 0 (FIXED):
+          ## ✅ تم الإصلاح — اجتاز الاختبار بعد الإصلاح
+          > تم التحقق بنجاح في: {current_timestamp}
+
+        If F4 exit code ≠ 0 (STILL FAILING):
+          ## ❌ لا يزال فاشلاً — يحتاج مراجعة
+          > تمت إعادة الاختبار في: {current_timestamp} — لا يزال يفشل.
+          > ما تمت محاولته: {description_of_fix_from_F2}
+
+        ✋ F5 GATE: retest outcome section is appended inside BUG-{XXXX}.md. Confirm before proceeding.
+
+        ── F6: UPDATE CHECKLIST AND LOG ──────────────────────────
+        If F4 passed:
+          - Mark {test_name} as ✅ Passed in test-checklist.md
+          - Increment {fixed_inline_count} by 1
+          - Append to {execution_log}: "🔧 FIXED — {test_name} | BUG-{next_bug_id - 1} | {fix_type}"
+        If F4 still failed:
+          - Mark {test_name} as ❌ Failed in test-checklist.md
+          - Increment {still_open_count} by 1
+          - Append to {execution_log}: "❌ OPEN — {test_name} | BUG-{next_bug_id - 1}"
+          - Do NOT retry — one fix attempt only
+
+        ✅ FAILURE PROTOCOL COMPLETE. All six steps done. Advance to next test.
+
+      END FOR EACH
+    </action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 7 — Post-loop: update index, final run, update checklist   -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="7" goal="Post-loop wrap-up">
+    <action>Create or update {output_folder}/{story_id}/bug-reports/INDEX.md with a table of every bug recorded this session (Bug ID | Test | نوع الخطأ | الخطورة | الحالة)</action>
+    <action>Run the full suite once to produce the canonical JUnit XML:
+      Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs run-tests --suite "{suite_name}"
+      This captures the final state (all fixes applied) in junit.xml
+    </action>
+    <action>Update the header table in test-checklist.md with final counts: Passed, Fixed-Inline (count as Passed), Still Failing, and overall status</action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 8 — Self-review                                            -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="8" goal="Self-review — verify execution artifacts">
+    <review>
+      <artifact-checklist>
+        <file path="{output_folder}/{story_id}/reports/junit.xml"   required="true">Final JUnit XML — reflects all fixes applied</file>
+        <file path="{output_folder}/{story_id}/test-checklist.md"   required="true">Updated with ✅/❌ for every test that ran</file>
+        <file path="{output_folder}/{story_id}/bug-reports/"        required="false">Bug reports — one per failure encountered during the loop</file>
+      </artifact-checklist>
+
+      <quality-checklist>
+        <check id="P5-1">Every test in {test_list} was actually executed — no test silently skipped</check>
+        <check id="P5-2">Every failed test has a corresponding BUG-XXXX.md in bug-reports/ — ZERO undocumented failures</check>
+        <check id="P5-3">Every bug report has a specific root cause — NOT "unknown error" or "test failed"</check>
+        <check id="P5-4">Every bug report contains the fix that was applied (before/after code snippet)</check>
+        <check id="P5-5">Every bug report has a retest outcome appended (✅ Fixed OR ❌ Still Open) — the section must be present even if the fix failed</check>
+        <check id="P5-6">test-checklist.md reflects final state — fixed tests show ✅, unfixed show ❌, no test still shows ⏳ Pending</check>
+        <check id="P5-7">Final JUnit XML exists and is non-empty</check>
+        <check id="P5-8">Number of BUG-XXXX.md files equals the number of tests that failed at any point — count must match</check>
+      </quality-checklist>
+
+      <fix-if-needed>
+        P5-1 → re-run any missing tests individually using --mode single
+        P5-2/P5-8 → for every failed test without a bug report: create BUG-XXXX.md now (re-read JUnit XML for error details)
+        P5-3 → re-read the stack trace for each report with vague root cause and rewrite it specifically
+        P5-4 → add the before/after code fix to any report missing it
+        P5-5 → for every bug report missing the retest outcome: run the test again now and append the result
+        P5-6 → update any checklist entry still showing ⏳ Pending based on the JUnit XML results
+        P5-7 → re-run the final full suite to regenerate JUnit XML
+      </fix-if-needed>
+    </review>
+
+    <output>
+      ✅ Phase 5 Complete — Test Execution Loop Finished
+
+      ╔══════════════════════════════════════════════╗
+      ║         Test Execution Summary               ║
+      ╠══════════════════════════════════════════════╣
+      ║  Pre-flight fixes  : {preflight_fixed}       ║
+      ║  Total Tests       : {total}                 ║
+      ║  ✅ Passed         : {pass_count}            ║
+      ║  🔧 Fixed Inline   : {fixed_inline_count}    ║
+      ║  ❌ Still Failing  : {still_open_count}      ║
+      ║  🐛 Bugs Recorded  : {next_bug_id - 1}       ║
+      ╚══════════════════════════════════════════════╝
+
+      📋 Checklist : {output_folder}/{story_id}/test-checklist.md
+      🐛 Bug reports: {output_folder}/{story_id}/bug-reports/
+
+      Next step → /aiqa-analyzebugs to triage failures (Phase 6)
+                → /aiqa-generatereport for the QA summary (Phase 7)
+    </output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 9 — Update TestResult/test-suites.yml                     -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="9" goal="Update TestResult/test-suites.yml — mark run-tests done">
+    <action>Read TestResult/test-suites.yml</action>
+    <action>Find the entry where name = {suite_name}</action>
+    <action>Update the entry:
+      - phases.run-tests: done
+      - status: if current rank &lt; rank("tests-executed") → set to "tests-executed"; otherwise keep existing (never downgrade)
+      - updated: {current_date}
+    </action>
+    <action>Write the updated content back to TestResult/test-suites.yml</action>
+    <output>📋 test-suites.yml updated — suite "{suite_name}" → tests-executed</output>
+  </step>
+</workflow>

@@ -1,15 +1,13 @@
-name: generate-report
-description: 'Aggregate all phase results into QA summary report HTML + XLSX + MD (Phase 7). Use when user says "generate report" or runs /aiqa-generatereport'
+name: generatetestcases-validate
+description: 'Validate Phase 2 output: review generated test cases for coverage, quality, and completeness (run after /aiqa-generatetestcases)'
 
 config_source: "{project-root}/AI-QA-FRAMEWORK/config.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 reporting_language: "{config_source}:reporting_language"
 output_folder: "{config_source}:output_folder"
-project_name: "{config_source}:project_name"
-min_pass_rate: "{config_source}:min_pass_rate"
 
-installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/generate-report"
+installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/generatetestcases-validate"
 instructions: "{installed_path}/instructions.xml"
 
 # Runtime variables — resolved from TestResult/test-suites.yml

@@ -1,13 +1,20 @@
-﻿name: fetch-test-data
-description: 'Fetch or collect test users and test data. Queries the database using db_connection_string, or collects users manually one by one. Saves all users to config.yaml test_users.'
+name: fetch-test-data
+description: 'Fetch or collect test users and save to config.yaml. Use when user says "fetch test users" or runs /aiqa-fetchtestusers'
+
 config_source: "{project-root}/AI-QA-FRAMEWORK/config.yaml"
 instructions: "{project-root}/AI-QA-FRAMEWORK/workflows/fetch-test-data/instructions.xml"
 installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/fetch-test-data"
+
 triggers:
   - "/aiqa-fetchtestusers"
   - "fetch test users"
   - "get test users from database"
   - "add test users"
   - "provide test users"
+
 outputs:
   - "config.yaml test_users list updated"
+
+# Runtime variables — resolved from TestResult/test-suites.yml (optional)
+suite_name: ""     # Optional — from argument or active_suite; used to extract required roles
+story_files: ""    # Loaded from suite entry if suite_name is resolved

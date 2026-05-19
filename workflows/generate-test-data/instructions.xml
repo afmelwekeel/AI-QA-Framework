@@ -1,0 +1,192 @@
+<workflow>
+  <critical>Communicate in {communication_language}</critical>
+  <critical>Execute ALL steps in exact order — do NOT skip steps</critical>
+  <critical>Output base path for all artifacts: {output_folder}/{story_id}/test-data/</critical>
+  <critical>MANDATORY USER REVIEW: After generating each data file, display it in full and WAIT for user confirmation before proceeding. This is a non-negotiable hard stop.</critical>
+  <critical>NEVER display passwords in plain text — always mask as ****</critical>
+  <critical>SELF-REVIEW RULE: After generating files, execute the quality checklist before reporting complete. Fix all failures.</critical>
+
+  <!-- STATUS ORDER (reference):
+       1. story-analyzed  2. test-cases-generated  3. e2e-generated
+       4. test-data-generated  5. tests-executed  6. bugs-analyzed  7. report-generated -->
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 1 — Resolve suite from argument or active_suite            -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="1" goal="Resolve suite name from argument or active suite in test-suites.yml">
+    <check if="suite name argument is provided">
+      <action>Set {suite_name} = the provided argument value</action>
+    </check>
+    <check if="no suite name argument is provided">
+      <action>Read TestResult/test-suites.yml</action>
+      <check if="file does not exist or active_suite is empty">
+        <output>❌ No active suite found. Run /aiqa-analyzestory --suite &lt;name&gt; first, then retry.</output>
+        <action>STOP</action>
+      </check>
+      <action>Set {suite_name} = active_suite value from TestResult/test-suites.yml</action>
+    </check>
+    <action>Read TestResult/test-suites.yml and find the suite entry where name = {suite_name}</action>
+    <check if="suite entry not found">
+      <output>❌ Suite "{suite_name}" not found in TestResult/test-suites.yml.
+Run /aiqa-analyzestory --suite {suite_name} first to register it.</output>
+      <action>STOP</action>
+    </check>
+    <action>Load from suite entry:
+      - {story_id}        = {suite_name}
+      - {current_status}  = suite status field
+    </action>
+    <action>Derive {story_id} from {suite_name}</action>
+    <action>Confirm the E2E spec exists at: {output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js</action>
+    <output>📂 Suite: {suite_name} | Status: {current_status}</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 2 — Verify suite is ready for Phase 4                     -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="2" goal="Verify suite has reached the minimum required status">
+    <!-- Minimum required: e2e-generated (rank 3) -->
+    <!-- Status ranks: story-analyzed=1, test-cases-generated=2, e2e-generated=3,
+         test-data-generated=4, tests-executed=5, bugs-analyzed=6, report-generated=7 -->
+    <check if="{current_status} rank is less than rank('e2e-generated')">
+      <!-- i.e., status is story-analyzed or test-cases-generated -->
+      <output>❌ Suite "{suite_name}" is not ready for test data generation.
+Current status  : {current_status}
+Required status : e2e-generated (minimum)
+
+You must generate E2E tests before generating test data.
+Run /aiqa-generatee2e first.</output>
+      <action>STOP</action>
+    </check>
+    <output>✅ Suite ready — status "{current_status}" satisfies minimum "e2e-generated"</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 3 — Ensure test users are available                        -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="3" goal="Check test users in config.yaml">
+    <action>
+      Check {test_users} in config.yaml:
+      - If {test_users} is NOT empty → use saved users directly; proceed to Step 4
+      - If {test_users} IS empty → ask the user:
+          "I need test user credentials to generate authentication test data.
+           Should I:
+           A) Fetch them from your database automatically ({db_connection_string})
+           B) You provide them manually one by one
+           Your choice?"
+        Then load and execute workflow: {project-root}/AI-QA-FRAMEWORK/workflows/fetch-test-data/workflow.yaml
+        WAIT for the workflow to complete and {test_users} to be saved before continuing.
+    </action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 4 — Execute test data generation skill                     -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="4" goal="Execute test data generation skill">
+    <action>Execute skill: test-data-generation</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-test-data --suite "{suite_name}"</action>
+    <action>Skill generates 3 JSON files at {output_folder}/{story_id}/test-data/</action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 5 — Self-review: verify artifact completeness and quality  -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="5" goal="Self-review — verify artifacts and data quality">
+    <review>
+      <artifact-checklist>
+        <file path="{output_folder}/{story_id}/test-data/{suite_name}-valid.json"    required="true">Valid test data — realistic positive input matching the story domain</file>
+        <file path="{output_folder}/{story_id}/test-data/{suite_name}-edge.json"     required="true">Edge case data — boundary values, empty, null, max-length, special chars</file>
+        <file path="{output_folder}/{story_id}/test-data/{suite_name}-security.json" required="true">Security payloads — SQL injection, XSS, CSRF, oversized inputs</file>
+      </artifact-checklist>
+
+      <quality-checklist>
+        <check id="TD-1">All 3 JSON data files exist at the correct paths inside {output_folder}/{story_id}/test-data/</check>
+        <check id="TD-2">valid.json contains realistic positive data matching the story's domain — no generic "test123" or "foo" placeholders</check>
+        <check id="TD-3">valid.json includes user credentials sourced from {test_users} in config.yaml — NOT invented or hardcoded</check>
+        <check id="TD-4">edge.json covers: empty strings, null values, maximum length strings, special characters (؟!@#), numeric boundaries, zero, negative numbers</check>
+        <check id="TD-5">security.json contains: SQL injection payloads (' OR '1'='1), XSS payloads (&lt;script&gt;alert(1)&lt;/script&gt;), CSRF tokens, oversized inputs</check>
+        <check id="TD-6">All JSON files are valid parseable JSON — no trailing commas, no unquoted keys</check>
+        <check id="TD-7">Field names in the JSON match the actual form fields / API request keys used in the spec file — no mismatched names</check>
+        <check id="TD-8">Expected success/error messages match what the application actually returns — not invented strings</check>
+      </quality-checklist>
+
+      <fix-if-needed>
+        TD-1 → create any missing JSON file with appropriate content; re-run the generation skill if needed
+        TD-2 → replace generic placeholder values with domain-specific realistic ones
+        TD-3 → populate credentials from config.yaml test_users; never invent credentials
+        TD-4 → add missing edge cases for each field type detected in the story
+        TD-5 → add missing security payload types
+        TD-6 → fix any malformed JSON (trailing commas, unquoted keys, unbalanced braces)
+        TD-7 → cross-reference field names with the spec file and correct any mismatches
+        TD-8 → update expected messages to match actual application behaviour (ask user if uncertain)
+        Save corrected files before proceeding to the user review checkpoint.
+      </fix-if-needed>
+    </review>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 6 — Mandatory user review checkpoint (HARD STOP)           -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="6" goal="User review — confirm all 3 data files before any tests run">
+    <action>For EACH of the 3 generated data files ({suite_name}-valid.json, {suite_name}-edge.json, {suite_name}-security.json):
+
+      1. Display the FULL file content to the user inside a code block
+      2. Show this message and WAIT:
+
+╔══════════════════════════════════════════════════════════════════╗
+║   📋 Test Data Review — {file_name}                              ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Please review this data file carefully before running any tests.
+Wrong or missing values will cause test failures.
+
+❓ Things to check:
+  • Are field names correct for your application's forms/API?
+  • Are the values realistic for your domain (not generic "test123")?
+  • Are credential values, IDs, or keys correct?
+  • Should any REPLACE_WITH_REAL_PASSWORD be replaced with an actual value?
+  • Are the expected success/error messages correct for your system?
+
+Reply:
+  ✅ "OK" / "correct" / "looks good" → I will show you the next file
+  ✏️  Describe what is wrong → I will fix it and show you the corrected version
+
+      3. WAIT for user response — do NOT move to the next file until this one is confirmed
+      4. If user reports issues:
+           a. Apply all corrections to the file on disk
+           b. Display the corrected full content
+           c. Ask: "I've applied your corrections. Does this look right now?"
+           d. WAIT for confirmation
+           e. Repeat until user says OK
+      5. Move to the next file
+    </action>
+    <action>Only after ALL 3 files are confirmed by the user → display the completion output</action>
+
+    <output>
+      ✅ Phase 4 Complete — Test Data Generated and Verified
+
+      📁 {output_folder}/{story_id}/test-data/
+         • {suite_name}-valid.json    ← positive / happy-path data
+         • {suite_name}-edge.json     ← boundary and edge case data
+         • {suite_name}-security.json ← security and injection payloads
+
+      All 3 files reviewed and confirmed by user.
+
+      Next step → /aiqa-runtests to execute the tests (Phase 5)
+    </output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 7 — Update TestResult/test-suites.yml                     -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="7" goal="Update TestResult/test-suites.yml — mark generate-test-data done">
+    <action>Read TestResult/test-suites.yml</action>
+    <action>Find the entry where name = {suite_name}</action>
+    <action>Update the entry:
+      - phases.generate-test-data: done
+      - status: if current rank &lt; rank("test-data-generated") → set to "test-data-generated"; otherwise keep existing (never downgrade)
+      - updated: {current_date}
+    </action>
+    <action>Write the updated content back to TestResult/test-suites.yml</action>
+    <output>📋 test-suites.yml updated — suite "{suite_name}" → test-data-generated</output>
+  </step>
+</workflow>

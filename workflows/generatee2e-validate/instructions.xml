@@ -1,0 +1,194 @@
+<workflow>
+  <critical>Communicate in {communication_language}</critical>
+  <critical>Execute ALL steps in exact order</critical>
+
+  <!--
+    PURPOSE: Standalone quality gate for /aiqa-generatee2e output.
+    Validates Playwright POM and spec files for correctness, coverage, and URL validity.
+
+    SEVERITY GUIDE:
+      Critical — files missing or all URL paths wrong; tests cannot run at all
+      High     — ACs not covered, no assertions, hardcoded base URLs; tests will fail
+      Medium   — structural issues (POM pattern, arbitrary waits); tests may be fragile
+      Low      — minor pattern issues
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 1 — Resolve suite                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="1" goal="Resolve suite name from argument or active suite in test-suites.yml">
+    <check if="suite name argument is provided">
+      <action>Set {suite_name} = the provided argument value</action>
+    </check>
+    <check if="no suite name argument is provided">
+      <action>Read TestResult/test-suites.yml</action>
+      <check if="file does not exist or active_suite is empty">
+        <output>❌ No active suite found. Run /aiqa-analyzestory --suite &lt;name&gt; first.</output>
+        <action>STOP</action>
+      </check>
+      <action>Set {suite_name} = active_suite value from TestResult/test-suites.yml</action>
+    </check>
+    <action>Find the suite entry where name = {suite_name}</action>
+    <check if="entry not found">
+      <output>❌ Suite "{suite_name}" not found in TestResult/test-suites.yml.</output>
+      <action>STOP</action>
+    </check>
+    <action>Load: {story_files}, {story_id} = {suite_name}, {current_status}</action>
+    <check if="{current_status} rank is less than rank('e2e-generated')">
+      <output>⚠️  Suite status is "{current_status}" — E2E files may not have been generated yet.
+Continuing validation; artifact checks will catch missing files.</output>
+    </check>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 2 — Load artifacts                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="2" goal="Load E2E artifacts and expected AC count">
+    <action>Read ALL story files in {story_files}; count {expected_ac_count} = total unique ACs</action>
+    <action>Record expected artifact paths:
+      - Page Object: {output_folder}/{story_id}/e2e/pages/{suite_name}.page.js
+      - Spec file:   {output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js
+      - Checklist:   {output_folder}/{story_id}/test-checklist.md
+    </action>
+    <action>If spec exists: read it completely; extract all page.goto() URLs; count test() blocks</action>
+    <action>If page object exists: read it completely</action>
+    <output>📂 Validating: {output_folder}/{story_id}/e2e/ | Expected ACs: {expected_ac_count}</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 3 — Run all quality checks; collect issues with severity   -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="3" goal="Run all quality checks and collect issues">
+    <action>Initialize {issues} = []</action>
+
+    <!-- CRITICAL -->
+    <check id="E2E-1" severity="Critical">Both .page.js and .spec.js files exist at the correct paths INSIDE {output_folder}/{story_id}/e2e/ — FAIL if files are in any host project folder</check>
+    <check id="E2E-12" severity="Critical">Every URL path in page.goto() calls is a valid, reachable route:
+      a. Extract all unique paths from page.goto() calls
+      b. Cross-reference against routes.pages in project.config.json
+      c. For any path not found: read host project router files to verify
+      d. Flag paths that cannot be verified as correct</check>
+
+    <!-- HIGH -->
+    <check id="E2E-7" severity="High">Spec covers ALL {expected_ac_count} acceptance criteria — at minimum one positive test() per AC</check>
+    <check id="E2E-8" severity="High">Each AC has at least one negative test case (invalid input, missing field, auth failure)</check>
+    <check id="E2E-9" severity="High">No hardcoded base URLs in page.goto() — must use baseURL from Playwright config or config.yaml</check>
+    <check id="E2E-11" severity="High">Each test() block contains at least one meaningful expect() assertion — not just navigation</check>
+
+    <!-- MEDIUM -->
+    <check id="E2E-2" severity="Medium">Page Object file uses JavaScript (not TypeScript) — no type annotations, no interface/type keywords, no .ts extension</check>
+    <check id="E2E-3" severity="Medium">Page Object constructor accepts page parameter and assigns this.page = page</check>
+    <check id="E2E-4" severity="Medium">All locators use this.page.locator() or Playwright locator methods — no raw strings outside locator calls</check>
+    <check id="E2E-5" severity="Medium">Spec file imports Page Object using a relative path pointing to the pages/ folder</check>
+    <check id="E2E-6" severity="Medium">Spec uses test.describe and individual test() blocks — not bare function calls</check>
+    <check id="E2E-10" severity="Medium">No page.waitForTimeout() with arbitrary millisecond delays — use waitForSelector() or expect().toBeVisible() instead</check>
+
+    <action>Count {critical_count}, {high_count}, {medium_count}, {low_count}</action>
+    <action>Set {total_issues} = sum of all counts</action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 4 — Present issues report and ask for fix choice           -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="4" goal="Present validation report and ask how to proceed">
+    <check if="{total_issues} = 0">
+      <output>
+✅ Validation Passed — /aiqa-generatee2e
+
+All 12 quality checks passed. E2E files are correct and complete.
+Suite: {suite_name} | ACs covered: {expected_ac_count}
+No issues found — safe to proceed to /aiqa-generatetestdata.
+      </output>
+      <action>STOP</action>
+    </check>
+
+    <output>
+╔══════════════════════════════════════════════════════════════════╗
+║   🔍 Validation Report — /aiqa-generatee2e                       ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Suite  : {suite_name}
+Files  : {output_folder}/{story_id}/e2e/
+ACs expected: {expected_ac_count}
+
+🔴 Critical ({critical_count}):
+(for each Critical issue: "  • {id} — {description}" + detail)
+(if none: "  None")
+
+🟠 High ({high_count}):
+(for each High issue: "  • {id} — {description}" + detail)
+(if none: "  None")
+
+🟡 Medium ({medium_count}):
+(for each Medium issue: "  • {id} — {description}")
+(if none: "  None")
+
+🔵 Low ({low_count}):
+(if none: "  None")
+
+Total issues: {total_issues}
+    </output>
+
+    <ask>How would you like to proceed?
+  A) Fix ALL {total_issues} issue(s) — resolve every finding
+  B) Fix only Critical + High ({critical_count + high_count} issue(s)) — skip Medium and Low
+  C) Skip — keep the report, apply no fixes
+    </ask>
+    <action>Store user choice as {fix_choice}</action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 5 — Apply fixes                                            -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="5" goal="Apply fixes to E2E files">
+    <check if="{fix_choice} = C">
+      <output>⏭️  No fixes applied.</output>
+      <action>STOP</action>
+    </check>
+
+    <action>Determine issues to fix:
+      Choice A → fix ALL issues
+      Choice B → fix only Critical and High issues
+    </action>
+
+    <action>For each issue selected for fixing:
+      E2E-1  → if files missing: re-run /aiqa-generatee2e {suite_name} to regenerate; if in wrong location: move to correct path
+      E2E-2  → convert any TypeScript syntax to plain JavaScript (remove type annotations, interfaces, .ts references)
+      E2E-3  → fix POM constructor: ensure it accepts page and assigns this.page = page
+      E2E-4  → replace any raw CSS selector strings outside locator calls with proper this.page.locator() calls
+      E2E-5  → fix import path in spec to use relative path ../pages/{suite_name}.page.js
+      E2E-6  → wrap test functions inside test.describe block; convert bare calls to test() blocks
+      E2E-7  → for each AC not covered: add a positive test() block targeting that specific AC's behavior
+      E2E-8  → for each AC lacking a negative test: add a test() with invalid/rejected input and assertion for the error state
+      E2E-9  → replace hardcoded full base URLs with baseURL reference from Playwright config
+      E2E-10 → replace page.waitForTimeout(N) with appropriate: await expect(locator).toBeVisible() or await page.waitForSelector()
+      E2E-11 → add at least one expect() assertion to each test that has none
+      E2E-12 → for each unrecognized URL path: read host project router files to find correct route; update spec with verified path
+      Save both .page.js and .spec.js after all edits.
+    </action>
+    <output>✍️  Fixes applied — E2E files updated.</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 6 — Re-verify and show final status                        -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="6" goal="Re-verify fixed checks and report final status">
+    <action>Re-read both .page.js and .spec.js files</action>
+    <action>Re-run ONLY the checks that were targeted for fixing</action>
+
+    <output>
+📋 Validation Summary — /aiqa-generatee2e
+
+(for each fixed check:)   ✅ {id} — resolved: {what was corrected}
+(for each still failing:)  ❌ {id} — still failing: {reason}
+(for each skipped check:)  ⏭️  {id} — skipped (outside selected fix scope)
+
+(if all targeted checks pass:)
+✅ All targeted issues resolved. Safe to proceed to /aiqa-generatetestdata.
+
+(if some still fail:)
+⚠️ {remaining} issue(s) could not be fixed automatically.
+   Edit the E2E files manually, then re-run /aiqa-generatee2e-validate.
+    </output>
+  </step>
+</workflow>

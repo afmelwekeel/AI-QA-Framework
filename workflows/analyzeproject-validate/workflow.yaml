@@ -1,0 +1,9 @@
+name: analyzeproject-validate
+description: 'Validate Phase 0 output: review project.config.json for completeness and accuracy (run after /aiqa-analyzeproject)'
+
+config_source: "{project-root}/AI-QA-FRAMEWORK/config.yaml"
+user_name: "{config_source}:user_name"
+communication_language: "{config_source}:communication_language"
+
+installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/analyzeproject-validate"
+instructions: "{installed_path}/instructions.xml"

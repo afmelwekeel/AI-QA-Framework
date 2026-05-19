@@ -1,17 +1,17 @@
-name: generate-report
-description: 'Aggregate all phase results into QA summary report HTML + XLSX + MD (Phase 7). Use when user says "generate report" or runs /aiqa-generatereport'
+name: validate
+description: 'Smart phase validator: reads active suite status, validates artifacts for that exact phase, reports issues by severity (Critical/High/Medium/Low), and asks the user how to fix them. Use when user says "validate" or runs /aiqa-validate'
 
 config_source: "{project-root}/AI-QA-FRAMEWORK/config.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 reporting_language: "{config_source}:reporting_language"
 output_folder: "{config_source}:output_folder"
-project_name: "{config_source}:project_name"
 min_pass_rate: "{config_source}:min_pass_rate"
 
-installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/generate-report"
+installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/validate"
 instructions: "{installed_path}/instructions.xml"
 
 # Runtime variables — resolved from TestResult/test-suites.yml
 suite_name: ""     # From argument or active_suite in TestResult/test-suites.yml
 story_id: ""       # Same value as suite_name
+current_status: "" # Loaded from suite entry — determines WHICH artifacts to validate

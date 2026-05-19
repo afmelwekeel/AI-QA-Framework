@@ -4,10 +4,24 @@
   <critical>After collecting or fetching users, ALWAYS save them to config.yaml test_users before completing</critical>
 
   <!-- ════════════════════════════════════════════════════════════════════ -->
-  <!-- STEP 0 — Extract required roles from user stories (if provided)     -->
+  <!-- STEP 0 — Resolve story files; extract required roles               -->
   <!-- ════════════════════════════════════════════════════════════════════ -->
-  <step n="0" anchor="extract-roles" goal="Identify roles needed for testing from user stories">
-    <check if="story file path(s) were provided as arguments">
+  <step n="0" anchor="extract-roles" goal="Resolve story files from arguments or active suite; identify roles needed for testing">
+
+    <!-- 0a: Resolve story files from test-suites.yml if not provided as arguments -->
+    <check if="no story file path(s) were provided as arguments">
+      <action>Read TestResult/test-suites.yml (if it exists)</action>
+      <check if="file exists and active_suite is set">
+        <action>Find the suite entry where name = active_suite</action>
+        <check if="suite entry found and stories list is not empty">
+          <action>Set {story_files} = the stories list from the active suite entry</action>
+          <output>ℹ️  No story files provided — using stories from active suite "{active_suite}": {story_files}</output>
+        </check>
+      </check>
+    </check>
+
+    <!-- 0b: Extract required roles from story files -->
+    <check if="story file path(s) were provided as arguments OR resolved from active suite">
       <action>
         For EACH story file provided:
         1. Read the full content of the story file

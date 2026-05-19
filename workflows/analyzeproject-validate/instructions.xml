@@ -1,0 +1,157 @@
+<workflow>
+  <critical>Communicate in {communication_language}</critical>
+  <critical>Execute ALL steps in exact order</critical>
+
+  <!--
+    PURPOSE: Standalone quality gate for /aiqa-analyzeproject output.
+    Runs all Phase 0 quality checks, classifies issues by severity,
+    presents findings to the user, and applies fixes based on their choice.
+
+    SEVERITY GUIDE:
+      Critical — artifact missing/invalid; blocks ALL downstream phases
+      High     — key field wrong/empty; will cause E2E test failures
+      Medium   — populated but questionable; reduces test accuracy
+      Low      — placeholder values or style issues
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 1 — Verify artifact exists and is readable                 -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="1" goal="Verify project.config.json exists and is valid JSON">
+    <action>Check if {project-root}/AI-QA-FRAMEWORK/core/project.config.json exists</action>
+    <check if="file does not exist">
+      <output>❌ project.config.json not found.
+Run /aiqa-analyzeproject first to generate this file.</output>
+      <action>STOP</action>
+    </check>
+    <action>Read the complete file content</action>
+    <action>Attempt to parse as JSON — if parsing fails, this is an immediate CRITICAL failure; record it and STOP with the error details</action>
+    <output>📂 Validating: AI-QA-FRAMEWORK/core/project.config.json</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 2 — Run all quality checks; collect issues with severity   -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="2" goal="Run all quality checks and collect issues">
+    <action>Run EVERY check below. For each FAILED check: record { id, severity, description, found_value }.</action>
+    <action>Initialize {issues} = []</action>
+
+    <!-- CRITICAL -->
+    <check id="PC-1" severity="Critical">project.config.json is valid, parseable JSON — FAIL if malformed</check>
+
+    <!-- HIGH -->
+    <check id="PC-2" severity="High">frontend field is a real framework name (Angular/React/Vue/Next.js/Nuxt/Blazor/etc.) — NOT null, "unknown", or blank</check>
+    <check id="PC-3" severity="High">backend.framework is populated AND backend.baseUrl is a real non-placeholder URL (e.g. not "http://localhost" without a port that's confirmed correct)</check>
+    <check id="PC-6" severity="High">routes.pages contains at least one real route entry — NOT an empty array []</check>
+
+    <!-- MEDIUM -->
+    <check id="PC-4" severity="Medium">database field is populated — if no DB detected, value is explicitly "none", NOT blank or null</check>
+    <check id="PC-5" severity="Medium">auth.scheme is one of: jwt / oauth / session / basic / none — NOT blank</check>
+
+    <!-- LOW -->
+    <check id="PC-7" severity="Low">No field contains "unknown", "detected", "N/A", "TODO", or is left empty string ""</check>
+
+    <action>Count {critical_count}, {high_count}, {medium_count}, {low_count} from {issues}</action>
+    <action>Set {total_issues} = {critical_count} + {high_count} + {medium_count} + {low_count}</action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 3 — Present issues report and ask for fix choice           -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="3" goal="Present validation report and ask how to proceed">
+    <check if="{total_issues} = 0">
+      <output>
+✅ Validation Passed — /aiqa-analyzeproject
+
+All 7 quality checks passed. project.config.json is complete and accurate.
+No issues found — safe to proceed to /aiqa-analyzestory.
+      </output>
+      <action>STOP</action>
+    </check>
+
+    <output>
+╔══════════════════════════════════════════════════════════════════╗
+║   🔍 Validation Report — /aiqa-analyzeproject                    ║
+╚══════════════════════════════════════════════════════════════════╝
+
+File: AI-QA-FRAMEWORK/core/project.config.json
+
+🔴 Critical ({critical_count}):
+(for each Critical issue: "  • {id} — {description}" and "    Found: {found_value}")
+(if none: "  None")
+
+🟠 High ({high_count}):
+(for each High issue: "  • {id} — {description}" and "    Found: {found_value}")
+(if none: "  None")
+
+🟡 Medium ({medium_count}):
+(for each Medium issue: "  • {id} — {description}")
+(if none: "  None")
+
+🔵 Low ({low_count}):
+(for each Low issue: "  • {id} — {description}")
+(if none: "  None")
+
+Total issues: {total_issues}
+    </output>
+
+    <ask>How would you like to proceed?
+  A) Fix ALL {total_issues} issue(s) — resolve every finding
+  B) Fix only Critical + High ({critical_count + high_count} issue(s)) — skip Medium and Low
+  C) Skip — keep the report, apply no fixes
+    </ask>
+    <action>Store user choice as {fix_choice}</action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 4 — Apply fixes based on user choice                       -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="4" goal="Apply fixes to project.config.json">
+    <check if="{fix_choice} = C">
+      <output>⏭️  No fixes applied. Issues remain in project.config.json.</output>
+      <action>STOP</action>
+    </check>
+
+    <action>Determine issues to fix:
+      Choice A → fix ALL issues in {issues}
+      Choice B → fix only issues where severity = Critical or High
+    </action>
+
+    <action>For each issue selected for fixing, apply the specific fix:
+      PC-1 → re-run: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-project to regenerate the file
+      PC-2 → re-scan package.json dependencies and src/ entry files; identify and set the correct frontend framework name
+      PC-3 → ask user: "What is your backend base URL? (e.g. http://localhost:3000 or https://api.yourapp.com)" then update backend.baseUrl
+      PC-4 → if no DB found: set database = "none"; if DB exists but unknown: ask user "What database does this project use?"
+      PC-5 → ask user: "What authentication scheme does this project use? (jwt / oauth / session / basic / none)" then update auth.scheme
+      PC-6 → read router config files: search for app-routing.module.ts, routes.js, App.tsx, router/index.js — extract all page routes; update routes.pages
+      PC-7 → for each field containing "unknown"/"N/A"/"TODO"/"": either derive the value from project files or ask the user for the correct value; update config
+    </action>
+
+    <action>Write the updated content back to project.config.json</action>
+    <output>✍️  Fixes applied — project.config.json updated.</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 5 — Re-verify and show final status                        -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="5" goal="Re-verify fixed checks and report final status">
+    <action>Re-read project.config.json</action>
+    <action>Re-run ONLY the checks that were targeted for fixing</action>
+    <action>Classify each as: ✅ Fixed | ❌ Still failing</action>
+
+    <output>
+📋 Validation Summary — /aiqa-analyzeproject
+
+(for each fixed check:)   ✅ {id} — resolved: {what was corrected}
+(for each still failing:)  ❌ {id} — still failing: {reason}
+(for each skipped check:)  ⏭️  {id} — skipped (not in selected fix scope)
+
+(if all targeted checks pass:)
+✅ All targeted issues resolved. Safe to proceed to /aiqa-analyzestory.
+
+(if some still fail:)
+⚠️ {remaining} issue(s) could not be fixed automatically.
+   Please correct project.config.json manually, then re-run /aiqa-analyzeproject-validate.
+    </output>
+  </step>
+</workflow>

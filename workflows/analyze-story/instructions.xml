@@ -2,40 +2,109 @@
   <critical>Communicate in {communication_language}</critical>
   <critical>Execute ALL steps in exact order</critical>
 
-  <step n="1" goal="Resolve story files">
+  <!-- STATUS ORDER (reference for all phase commands):
+       1. story-analyzed
+       2. test-cases-generated
+       3. e2e-generated
+       4. test-data-generated
+       5. tests-executed
+       6. bugs-analyzed
+       7. report-generated
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 0 — Handle --activate flag (switch active suite)           -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="0" goal="Handle --activate flag if present">
+    <check if="--activate flag is provided in the command arguments">
+      <action>Read TestResult/test-suites.yml</action>
+      <check if="file does not exist or suites list is empty">
+        <output>❌ No suites found in TestResult/test-suites.yml. Run /aiqa-analyzestory --suite &lt;name&gt; first to create a suite.</output>
+        <action>STOP</action>
+      </check>
+      <action>Find the suite entry where name = {activate_argument}</action>
+      <check if="entry not found">
+        <output>❌ Suite "{activate_argument}" not found.
+
+Available suites:
+(list all suite names from test-suites.yml with their current status)
+
+Usage: /aiqa-analyzestory --activate &lt;suitename&gt;</output>
+        <action>STOP</action>
+      </check>
+      <action>Set active_suite = {activate_argument} in TestResult/test-suites.yml and write the file</action>
+      <output>✅ Active suite switched to: {activate_argument}
+Status: {suite_status}
+Stories: (list story files from the suite entry)
+
+All subsequent commands will use this suite unless you pass a suite name explicitly.</output>
+      <action>STOP — do not continue to story analysis</action>
+    </check>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 1 — Resolve suite name                                     -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="1" goal="Resolve suite name from --suite argument or derive from first story filename">
+    <check if="--suite argument is provided">
+      <action>Set {suite_name} = value of --suite argument</action>
+    </check>
+    <check if="--suite is NOT provided">
+      <action>Derive {suite_name} from the FIRST story filename (strip path and extension, e.g. "1-1-login-feature" from "docs/stories/1-1-login-feature.md")</action>
+      <check if="no story files were provided either">
+        <ask>Please provide the path(s) to the user story file(s). You may also provide a suite name with --suite &lt;name&gt;:</ask>
+        <action>Store the provided value as {story_files}</action>
+        <action>Derive {suite_name} from the first story filename</action>
+      </check>
+    </check>
+    <action>Set {story_id} = {suite_name}</action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 2 — Resolve story files                                    -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="2" goal="Resolve story files">
     <check if="{story_files} is NOT provided">
-      <ask>Please provide the path(s) to the user story file(s). You may provide multiple paths separated by spaces (e.g., docs/stories/1-1-feature.md docs/stories/1-2-feature.md):</ask>
+      <ask>Please provide the path(s) to the user story file(s). Multiple paths may be separated by spaces or commas:</ask>
       <action>Store the provided value as {story_files}</action>
     </check>
     <action>Parse {story_files} into a list — split on spaces or commas, trim whitespace from each path, filter out empty entries</action>
-    <action>Derive {story_id} from the FIRST story filename (e.g., "1-1-opt-in-link-generation" from "1-1-opt-in-link-generation.md")</action>
     <action>Store {story_count} = number of story files in the list</action>
   </step>
 
-  <step n="2" goal="Load and merge all story files">
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 3 — Load and merge all story files                         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="3" goal="Load and merge all story files">
     <action>For EACH path in the {story_files} list: read the COMPLETE file content</action>
     <action>From each story, extract: title, actor, goal, benefit, acceptance criteria (exact list), technical notes</action>
     <action>Merge all extracted data into one unified set:
-      - Combined acceptance criteria list (de-duplicate identical ACs across stories; keep all unique ones)
-      - Combined scenarios, edge cases, security scenarios, risks, and data needed sections
+      - Combined acceptance criteria list (de-duplicate identical ACs; keep all unique ones)
+      - Combined scenarios, edge cases, security scenarios, risks, and data needed
       - If multiple actors are present, note all of them
     </action>
     <action>Count and store {ac_count} = TOTAL number of unique acceptance criteria across ALL stories</action>
-    <action>If {story_count} > 1: note in the output header how many stories were merged</action>
+    <action>If {story_count} > 1: note in the output how many stories were merged</action>
   </step>
 
-  <step n="3" goal="Execute story analysis skill">
-    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-story --suite "{story_id}" --stories "{story_files}"</action>
-    <action>Pass ALL story file paths (not just the first) so the Node.js skill merges every story's acceptance criteria into the unified AST</action>
-    <action>The skill emits a structured JSON AST saved to reports/story-asts/{story_id}.json</action>
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 4 — Execute story analysis skill                           -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="4" goal="Execute story analysis skill">
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-story --suite "{suite_name}" --stories "{story_files}"</action>
+    <action>Pass ALL story file paths (not just the first) so the skill merges every story's acceptance criteria into the unified AST</action>
+    <action>The skill emits a structured JSON AST saved to AI-QA-FRAMEWORK/reports/story-asts/{suite_name}.json</action>
   </step>
 
-  <step n="4" goal="Display analysis results">
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 5 — Display analysis results                               -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="5" goal="Display analysis results">
     <output>
-      **Story Analysis Complete for: {story_id}**
+      Story Analysis Complete for suite: {suite_name}
 
       Display the following sections from the AST:
-      1. Acceptance Criteria (numbered list)
+      1. Acceptance Criteria (numbered list — {ac_count} total)
       2. Positive Scenarios
       3. Negative Scenarios
       4. Edge Cases
@@ -45,10 +114,13 @@
     </output>
   </step>
 
-  <step n="5" goal="Self-review — verify artifact completeness and accuracy">
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 6 — Self-review                                            -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="6" goal="Self-review — verify artifact completeness and accuracy">
     <review>
       <artifact-checklist>
-        <file path="{project-root}/AI-QA-FRAMEWORK/reports/story-asts/{story_id}.json" required="true">
+        <file path="{project-root}/AI-QA-FRAMEWORK/reports/story-asts/{suite_name}.json" required="true">
           Story AST — must exist and be valid JSON
         </file>
       </artifact-checklist>
@@ -56,7 +128,7 @@
       <quality-checklist>
         <check id="SA-1">Story AST JSON file exists and is valid parseable JSON</check>
         <check id="SA-2">AST contains an acceptance_criteria array with exactly {ac_count} items — one entry per unique AC found across ALL provided story files. No AC may be omitted.</check>
-        <check id="SA-3">Each acceptance criterion in the AST matches the original text from its source story file — no paraphrasing that loses meaning</check>
+        <check id="SA-3">Each acceptance criterion matches the original text from its source story file — no paraphrasing that loses meaning</check>
         <check id="SA-4">At least 2 positive test scenarios are defined</check>
         <check id="SA-5">At least 1 negative test scenario is defined per acceptance criterion</check>
         <check id="SA-6">Edge cases section is not empty — contains boundary conditions, empty input, max-length, special characters</check>
@@ -66,21 +138,65 @@
       </quality-checklist>
 
       <fix-if-needed>
-        For every failed check, apply the specific fix before marking this step complete:
-        - SA-2/SA-3 → re-read ALL story files in {story_files}, extract every AC precisely, update the AST
-        - SA-4 → add missing positive scenarios covering happy-path and alternate flows
-        - SA-5 → add negative scenarios for each AC (invalid input, missing required field, auth failure, etc.)
-        - SA-6 → add edge cases: empty inputs, boundary values, maximum length, special characters, concurrent actions
-        - SA-7 → add security scenarios: SQL injection attempt, XSS payload, CSRF, broken auth
-        - SA-8/SA-9 → populate with specific values based on the story context
-        After all fixes, save the corrected AST to the JSON file and re-display the updated analysis.
+        SA-2/SA-3 → re-read ALL story files in {story_files}, extract every AC precisely, update the AST
+        SA-4 → add missing positive scenarios covering happy-path and alternate flows
+        SA-5 → add negative scenarios for each AC (invalid input, missing required field, auth failure, etc.)
+        SA-6 → add edge cases: empty inputs, boundary values, maximum length, special characters
+        SA-7 → add security scenarios: SQL injection attempt, XSS payload, auth bypass
+        SA-8/SA-9 → populate with specific values based on the story context
+        After all fixes, save the corrected AST and re-display the updated analysis.
       </fix-if-needed>
     </review>
     <output>✅ Review complete — story AST verified: {ac_count} ACs captured, all scenario sections populated</output>
+  </step>
 
-    <ask>Would you like to proceed with test case generation for this story? [Y/N]</ask>
-    <check if="user says yes or Y">
-      <output>✅ Analysis saved. Run [FW] Full Workflow or [GE] Generate E2E Tests to continue.</output>
-    </check>
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 7 — Create or update TestResult/test-suites.yml            -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="7" goal="Create or update TestResult/test-suites.yml with this suite">
+    <action>
+      Ensure TestResult/ folder exists (create if missing).
+
+      Read TestResult/test-suites.yml (if it exists).
+
+      CASE A — Suite "{suite_name}" does NOT yet exist in the file:
+        Append a new entry:
+          - name: {suite_name}
+            status: story-analyzed
+            created: {current_date}
+            updated: {current_date}
+            stories:
+              (one line per story file in {story_files})
+            phases:
+              analyze-story:        done
+              generate-test-cases:  pending
+              generate-e2e:         pending
+              generate-test-data:   pending
+              run-tests:            pending
+              analyze-bugs:         pending
+              generate-report:      pending
+        Set active_suite: {suite_name}
+
+      CASE B — Suite "{suite_name}" ALREADY EXISTS in the file:
+        Update the existing entry:
+          - stories: replace with current {story_files} list
+          - phases.analyze-story: done
+          - updated: {current_date}
+          - status: keep existing status unchanged (do not downgrade)
+        Set active_suite: {suite_name}
+
+      Write the updated content back to TestResult/test-suites.yml.
+    </action>
+
+    <output>
+      📋 Suite registry updated: TestResult/test-suites.yml
+
+      Suite  : {suite_name}
+      Status : {suite_status}
+      Stories: (list story files)
+      Active : ✅ yes
+
+      Next step → /aiqa-generatetestcases to generate test cases (Phase 2)
+    </output>
   </step>
 </workflow>

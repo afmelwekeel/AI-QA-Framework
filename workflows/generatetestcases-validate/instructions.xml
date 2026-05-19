@@ -1,0 +1,191 @@
+<workflow>
+  <critical>Communicate in {communication_language}</critical>
+  <critical>All test case content must be verified against {reporting_language}</critical>
+  <critical>Execute ALL steps in exact order</critical>
+
+  <!--
+    PURPOSE: Standalone quality gate for /aiqa-generatetestcases output.
+    Runs all Phase 2 quality checks on the generated test case files,
+    classifies issues by severity, presents findings to the user, and applies fixes.
+
+    SEVERITY GUIDE:
+      Critical — files missing or ACs without any test case; major coverage hole
+      High     — no negative tests, blank required fields, or duplicate IDs
+      Medium   — edge/security coverage missing, placeholder values, vague expected results
+      Low      — wrong language, missing test type categories
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 1 — Resolve suite                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="1" goal="Resolve suite name from argument or active suite in test-suites.yml">
+    <check if="suite name argument is provided">
+      <action>Set {suite_name} = the provided argument value</action>
+    </check>
+    <check if="no suite name argument is provided">
+      <action>Read TestResult/test-suites.yml</action>
+      <check if="file does not exist or active_suite is empty">
+        <output>❌ No active suite found. Run /aiqa-analyzestory --suite &lt;name&gt; first.</output>
+        <action>STOP</action>
+      </check>
+      <action>Set {suite_name} = active_suite value from TestResult/test-suites.yml</action>
+    </check>
+    <action>Find the suite entry where name = {suite_name}</action>
+    <check if="entry not found">
+      <output>❌ Suite "{suite_name}" not found in TestResult/test-suites.yml.</output>
+      <action>STOP</action>
+    </check>
+    <action>Load: {story_files}, {story_id} = {suite_name}, {current_status}</action>
+    <check if="{current_status} rank is less than rank('test-cases-generated')">
+      <output>⚠️  Suite status is "{current_status}" — test cases may not have been generated yet.
+Continuing validation anyway; artifact checks will catch missing files.</output>
+    </check>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 2 — Load artifacts and count ACs                           -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="2" goal="Load test case artifacts and compute expected AC count">
+    <action>Read ALL story files in {story_files}; count {expected_ac_count} = total unique ACs</action>
+    <action>Record the expected artifact paths:
+      - XLSX: {output_folder}/{story_id}/test-cases/{story_id}-test-cases.xlsx
+      - MD:   {output_folder}/{story_id}/test-cases/{story_id}-test-cases.md
+    </action>
+    <action>If the MD file exists: read it to count test cases by type and collect test case IDs</action>
+    <output>📂 Validating: {output_folder}/{story_id}/test-cases/ | Expected ACs: {expected_ac_count}</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 3 — Run all quality checks; collect issues with severity   -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="3" goal="Run all quality checks and collect issues">
+    <action>Initialize {issues} = []</action>
+
+    <!-- CRITICAL -->
+    <check id="TC-1" severity="Critical">Both XLSX and MD files exist at the correct paths inside {output_folder}/{story_id}/test-cases/</check>
+    <check id="TC-2" severity="Critical">Every AC from ALL provided stories has at least one positive test case — total positive tests ≥ {expected_ac_count}. List any AC that has zero coverage.</check>
+
+    <!-- HIGH -->
+    <check id="TC-3" severity="High">Every AC has at least one negative test case covering invalid or rejected input</check>
+    <check id="TC-6" severity="High">Each test case has ALL required fields populated: ID, title, description, preconditions, numbered steps, test data, expected result — no field is blank</check>
+    <check id="TC-9" severity="High">No duplicate test case IDs exist in the test suite</check>
+
+    <!-- MEDIUM -->
+    <check id="TC-4" severity="Medium">Edge case test cases are present: boundary values, empty inputs, max-length, special characters</check>
+    <check id="TC-5" severity="Medium">Security and permission test cases are present when the story involves authentication or roles (SQL injection, XSS, unauthenticated access, RBAC)</check>
+    <check id="TC-7" severity="Medium">Steps use actual field names, URLs, and values from the story — no placeholders like "[field]", "[value]", or "TBD"</check>
+    <check id="TC-8" severity="Medium">Expected results are specific and measurable — NOT vague phrases like "يعمل بشكل صحيح", "the system works", or "success"</check>
+
+    <!-- LOW -->
+    <check id="TC-10" severity="Low">All text content is in {reporting_language} — no content in another language</check>
+    <check id="TC-11" severity="Low">Test types cover all applicable categories: وظيفي، تحقق، حد، أمان، صلاحيات</check>
+
+    <action>Count {critical_count}, {high_count}, {medium_count}, {low_count}</action>
+    <action>Set {total_issues} = sum of all counts</action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 4 — Present issues report and ask for fix choice           -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="4" goal="Present validation report and ask how to proceed">
+    <check if="{total_issues} = 0">
+      <output>
+✅ Validation Passed — /aiqa-generatetestcases
+
+All 11 quality checks passed. Test case files are complete and accurate.
+Suite: {suite_name} | ACs covered: {expected_ac_count}
+No issues found — safe to proceed to /aiqa-generatee2e.
+      </output>
+      <action>STOP</action>
+    </check>
+
+    <output>
+╔══════════════════════════════════════════════════════════════════╗
+║   🔍 Validation Report — /aiqa-generatetestcases                 ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Suite  : {suite_name}
+Output : {output_folder}/{story_id}/test-cases/
+ACs expected: {expected_ac_count}
+
+🔴 Critical ({critical_count}):
+(for each Critical issue: "  • {id} — {description}" + detail)
+(if none: "  None")
+
+🟠 High ({high_count}):
+(for each High issue: "  • {id} — {description}" + detail)
+(if none: "  None")
+
+🟡 Medium ({medium_count}):
+(for each Medium issue: "  • {id} — {description}")
+(if none: "  None")
+
+🔵 Low ({low_count}):
+(for each Low issue: "  • {id} — {description}")
+(if none: "  None")
+
+Total issues: {total_issues}
+    </output>
+
+    <ask>How would you like to proceed?
+  A) Fix ALL {total_issues} issue(s) — resolve every finding
+  B) Fix only Critical + High ({critical_count + high_count} issue(s)) — skip Medium and Low
+  C) Skip — keep the report, apply no fixes
+    </ask>
+    <action>Store user choice as {fix_choice}</action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 5 — Apply fixes                                            -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="5" goal="Apply fixes to test case files">
+    <check if="{fix_choice} = C">
+      <output>⏭️  No fixes applied.</output>
+      <action>STOP</action>
+    </check>
+
+    <action>Determine issues to fix:
+      Choice A → fix ALL issues
+      Choice B → fix only Critical and High issues
+    </action>
+
+    <action>For each issue selected for fixing:
+      TC-1 → re-run /aiqa-generatetestcases {suite_name} to regenerate missing files
+      TC-2 → for each AC with zero test coverage: generate at least one positive test case covering the happy-path scenario
+      TC-3 → for each AC lacking a negative test: add a test case with invalid/rejected input and the expected error response
+      TC-4 → add at least 3 edge case tests: empty input, maximum-length value, special characters (؟!@#)
+      TC-5 → if story involves auth or roles: add SQL injection, XSS payload, unauthenticated access, and RBAC denial test cases
+      TC-6 → for each test case with blank fields: fill every empty field (ID, title, steps, expected result) with accurate, story-specific content
+      TC-7 → find all "[field]", "[value]", "TBD" placeholders; replace with exact values from the story (field names, URLs, sample data)
+      TC-8 → identify vague expected results; rewrite each to state the specific outcome, UI change, or API response expected
+      TC-9 → find duplicate IDs; renumber sequentially (TC-0001, TC-0002, …)
+      TC-10 → translate any non-{reporting_language} content to {reporting_language}
+      TC-11 → add test cases for any missing applicable category (boundary, security, permissions)
+      Save the corrected MD file and regenerate XLSX from the corrected content.
+    </action>
+    <output>✍️  Fixes applied — test case files updated.</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 6 — Re-verify and show final status                        -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="6" goal="Re-verify fixed checks and report final status">
+    <action>Re-read the MD test case file</action>
+    <action>Re-run ONLY the checks that were targeted for fixing</action>
+
+    <output>
+📋 Validation Summary — /aiqa-generatetestcases
+
+(for each fixed check:)   ✅ {id} — resolved: {what was corrected}
+(for each still failing:)  ❌ {id} — still failing: {reason}
+(for each skipped check:)  ⏭️  {id} — skipped (outside selected fix scope)
+
+(if all targeted checks pass:)
+✅ All targeted issues resolved. Safe to proceed to /aiqa-generatee2e.
+
+(if some still fail:)
+⚠️ {remaining} issue(s) could not be fixed automatically.
+   Edit the test case files manually, then re-run /aiqa-generatetestcases-validate.
+    </output>
+  </step>
+</workflow>

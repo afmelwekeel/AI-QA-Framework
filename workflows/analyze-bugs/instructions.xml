@@ -1,0 +1,161 @@
+<workflow>
+  <critical>Communicate in {communication_language}</critical>
+  <critical>All bug report CONTENT must be in {reporting_language}</critical>
+  <critical>Execute ALL steps in exact order — do NOT skip steps</critical>
+  <critical>Output base path: {output_folder}/{story_id}/bug-reports/</critical>
+  <critical>SELF-REVIEW RULE: After generating bug reports, execute the quality checklist before reporting complete. Fix all failures.</critical>
+
+  <!-- STATUS ORDER (reference):
+       1. story-analyzed  2. test-cases-generated  3. e2e-generated
+       4. test-data-generated  5. tests-executed  6. bugs-analyzed  7. report-generated -->
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 1 — Resolve suite from argument or active_suite            -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="1" goal="Resolve suite name from argument or active suite in test-suites.yml">
+    <check if="suite name argument is provided">
+      <action>Set {suite_name} = the provided argument value</action>
+    </check>
+    <check if="no suite name argument is provided">
+      <action>Read TestResult/test-suites.yml</action>
+      <check if="file does not exist or active_suite is empty">
+        <output>❌ No active suite found. Run /aiqa-analyzestory --suite &lt;name&gt; first, then retry.</output>
+        <action>STOP</action>
+      </check>
+      <action>Set {suite_name} = active_suite value from TestResult/test-suites.yml</action>
+    </check>
+    <action>Read TestResult/test-suites.yml and find the suite entry where name = {suite_name}</action>
+    <check if="suite entry not found">
+      <output>❌ Suite "{suite_name}" not found in TestResult/test-suites.yml.
+Run /aiqa-analyzestory --suite {suite_name} first to register it.</output>
+      <action>STOP</action>
+    </check>
+    <action>Load from suite entry:
+      - {story_id}        = {suite_name}
+      - {current_status}  = suite status field
+    </action>
+    <output>📂 Suite: {suite_name} | Status: {current_status}</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 2 — Verify suite is ready for Phase 6                     -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="2" goal="Verify suite has reached the minimum required status; locate test artifacts">
+    <!-- Minimum required: tests-executed (rank 5) -->
+    <!-- Status ranks: story-analyzed=1, test-cases-generated=2, e2e-generated=3,
+         test-data-generated=4, tests-executed=5, bugs-analyzed=6, report-generated=7 -->
+    <check if="{current_status} rank is less than rank('tests-executed')">
+      <output>❌ Suite "{suite_name}" has not been tested yet.
+Current status  : {current_status}
+Required status : tests-executed (minimum)
+Run /aiqa-runtests first to execute the tests before analyzing bugs.</output>
+      <action>STOP</action>
+    </check>
+    <output>✅ Suite ready — status "{current_status}" satisfies minimum "tests-executed"</output>
+    <action>Locate the JUnit XML at {output_folder}/{story_id}/reports/junit.xml — report error if not found</action>
+    <action>Check {output_folder}/{story_id}/bug-reports/ for any existing bug reports — count them as {existing_bug_count}</action>
+    <output>
+      📂 Analyzing test results for suite: {suite_name}
+      Source: {output_folder}/{story_id}/reports/junit.xml
+    </output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 3 — Execute bug analysis skill                             -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="3" goal="Execute bug analysis skill">
+    <action>Execute skill: bug-analysis</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs analyze-bugs --suite "{suite_name}"</action>
+    <action>Skill reads junit.xml, triages each failure, and generates a bug report per failed test</action>
+    <action>Bug reports are saved to {output_folder}/{story_id}/bug-reports/</action>
+
+    <check if="junit.xml shows 0 failures">
+      <output>✅ No failures found in JUnit XML — no bug reports to generate.</output>
+      <action>STOP this step and skip to Step 5</action>
+    </check>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 4 — Self-review: verify artifact completeness and quality  -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="4" goal="Self-review — verify bug report completeness and quality">
+    <review>
+      <artifact-checklist>
+        <file path="{output_folder}/{story_id}/bug-reports/" required="true">
+          Bug reports folder — must contain one BUG-XXXX.md per failed test in junit.xml
+        </file>
+      </artifact-checklist>
+
+      <quality-checklist>
+        <check id="BG-1">One bug report exists for every failed test in junit.xml — no failure goes undocumented</check>
+        <check id="BG-2">Each report contains all required fields: Bug ID, عنوان المشكلة, وصف المشكلة, خطوات إعادة المشكلة, النتيجة الحالية, النتيجة المتوقعة, مستوى الخطورة, الأولوية</check>
+        <check id="BG-3">Each report includes: screenshot/video/trace paths (if available), API error details (status code + URL), console errors from the test run</check>
+        <check id="BG-4">Severity is correctly classified using these heuristics:
+          - 5xx response / login broken / payment broken → حرجة
+          - Functional flow blocked with no workaround → عالية
+          - UI defect with workaround → متوسطة
+          - Cosmetic / minor wording → منخفضة
+          NOT every bug is حرجة</check>
+        <check id="BG-5">Root cause analysis is specific — NOT generic ("unknown error", "test failed", "something went wrong")</check>
+        <check id="BG-6">Each report includes a suggested fix based on the root cause analysis</check>
+        <check id="BG-7">All bug report content is in {reporting_language}</check>
+        <check id="BG-8">Bug IDs are unique and sequential (BUG-0001, BUG-0002, …) — no duplicates</check>
+      </quality-checklist>
+
+      <fix-if-needed>
+        BG-1 → create a bug report for any undocumented failure by re-reading the junit.xml failure node
+        BG-2 → add any missing required field to each report (re-read junit.xml for the specific error message)
+        BG-3 → add attachment paths from the Playwright test-results/ folder; add console errors from junit.xml attributes
+        BG-4 → re-evaluate severity: re-read the error type and impact; downgrade inflated "حرجة" ratings
+        BG-5 → re-read the stack trace and error message; write a specific root cause (file path + line number + what went wrong)
+        BG-6 → add a concrete suggested fix for each report
+        BG-7 → translate all content to {reporting_language}
+        BG-8 → renumber any duplicate or out-of-sequence bug IDs
+        Save corrected reports before marking complete.
+      </fix-if-needed>
+    </review>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 5 — Update bug INDEX and display summary                   -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="5" goal="Update INDEX.md and display summary">
+    <action>Create or update {output_folder}/{story_id}/bug-reports/INDEX.md with a table of ALL bugs in the folder:
+      Columns: Bug ID | عنوان المشكلة | نوع الخطأ | الخطورة | الأولوية | الحالة
+    </action>
+
+    <output>
+      ✅ Phase 6 Complete — Bug Analysis Finished
+
+      📁 {output_folder}/{story_id}/bug-reports/
+
+      Bug Summary:
+      | الخطورة | العدد |
+      |---------|-------|
+      | حرجة    | {critical_count} |
+      | عالية   | {high_count}     |
+      | متوسطة  | {medium_count}   |
+      | منخفضة  | {low_count}      |
+      | **المجموع** | **{total_bug_count}** |
+
+      All bug reports verified — root causes specific, severity correctly classified.
+
+      Next step → /aiqa-generatereport to produce the QA summary (Phase 7)
+    </output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 6 — Update TestResult/test-suites.yml                     -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="6" goal="Update TestResult/test-suites.yml — mark analyze-bugs done">
+    <action>Read TestResult/test-suites.yml</action>
+    <action>Find the entry where name = {suite_name}</action>
+    <action>Update the entry:
+      - phases.analyze-bugs: done
+      - status: if current rank &lt; rank("bugs-analyzed") → set to "bugs-analyzed"; otherwise keep existing (never downgrade)
+      - updated: {current_date}
+    </action>
+    <action>Write the updated content back to TestResult/test-suites.yml</action>
+    <output>📋 test-suites.yml updated — suite "{suite_name}" → bugs-analyzed</output>
+  </step>
+</workflow>

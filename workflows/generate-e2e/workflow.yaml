@@ -1,16 +1,19 @@
 name: generate-e2e
-description: 'Scaffold Playwright Page Object + spec files for a story. Use when user says "generate e2e" or "write playwright tests" or "create test files"'
+description: 'Scaffold Playwright POM + spec for a suite (Phase 3). Use when user says "generate e2e" or runs /aiqa-generatee2e'
 
 config_source: "{project-root}/AI-QA-FRAMEWORK/config.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
+reporting_language: "{config_source}:reporting_language"
 output_folder: "{config_source}:output_folder"
+project_name: "{config_source}:project_name"
 test_mode: "{config_source}:test_mode"
 default_browser: "{config_source}:default_browser"
 
 installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/generate-e2e"
 instructions: "{installed_path}/instructions.xml"
 
-story_files: ""    # Space- or comma-separated paths to one or more story files
-suite_name: ""
-story_id: ""       # Derived from first story filename
+# Runtime variables — resolved from TestResult/test-suites.yml
+suite_name: ""     # From argument or active_suite in TestResult/test-suites.yml
+story_id: ""       # Same value as suite_name
+story_files: ""    # Loaded from suite entry in TestResult/test-suites.yml

@@ -1,15 +1,17 @@
-name: generate-report
-description: 'Aggregate all phase results into QA summary report HTML + XLSX + MD (Phase 7). Use when user says "generate report" or runs /aiqa-generatereport'
+name: generate-test-data
+description: 'Generate JSON test data files (valid, edge, security) for a suite (Phase 4). Use when user says "generate test data" or runs /aiqa-generatetestdata'
 
 config_source: "{project-root}/AI-QA-FRAMEWORK/config.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
+document_output_language: "{config_source}:document_output_language"
 reporting_language: "{config_source}:reporting_language"
 output_folder: "{config_source}:output_folder"
 project_name: "{config_source}:project_name"
-min_pass_rate: "{config_source}:min_pass_rate"
+test_users: "{config_source}:test_users"
+db_connection_string: "{config_source}:db_connection_string"
 
-installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/generate-report"
+installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/generate-test-data"
 instructions: "{installed_path}/instructions.xml"
 
 # Runtime variables — resolved from TestResult/test-suites.yml

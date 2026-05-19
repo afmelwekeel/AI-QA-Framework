@@ -10,5 +10,7 @@ output_folder: "{config_source}:output_folder"
 installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/analyze-story"
 instructions: "{installed_path}/instructions.xml"
 
-story_files: ""    # Space- or comma-separated paths to one or more story files; ask user if empty
-story_id: ""       # Derived from first story filename
+# Runtime variables
+suite_name: ""     # From --suite argument; derived from first story filename if omitted
+story_files: ""    # Space- or comma-separated paths; ask user if empty
+story_id: ""       # Same value as suite_name

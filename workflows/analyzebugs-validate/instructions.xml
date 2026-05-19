@@ -1,0 +1,189 @@
+<workflow>
+  <critical>Communicate in {communication_language}</critical>
+  <critical>All bug report content must be verified against {reporting_language}</critical>
+  <critical>Execute ALL steps in exact order</critical>
+
+  <!--
+    PURPOSE: Standalone quality gate for /aiqa-analyzebugs output.
+    Validates all bug reports in the bug-reports/ folder for completeness,
+    accuracy, and severity correctness.
+
+    SEVERITY GUIDE:
+      Critical — undocumented failures or reports missing required fields; gaps in accountability
+      High     — vague root causes or duplicate IDs; reports are misleading or unusable
+      Medium   — missing attachments, inflated severity ratings, no suggested fix
+      Low      — wrong language
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 1 — Resolve suite                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="1" goal="Resolve suite name from argument or active suite in test-suites.yml">
+    <check if="suite name argument is provided">
+      <action>Set {suite_name} = the provided argument value</action>
+    </check>
+    <check if="no suite name argument is provided">
+      <action>Read TestResult/test-suites.yml</action>
+      <check if="file does not exist or active_suite is empty">
+        <output>❌ No active suite found. Run /aiqa-analyzestory --suite &lt;name&gt; first.</output>
+        <action>STOP</action>
+      </check>
+      <action>Set {suite_name} = active_suite value from TestResult/test-suites.yml</action>
+    </check>
+    <action>Find the suite entry where name = {suite_name}</action>
+    <check if="entry not found">
+      <output>❌ Suite "{suite_name}" not found in TestResult/test-suites.yml.</output>
+      <action>STOP</action>
+    </check>
+    <action>Load: {story_id} = {suite_name}, {current_status}</action>
+    <check if="{current_status} rank is less than rank('bugs-analyzed')">
+      <output>⚠️  Suite status is "{current_status}" — bug analysis may not have run yet.
+Continuing validation; artifact checks will catch missing reports.</output>
+    </check>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 2 — Load artifacts                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="2" goal="Load bug reports and JUnit XML for cross-reference">
+    <action>Check if {output_folder}/{story_id}/reports/junit.xml exists; if so, read it and count {failed_test_count} = number of &lt;failure&gt; or &lt;error&gt; elements</action>
+    <action>List all BUG-XXXX.md files in {output_folder}/{story_id}/bug-reports/ → {bug_report_files}; count {bug_report_count}</action>
+    <action>Read each bug report file completely</action>
+    <output>📂 Validating: {output_folder}/{story_id}/bug-reports/
+Failed tests (junit.xml): {failed_test_count}
+Bug reports found       : {bug_report_count}</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 3 — Run all quality checks; collect issues with severity   -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="3" goal="Run all quality checks and collect issues">
+    <action>Initialize {issues} = []</action>
+
+    <!-- CRITICAL -->
+    <check id="BG-1" severity="Critical">One bug report exists for every failed test in junit.xml — {bug_report_count} must equal {failed_test_count}. List any failure from junit.xml that has no corresponding BUG-XXXX.md.</check>
+    <check id="BG-2" severity="Critical">Each report contains ALL required fields: Bug ID, عنوان المشكلة, وصف المشكلة, خطوات إعادة المشكلة, النتيجة الحالية, النتيجة المتوقعة, مستوى الخطورة, الأولوية. List any report with missing fields.</check>
+
+    <!-- HIGH -->
+    <check id="BG-5" severity="High">Root cause analysis is SPECIFIC in every report — NOT generic text like "unknown error", "test failed", or "something went wrong". Each RCA must include the file path, line number, and what specifically went wrong.</check>
+    <check id="BG-8" severity="High">Bug IDs are unique and sequential (BUG-0001, BUG-0002, …) — no duplicate IDs, no gaps, no out-of-sequence numbering</check>
+
+    <!-- MEDIUM -->
+    <check id="BG-3" severity="Medium">Each report includes evidence: screenshot/video/trace paths (if Playwright captured them) AND console error details from junit.xml attributes</check>
+    <check id="BG-4" severity="Medium">Severity is correctly classified — NOT every bug rated حرجة:
+      5xx response / login broken / payment broken → حرجة
+      Functional flow blocked with no workaround → عالية
+      UI defect with workaround → متوسطة
+      Cosmetic / minor wording → منخفضة</check>
+    <check id="BG-6" severity="Medium">Each report includes a concrete suggested fix based on the root cause analysis — NOT a generic "investigate further"</check>
+
+    <!-- LOW -->
+    <check id="BG-7" severity="Low">All bug report content is written in {reporting_language} — no content in another language</check>
+
+    <action>Count {critical_count}, {high_count}, {medium_count}, {low_count}</action>
+    <action>Set {total_issues} = sum of all counts</action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 4 — Present issues report and ask for fix choice           -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="4" goal="Present validation report and ask how to proceed">
+    <check if="{total_issues} = 0">
+      <output>
+✅ Validation Passed — /aiqa-analyzebugs
+
+All 8 quality checks passed. Bug reports are complete and accurate.
+Suite: {suite_name} | Reports verified: {bug_report_count}
+No issues found — safe to proceed to /aiqa-generatereport.
+      </output>
+      <action>STOP</action>
+    </check>
+
+    <output>
+╔══════════════════════════════════════════════════════════════════╗
+║   🔍 Validation Report — /aiqa-analyzebugs                       ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Suite         : {suite_name}
+Output        : {output_folder}/{story_id}/bug-reports/
+Failed tests  : {failed_test_count}
+Bug reports   : {bug_report_count}
+
+🔴 Critical ({critical_count}):
+(for each Critical issue: "  • {id} — {description}" + which reports/tests affected)
+(if none: "  None")
+
+🟠 High ({high_count}):
+(for each High issue: "  • {id} — {description}" + which reports affected)
+(if none: "  None")
+
+🟡 Medium ({medium_count}):
+(for each Medium issue: "  • {id} — {description}" + which reports affected)
+(if none: "  None")
+
+🔵 Low ({low_count}):
+(for each Low issue: "  • {id} — {description}")
+(if none: "  None")
+
+Total issues: {total_issues}
+    </output>
+
+    <ask>How would you like to proceed?
+  A) Fix ALL {total_issues} issue(s) — resolve every finding
+  B) Fix only Critical + High ({critical_count + high_count} issue(s)) — skip Medium and Low
+  C) Skip — keep the report, apply no fixes
+    </ask>
+    <action>Store user choice as {fix_choice}</action>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 5 — Apply fixes                                            -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="5" goal="Apply fixes to bug reports">
+    <check if="{fix_choice} = C">
+      <output>⏭️  No fixes applied.</output>
+      <action>STOP</action>
+    </check>
+
+    <action>Determine issues to fix:
+      Choice A → fix ALL issues
+      Choice B → fix only Critical and High issues
+    </action>
+
+    <action>For each issue selected for fixing:
+      BG-1 → for each failure in junit.xml that has no bug report: create BUG-XXXX.md now — read the failure node for error message, stack trace, and test name; fill all required sections
+      BG-2 → for each report missing required fields: re-read the junit.xml failure node for this test; populate every blank field with the actual error details
+      BG-3 → check Playwright test-results/ folder for screenshots/videos/traces matching this test; add paths to report; extract console errors from junit.xml &lt;system-err&gt; section and add them
+      BG-4 → re-evaluate severity for each inflated or wrong classification: re-read the error type and flow impact; adjust rating using the severity heuristic (حرجة/عالية/متوسطة/منخفضة)
+      BG-5 → for each report with vague RCA: re-read the full stack trace; rewrite the root cause section with: specific file path, line number, what exactly failed, and why
+      BG-6 → add a concrete suggested fix to each report that lacks one (e.g. "Update selector on line 42 of login.page.js to use getByRole('button', { name: 'تسجيل الدخول' })")
+      BG-7 → translate any non-{reporting_language} content in each report to {reporting_language}
+      BG-8 → renumber any duplicate or out-of-sequence IDs sequentially (BUG-0001, BUG-0002, …); update INDEX.md accordingly
+      Save all modified bug reports.
+    </action>
+    <output>✍️  Fixes applied — bug reports updated.</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 6 — Re-verify and show final status                        -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="6" goal="Re-verify fixed checks and report final status">
+    <action>Re-read all BUG-XXXX.md files in {output_folder}/{story_id}/bug-reports/</action>
+    <action>Re-run ONLY the checks that were targeted for fixing</action>
+
+    <output>
+📋 Validation Summary — /aiqa-analyzebugs
+
+(for each fixed check:)   ✅ {id} — resolved: {what was corrected}
+(for each still failing:)  ❌ {id} — still failing: {reason}
+(for each skipped check:)  ⏭️  {id} — skipped (outside selected fix scope)
+
+(if all targeted checks pass:)
+✅ All targeted issues resolved. Safe to proceed to /aiqa-generatereport.
+
+(if some still fail:)
+⚠️ {remaining} issue(s) could not be fixed automatically.
+   Edit the bug reports manually, then re-run /aiqa-analyzebugs-validate.
+    </output>
+  </step>
+</workflow>

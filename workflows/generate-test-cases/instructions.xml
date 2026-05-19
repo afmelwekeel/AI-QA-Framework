@@ -1,0 +1,145 @@
+<workflow>
+  <critical>Communicate in {communication_language}</critical>
+  <critical>All generated test case content must be in {reporting_language}</critical>
+  <critical>Execute ALL steps in exact order — do NOT skip steps</critical>
+  <critical>Output base path for all artifacts: {output_folder}/{story_id}/test-cases/</critical>
+  <critical>SELF-REVIEW RULE: After generating files, execute the quality checklist before reporting complete. Fix all failures before finishing.</critical>
+
+  <!-- STATUS ORDER (reference):
+       1. story-analyzed  2. test-cases-generated  3. e2e-generated
+       4. test-data-generated  5. tests-executed  6. bugs-analyzed  7. report-generated -->
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 1 — Resolve suite from argument or active_suite            -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="1" goal="Resolve suite name from argument or active suite in test-suites.yml">
+    <check if="suite name argument is provided">
+      <action>Set {suite_name} = the provided argument value</action>
+    </check>
+    <check if="no suite name argument is provided">
+      <action>Read TestResult/test-suites.yml</action>
+      <check if="file does not exist or active_suite is empty">
+        <output>❌ No active suite found. Run /aiqa-analyzestory --suite &lt;name&gt; first, then retry.</output>
+        <action>STOP</action>
+      </check>
+      <action>Set {suite_name} = active_suite value from TestResult/test-suites.yml</action>
+    </check>
+    <action>Read TestResult/test-suites.yml and find the suite entry where name = {suite_name}</action>
+    <check if="suite entry not found">
+      <output>❌ Suite "{suite_name}" not found in TestResult/test-suites.yml.
+Run /aiqa-analyzestory --suite {suite_name} first to register it.</output>
+      <action>STOP</action>
+    </check>
+    <action>Load from suite entry:
+      - {story_files}     = list of story file paths from the suite's stories field
+      - {story_id}        = {suite_name}
+      - {current_status}  = suite status field
+    </action>
+    <action>Read ALL story files in {story_files}; merge acceptance criteria into one unified set; de-duplicate identical ACs</action>
+    <action>Store {ac_count} = total number of unique acceptance criteria across all stories</action>
+    <action>Store {story_count} = number of story files in the suite</action>
+    <output>📂 Suite: {suite_name} | Status: {current_status} | Stories: {story_count} | ACs: {ac_count}</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 2 — Verify suite is ready for Phase 2                     -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="2" goal="Verify suite has reached the minimum required status">
+    <!-- Minimum required: story-analyzed (rank 1) -->
+    <!-- Status ranks: story-analyzed=1, test-cases-generated=2, e2e-generated=3,
+         test-data-generated=4, tests-executed=5, bugs-analyzed=6, report-generated=7 -->
+    <check if="{current_status} rank is 0 (not yet story-analyzed — suite exists but has no valid status)">
+      <output>❌ Suite "{suite_name}" has not been analyzed yet.
+Current status  : {current_status}
+Required status : story-analyzed (minimum)
+Run /aiqa-analyzestory --suite {suite_name} first.</output>
+      <action>STOP</action>
+    </check>
+    <output>✅ Suite ready — status "{current_status}" satisfies minimum "story-analyzed"</output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 3 — Execute test case generation skill                     -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="3" goal="Execute test case generation skill">
+    <action>Execute skill: test-case-generation</action>
+    <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-test-cases --suite "{suite_name}" --stories "{story_files}"</action>
+    <action>Skill generates output files at {output_folder}/{story_id}/test-cases/</action>
+
+    <output>
+      📝 Generating test cases for {story_count} story file(s)...
+      Suite: {suite_name}
+      ACs to cover: {ac_count}
+    </output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 4 — Self-review: verify artifact completeness and quality  -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="4" goal="Self-review — verify artifacts and test case quality">
+    <review>
+      <artifact-checklist>
+        <file path="{output_folder}/{story_id}/test-cases/{story_id}-test-cases.xlsx" required="true">XLSX test cases — RTL Arabic workbook with 17 columns</file>
+        <file path="{output_folder}/{story_id}/test-cases/{story_id}-test-cases.md"   required="true">Markdown test cases — grouped by test type</file>
+      </artifact-checklist>
+
+      <quality-checklist>
+        <check id="TC-1">Both XLSX and MD files exist at the correct paths inside {output_folder}/{story_id}/test-cases/</check>
+        <check id="TC-2">Every AC from ALL provided stories has at least one positive test case — total positive tests ≥ {ac_count}</check>
+        <check id="TC-3">Every AC has at least one negative test case covering invalid/rejected input</check>
+        <check id="TC-4">Edge case test cases are present (boundary values, empty inputs, max-length, special characters)</check>
+        <check id="TC-5">Security and permission test cases are present when the story involves authentication or roles (SQL injection, XSS, unauthenticated access, RBAC)</check>
+        <check id="TC-6">Each test case has all required fields populated — ID, title, description, preconditions, numbered steps, test data, expected result — no field is blank</check>
+        <check id="TC-7">Steps use actual field names, URLs, and values from the story — no placeholders like "[field]" or "[value]"</check>
+        <check id="TC-8">Expected results are specific and measurable — NOT vague ("يعمل بشكل صحيح" or "system works correctly")</check>
+        <check id="TC-9">No duplicate test case IDs</check>
+        <check id="TC-10">All text content is in {reporting_language}</check>
+        <check id="TC-11">Test types span the required categories: وظيفي، تحقق، حد، أمان، صلاحيات (where applicable to the story)</check>
+      </quality-checklist>
+
+      <fix-if-needed>
+        TC-2/TC-3 → add missing test cases for uncovered ACs and negative scenarios
+        TC-4 → add at least 3 edge case tests: empty input, boundary value, special characters
+        TC-5 → add security (SQL injection, XSS payloads) and permission (unauthenticated redirect, RBAC denial) cases
+        TC-6/TC-7 → fill any blank fields with accurate, story-specific content; replace all placeholders with real values
+        TC-8 → rewrite vague expected results to be specific and measurable outcomes
+        TC-9 → renumber any duplicate IDs sequentially (TC-0001, TC-0002, …)
+        TC-10 → translate all content to {reporting_language}
+        TC-11 → add missing test type categories if story warrants them
+        Save corrected files before marking complete.
+      </fix-if-needed>
+    </review>
+
+    <output>
+      ✅ Phase 2 Complete — Test Cases Generated and Verified
+
+      📊 {output_folder}/{story_id}/test-cases/{story_id}-test-cases.xlsx
+      📄 {output_folder}/{story_id}/test-cases/{story_id}-test-cases.md
+
+      Summary:
+      - Stories processed : {story_count}
+      - ACs covered       : {ac_count}
+      - Total test cases  : (count from generated MD file)
+      - Language          : {reporting_language}
+
+      ⚠️  ACs with only 1 test scenario (coverage risk): (list any, or "none")
+
+      Next step → /aiqa-generatee2e to scaffold Playwright tests (Phase 3)
+    </output>
+  </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STEP 5 — Update TestResult/test-suites.yml                     -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <step n="5" goal="Update TestResult/test-suites.yml — mark generate-test-cases done">
+    <action>Read TestResult/test-suites.yml</action>
+    <action>Find the entry where name = {suite_name}</action>
+    <action>Update the entry:
+      - phases.generate-test-cases: done
+      - status: if current rank &lt; rank("test-cases-generated") → set to "test-cases-generated"; otherwise keep existing (never downgrade)
+      - updated: {current_date}
+    </action>
+    <action>Write the updated content back to TestResult/test-suites.yml</action>
+    <output>📋 test-suites.yml updated — suite "{suite_name}" → test-cases-generated</output>
+  </step>
+</workflow>

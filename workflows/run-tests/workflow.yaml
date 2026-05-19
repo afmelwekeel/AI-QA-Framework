@@ -1,5 +1,5 @@
-name: generate-report
-description: 'Aggregate all phase results into QA summary report HTML + XLSX + MD (Phase 7). Use when user says "generate report" or runs /aiqa-generatereport'
+name: run-tests
+description: 'Execute Playwright tests one-by-one with pre-flight spec review and per-test fix loop (Phase 5). Use when user says "run tests" or runs /aiqa-runtests'
 
 config_source: "{project-root}/AI-QA-FRAMEWORK/config.yaml"
 user_name: "{config_source}:user_name"
@@ -7,9 +7,11 @@ communication_language: "{config_source}:communication_language"
 reporting_language: "{config_source}:reporting_language"
 output_folder: "{config_source}:output_folder"
 project_name: "{config_source}:project_name"
+test_mode: "{config_source}:test_mode"
+default_browser: "{config_source}:default_browser"
 min_pass_rate: "{config_source}:min_pass_rate"
 
-installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/generate-report"
+installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/run-tests"
 instructions: "{installed_path}/instructions.xml"
 
 # Runtime variables — resolved from TestResult/test-suites.yml

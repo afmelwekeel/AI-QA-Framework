@@ -1,17 +1,19 @@
-name: generate-report
-description: 'Aggregate all phase results into QA summary report HTML + XLSX + MD (Phase 7). Use when user says "generate report" or runs /aiqa-generatereport'
+name: generate-test-cases
+description: 'Generate Arabic XLSX + MD test cases for a suite (Phase 2). Use when user says "generate test cases" or runs /aiqa-generatetestcases'
 
 config_source: "{project-root}/AI-QA-FRAMEWORK/config.yaml"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
+document_output_language: "{config_source}:document_output_language"
 reporting_language: "{config_source}:reporting_language"
 output_folder: "{config_source}:output_folder"
 project_name: "{config_source}:project_name"
-min_pass_rate: "{config_source}:min_pass_rate"
 
-installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/generate-report"
+installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/generate-test-cases"
 instructions: "{installed_path}/instructions.xml"
 
 # Runtime variables — resolved from TestResult/test-suites.yml
 suite_name: ""     # From argument or active_suite in TestResult/test-suites.yml
 story_id: ""       # Same value as suite_name
+story_files: ""    # Loaded from suite entry in TestResult/test-suites.yml
+ac_count: 0        # Counted after reading story files

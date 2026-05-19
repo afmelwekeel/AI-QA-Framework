@@ -1,0 +1,13 @@
+name: analyzestory-validate
+description: 'Validate Phase 1 output: review story AST for AC completeness and scenario coverage (run after /aiqa-analyzestory)'
+
+config_source: "{project-root}/AI-QA-FRAMEWORK/config.yaml"
+user_name: "{config_source}:user_name"
+communication_language: "{config_source}:communication_language"
+
+installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/analyzestory-validate"
+instructions: "{installed_path}/instructions.xml"
+
+# Runtime variables — resolved from TestResult/test-suites.yml
+suite_name: ""     # From argument or active_suite in TestResult/test-suites.yml
+story_id: ""       # Same value as suite_name
