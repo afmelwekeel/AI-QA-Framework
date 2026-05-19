@@ -17,20 +17,58 @@ function printBanner() {
     const raw = text.replace(/\x1b\[[0-9;]*m/g, '');
     const pad = Math.max(0, width - raw.length);
     const l = Math.floor(pad / 2);
-    const r = pad - l;
-    return ' '.repeat(l) + text + ' '.repeat(r);
+    const ri = pad - l;
+    return ' '.repeat(l) + text + ' '.repeat(ri);
   };
 
-  console.log(`\n  ${c.blue}╔${'═'.repeat(W)}╗${c.reset}`);
-  console.log(`  ${c.blue}║${c.reset}${' '.repeat(W)}${c.blue}║${c.reset}`);
-  console.log(`  ${c.blue}║${c.reset}${center(`${c.cyan}${c.bold}  ✦  AI-QA-Framework  ✦${c.reset}`, W)}${c.blue}║${c.reset}`);
-  console.log(`  ${c.blue}║${c.reset}${center(`${c.magenta}${c.bold}  v${version}${c.reset}`, W)}${c.blue}║${c.reset}`);
-  console.log(`  ${c.blue}║${c.reset}${' '.repeat(W)}${c.blue}║${c.reset}`);
-  console.log(`  ${c.blue}║${c.reset}${center(`${c.dim}Universal AI QA Automation${c.reset}`, W)}${c.blue}║${c.reset}`);
-  console.log(`  ${c.blue}║${c.reset}${center(`${c.dim}npx ai-qa-framework install${c.reset}`, W)}${c.blue}║${c.reset}`);
-  console.log(`  ${c.blue}║${c.reset}${center(`${c.dim}by Ahmed Al Wakeel${c.reset}`, W)}${c.blue}║${c.reset}`);
-  console.log(`  ${c.blue}║${c.reset}${' '.repeat(W)}${c.blue}║${c.reset}`);
-  console.log(`  ${c.blue}╚${'═'.repeat(W)}╝${c.reset}\n`);
+  const b  = c.blue;  const cy = c.cyan;  const ma = c.magenta;
+  const bo = c.bold;  const di = c.dim;   const ye = c.yellow;
+  const gr = c.green; const r  = c.reset;
+
+  // Fancy ninja kid — 26 visible chars wide, 15 rows
+  const nw = 26;
+  const p = (s) => s + ' '.repeat(Math.max(0, nw - s.replace(/\x1b\[[0-9;]*m/g, '').length));
+  const ninja = [
+    p(`  ${ma}✦${r} ${ye}✦${r} ${ma}✦${r} ${ye}✦${r} ${ma}✦${r} ${ye}✦${r} ${ma}✦${r} ${ye}✦${r} ${ma}✦${r}  `),
+    p(`    ${cy}▄▄████████████▄▄${r}    `),
+    p(`   ${cy}█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█${r}   `),
+    p(`   ${cy}█${r} ${ye}◈${r}            ${ye}◈${r} ${cy}█${r}   `),
+    p(`   ${cy}█${r}${b}  ▓▓▓▓▓▓▓▓▓▓▓▓  ${r}${cy}█${r}   `),
+    p(`   ${cy}▀████████████████▀${r}   `),
+    p(`   ${b}▄██████████████████▄${r}   `),
+    p(`  ${b}▐██${r}${gr}⚡${r}${b}████████████${r}${gr}⚡${r}${b}██▌${r}  `),
+    p(`  ${b}▐█████████████████████▌${r}  `),
+    p(`  ${b}▐██${r}${ye}★${r}${b}████████████${r}${ye}★${r}${b}██▌${r}  `),
+    p(`   ${b}▀██████████████████▀${r}   `),
+    p(`     ${di}▐███▌${r}     ${di}▐███▌${r}     `),
+    p(`     ${di}▐███▌${r}     ${di}▐███▌${r}     `),
+    p(`     ${di}▀▀▀▀▀${r}     ${di}▀▀▀▀▀${r}     `),
+    p(`  ${ma}✦${r}${cy}${bo}  ─── Rayan ───  ${r}${ma}✦${r}  `),
+  ];
+
+  // banner box spans rows 0-9; rows 10-14 stay empty so ninja legs show below
+  const bannerLines = [
+    `  ${b}╔${'═'.repeat(W)}╗${r}`,
+    `  ${b}║${r}${' '.repeat(W)}${b}║${r}`,
+    `  ${b}║${r}${center(`${cy}${bo}  ✦  AI-QA-Framework  ✦${r}`, W)}${b}║${r}`,
+    `  ${b}║${r}${center(`${ma}${bo}  v${version}${r}`, W)}${b}║${r}`,
+    `  ${b}║${r}${' '.repeat(W)}${b}║${r}`,
+    `  ${b}║${r}${center(`${di}Universal AI QA Automation${r}`, W)}${b}║${r}`,
+    `  ${b}║${r}${center(`${di}npx ai-qa-framework install${r}`, W)}${b}║${r}`,
+    `  ${b}║${r}${center(`${di}by Ahmed Al Wakeel${r}`, W)}${b}║${r}`,
+    `  ${b}║${r}${' '.repeat(W)}${b}║${r}`,
+    `  ${b}╚${'═'.repeat(W)}╝${r}`,
+    ``, ``, ``, ``, ``,
+  ];
+
+  console.log('');
+  const rows = Math.max(ninja.length, bannerLines.length);
+  for (let i = 0; i < rows; i++) {
+    const left  = ninja[i]       ?? ' '.repeat(nw);
+    const right = bannerLines[i] ?? '';
+    console.log(left + right);
+  }
+  console.log('');
 }
 
 // ── Run a shell command with a spinner ───────────────────────────────────────
