@@ -99,7 +99,15 @@ You must fully embody this agent's persona and follow all activation instruction
     { path: '.github/prompts/aiqa-autorun.prompt.md',           content: autoRunPrompt(fw, 'prompt') },
     { path: '.github/prompts/aiqa-listskills.prompt.md',        content: listSkillsPrompt(fw, 'prompt') },
     { path: '.github/prompts/aiqa-listworkflows.prompt.md',     content: listWorkflowsPrompt(fw, 'prompt') },
-    { path: '.github/prompts/aiqa-reset.prompt.md',             content: resetPrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-reset.prompt.md',                          content: resetPrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-analyzeproject-validate.prompt.md',        content: analyzeProjectValidatePrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-analyzestory-validate.prompt.md',          content: analyzeStoryValidatePrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-generatetestcases-validate.prompt.md',     content: generateTestCasesValidatePrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-generatee2e-validate.prompt.md',           content: generateE2EValidatePrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-generatetestdata-validate.prompt.md',      content: generateTestDataValidatePrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-analyzebugs-validate.prompt.md',           content: analyzeBugsValidatePrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-generatereport-validate.prompt.md',        content: generateReportValidatePrompt(fw, 'prompt') },
+    { path: '.github/prompts/aiqa-validate.prompt.md',                       content: validateSmartPrompt(fw, 'prompt') },
   ];
 }
 
@@ -132,6 +140,14 @@ Follow all steps in the <activation> section of the agent file.`,
     { path: '.claude/commands/aiqa-listskills.md',        content: claudeCmd('aiqa-listskills',        fw, 'List all available QA skills', listSkillsPrompt(fw, 'claude')) },
     { path: '.claude/commands/aiqa-listworkflows.md',     content: claudeCmd('aiqa-listworkflows',     fw, 'List all available QA workflows', listWorkflowsPrompt(fw, 'claude')) },
     { path: '.claude/commands/aiqa-reset.md',             content: claudeCmd('aiqa-reset',             fw, 'Reset all test outputs for a fresh cycle', resetPrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-analyzeproject-validate.md',    content: claudeCmd('aiqa-analyzeproject-validate',    fw, 'Validate Phase 0: review project.config.json for accuracy and completeness', analyzeProjectValidatePrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-analyzestory-validate.md',      content: claudeCmd('aiqa-analyzestory-validate',      fw, 'Validate Phase 1: verify AC completeness and scenario coverage in story AST', analyzeStoryValidatePrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-generatetestcases-validate.md', content: claudeCmd('aiqa-generatetestcases-validate', fw, 'Validate Phase 2: review test case coverage, quality, and completeness', generateTestCasesValidatePrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-generatee2e-validate.md',       content: claudeCmd('aiqa-generatee2e-validate',       fw, 'Validate Phase 3: review Playwright POM and spec for correctness and URL validity', generateE2EValidatePrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-generatetestdata-validate.md',  content: claudeCmd('aiqa-generatetestdata-validate',  fw, 'Validate Phase 4: review JSON data files for correctness and field alignment', generateTestDataValidatePrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-analyzebugs-validate.md',       content: claudeCmd('aiqa-analyzebugs-validate',       fw, 'Validate Phase 6: review bug reports for completeness and severity accuracy', analyzeBugsValidatePrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-generatereport-validate.md',    content: claudeCmd('aiqa-generatereport-validate',    fw, 'Validate Phase 7: verify report accuracy, bug counts, pass rate, and quality gate', generateReportValidatePrompt(fw, 'claude')) },
+    { path: '.claude/commands/aiqa-validate.md',                   content: claudeCmd('aiqa-validate',                   fw, 'Smart validator: reads active suite status and auto-validates artifacts for that exact phase', validateSmartPrompt(fw, 'claude')) },
   ];
 }
 
@@ -153,7 +169,15 @@ function buildCursorFiles(fw) {
     { name: 'aiqa-securityscan',      desc: 'OWASP security scan',                  body: securityScanPrompt(fw, 'cursor') },
     { name: 'aiqa-accessibilityscan', desc: 'Accessibility audit',                  body: accessibilityPrompt(fw, 'cursor') },
     { name: 'aiqa-regressiontest',    desc: 'Regression test and diff baseline',    body: regressionTestPrompt(fw, 'cursor') },
-    { name: 'aiqa-autorun',           desc: 'Autonomous QA loop',                   body: autoRunPrompt(fw, 'cursor') },
+    { name: 'aiqa-autorun',                        desc: 'Autonomous QA loop',                              body: autoRunPrompt(fw, 'cursor') },
+    { name: 'aiqa-analyzeproject-validate',        desc: 'Validate Phase 0 project analysis output',         body: analyzeProjectValidatePrompt(fw, 'cursor') },
+    { name: 'aiqa-analyzestory-validate',          desc: 'Validate Phase 1 story AST output',                body: analyzeStoryValidatePrompt(fw, 'cursor') },
+    { name: 'aiqa-generatetestcases-validate',     desc: 'Validate Phase 2 test cases output',               body: generateTestCasesValidatePrompt(fw, 'cursor') },
+    { name: 'aiqa-generatee2e-validate',           desc: 'Validate Phase 3 Playwright E2E output',           body: generateE2EValidatePrompt(fw, 'cursor') },
+    { name: 'aiqa-generatetestdata-validate',      desc: 'Validate Phase 4 test data output',                body: generateTestDataValidatePrompt(fw, 'cursor') },
+    { name: 'aiqa-analyzebugs-validate',           desc: 'Validate Phase 6 bug reports output',              body: analyzeBugsValidatePrompt(fw, 'cursor') },
+    { name: 'aiqa-generatereport-validate',        desc: 'Validate Phase 7 QA reports output',               body: generateReportValidatePrompt(fw, 'cursor') },
+    { name: 'aiqa-validate',                       desc: 'Smart validator for the active suite current phase',body: validateSmartPrompt(fw, 'cursor') },
   ];
   return commands.map(c => ({
     path: `.cursor/rules/${c.name}.mdc`,
@@ -184,7 +208,15 @@ function buildWindsurfFiles(fw) {
     { name: 'aiqa-securityscan',      body: securityScanPrompt(fw, 'windsurf') },
     { name: 'aiqa-accessibilityscan', body: accessibilityPrompt(fw, 'windsurf') },
     { name: 'aiqa-regressiontest',    body: regressionTestPrompt(fw, 'windsurf') },
-    { name: 'aiqa-autorun',           body: autoRunPrompt(fw, 'windsurf') },
+    { name: 'aiqa-autorun',                    body: autoRunPrompt(fw, 'windsurf') },
+    { name: 'aiqa-analyzeproject-validate',    body: analyzeProjectValidatePrompt(fw, 'windsurf') },
+    { name: 'aiqa-analyzestory-validate',      body: analyzeStoryValidatePrompt(fw, 'windsurf') },
+    { name: 'aiqa-generatetestcases-validate', body: generateTestCasesValidatePrompt(fw, 'windsurf') },
+    { name: 'aiqa-generatee2e-validate',       body: generateE2EValidatePrompt(fw, 'windsurf') },
+    { name: 'aiqa-generatetestdata-validate',  body: generateTestDataValidatePrompt(fw, 'windsurf') },
+    { name: 'aiqa-analyzebugs-validate',       body: analyzeBugsValidatePrompt(fw, 'windsurf') },
+    { name: 'aiqa-generatereport-validate',    body: generateReportValidatePrompt(fw, 'windsurf') },
+    { name: 'aiqa-validate',                   body: validateSmartPrompt(fw, 'windsurf') },
   ];
   return commands.map(c => ({
     path: `.windsurf/rules/${c.name}.md`,
@@ -386,4 +418,63 @@ function listWorkflowsPrompt(fw, _) {
 function resetPrompt(fw, _) {
   return `${header(fw)}
 3. Follow the reset-framework prompt handler defined in the agent file`;
+}
+
+function validateWorkflow(fw, workflowId, description) {
+  return `${header(fw)}
+3. Load and read the workflow file at {project-root}/${fw}/workflows/${workflowId}/workflow.yaml
+4. Resolve all variables from the config and from TestResult/test-suites.yml (active suite)
+5. Load and follow the instructions at {project-root}/${fw}/workflows/${workflowId}/instructions.xml
+6. ${description}
+7. Report all issues found, classified by severity: Critical / High / Medium / Low
+8. Ask the user: A) Fix ALL issues  B) Fix only Critical + High  C) Skip`;
+}
+
+function analyzeProjectValidatePrompt(fw, _) {
+  return `${header(fw)}
+3. Load and read the workflow file at {project-root}/${fw}/workflows/analyzeproject-validate/workflow.yaml
+4. Load and follow the instructions at {project-root}/${fw}/workflows/analyzeproject-validate/instructions.xml
+5. Validate Phase 0 output: project.config.json accuracy, completeness, URL/auth/stack correctness
+6. Report all issues by severity and ask the user how to proceed`;
+}
+
+function analyzeStoryValidatePrompt(fw, _) {
+  return validateWorkflow(fw, 'analyzestory-validate', 'Validate Phase 1 output: story AST JSON — AC completeness, scenario coverage, risk assessment');
+}
+
+function generateTestCasesValidatePrompt(fw, _) {
+  return validateWorkflow(fw, 'generatetestcases-validate', 'Validate Phase 2 output: XLSX + MD test cases — coverage, traceability, correct severity/priority');
+}
+
+function generateE2EValidatePrompt(fw, _) {
+  return validateWorkflow(fw, 'generatee2e-validate', 'Validate Phase 3 output: Playwright POM + spec — selector quality, URL accuracy, AC traceability');
+}
+
+function generateTestDataValidatePrompt(fw, _) {
+  return validateWorkflow(fw, 'generatetestdata-validate', 'Validate Phase 4 output: JSON test data files — field alignment, boundary values, no hardcoded credentials');
+}
+
+function analyzeBugsValidatePrompt(fw, _) {
+  return validateWorkflow(fw, 'analyzebugs-validate', 'Validate Phase 6 output: bug reports — completeness, severity accuracy, RCA quality, steps to reproduce');
+}
+
+function generateReportValidatePrompt(fw, _) {
+  return validateWorkflow(fw, 'generatereport-validate', 'Validate Phase 7 output: QA reports (HTML + XLSX + MD) — pass rate accuracy, bug count, quality gate result');
+}
+
+function validateSmartPrompt(fw, _) {
+  return `${header(fw)}
+3. Load and read the workflow file at {project-root}/${fw}/workflows/validate/workflow.yaml
+4. Read TestResult/test-suites.yml to resolve the active suite and its current_status
+5. Load and follow the instructions at {project-root}/${fw}/workflows/validate/instructions.xml
+6. Automatically dispatch to the quality checklist for the active suite's current phase:
+   story-analyzed       → validate story AST (SA-1 through SA-9)
+   test-cases-generated → validate XLSX + MD test cases (TC-1 through TC-11)
+   e2e-generated        → validate Playwright POM + spec (E2E-1 through E2E-12)
+   test-data-generated  → validate JSON test data files (TD-1 through TD-8)
+   tests-executed       → validate execution results (P5-1 through P5-8)
+   bugs-analyzed        → validate bug reports (BG-1 through BG-8)
+   report-generated     → validate QA reports (QR-1 through QR-8)
+7. Report all issues found, classified by severity: Critical / High / Medium / Low
+8. Ask the user: A) Fix ALL issues  B) Fix only Critical + High  C) Skip`;
 }

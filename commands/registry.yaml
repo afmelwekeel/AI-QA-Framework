@@ -90,3 +90,44 @@ commands:
     skill: autonomous-testing
     description: Full autonomous pipeline (legacy — prefer full-workflow)
     args: []
+
+  # ── Validate Commands ────────────────────────────────────────────────────────
+  - id: analyzeproject-validate
+    workflow: analyzeproject-validate
+    description: Validate Phase 0 output — project.config.json accuracy and completeness
+    args: []
+
+  - id: analyzestory-validate
+    workflow: analyzestory-validate
+    description: Validate Phase 1 output — story AST quality and AC coverage
+    args: [{ name: suite, required: false }]
+
+  - id: generatetestcases-validate
+    workflow: generatetestcases-validate
+    description: Validate Phase 2 output — test case coverage, traceability, and quality
+    args: [{ name: suite, required: false }]
+
+  - id: generatee2e-validate
+    workflow: generatee2e-validate
+    description: Validate Phase 3 output — Playwright POM and spec correctness
+    args: [{ name: suite, required: false }]
+
+  - id: generatetestdata-validate
+    workflow: generatetestdata-validate
+    description: Validate Phase 4 output — JSON test data field alignment and completeness
+    args: [{ name: suite, required: false }]
+
+  - id: analyzebugs-validate
+    workflow: analyzebugs-validate
+    description: Validate Phase 6 output — bug report completeness and severity accuracy
+    args: [{ name: suite, required: false }]
+
+  - id: generatereport-validate
+    workflow: generatereport-validate
+    description: Validate Phase 7 output — QA report accuracy, pass rate, quality gate
+    args: [{ name: suite, required: false }]
+
+  - id: validate
+    workflow: validate
+    description: Smart validator — auto-dispatches to the checklist for the active suite's current phase
+    args: [{ name: suite, required: false }]
