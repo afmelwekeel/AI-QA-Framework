@@ -32,12 +32,21 @@ Run /aiqa-analyzestory --suite {suite_name} first to register it.</output>
       <action>STOP</action>
     </check>
     <action>Load from suite entry:
-      - {story_files}     = list of story file paths from the suite's stories field
-      - {story_id}        = {suite_name}
-      - {current_status}  = suite status field
+      - {story_files}         = list of story file paths from the suite's stories field
+      - {story_id}            = {suite_name}
+      - {current_status}      = suite status field
+      - {test_cases_parts}    = test-cases-parts field (default: 1 if absent)
     </action>
     <action>Parse {story_files} list; read ALL story files completely; merge their acceptance criteria into one unified set; store {ac_count} = total unique ACs</action>
-    <output>📂 Suite: {suite_name} | Status: {current_status} | Stories loaded from test-suites.yml</output>
+
+    <action>Load all generated test case markdown files:
+      - If {test_cases_parts} == 1 (or absent): read {output_folder}/{story_id}/test-cases/{story_id}-test-cases.md
+      - If {test_cases_parts} > 1: for each part N from 1 to {test_cases_parts}, read {output_folder}/{story_id}/test-cases/{story_id}-test-cases-partN.md
+      - Merge all test case content into {all_test_cases}; store the list of file paths as {test_case_files}
+      - If none of the expected files exist, set {all_test_cases} = null and proceed without them
+    </action>
+
+    <output>📂 Suite: {suite_name} | Status: {current_status} | Stories loaded | Test case files: {test_cases_parts} part(s)</output>
   </step>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -142,6 +151,13 @@ Run /aiqa-analyzestory --suite {suite_name} first.</output>
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <step n="5" goal="Generate E2E files using source findings from Step 4">
     <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-e2e --suite "{suite_name}" --stories "{story_files}"</action>
+    <action>If {all_test_cases} is available, use it to enrich E2E generation:
+      - Map each test case ID (TC-XXXX) from {all_test_cases} to the corresponding AC
+      - Preserve test case IDs in generated spec test() titles (e.g., 'TC-0001: title')
+      - Use the detailed steps and expected results from {all_test_cases} to write more precise test assertions
+      - When {test_cases_parts} > 1 and files are split: reference all parts in the spec file header comment
+        listing each part file path so future readers know where to find the full test case details
+    </action>
     <action>Skill generates the scaffold:
       - Page Object file: {output_folder}/{story_id}/e2e/pages/{suite_name}.page.js
       - Spec file: {output_folder}/{story_id}/e2e/tests/{suite_name}.spec.js

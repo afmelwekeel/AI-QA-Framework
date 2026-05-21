@@ -65,7 +65,11 @@ Run /aiqa-analyzestory --suite {suite_name} first.</output>
   <step n="3" goal="Execute test case generation skill">
     <action>Execute skill: test-case-generation</action>
     <action>Command: node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs generate-test-cases --suite "{suite_name}" --stories "{story_files}"</action>
-    <action>Skill generates output files at {output_folder}/{story_id}/test-cases/</action>
+    <action>Skill generates output files at {output_folder}/{story_id}/test-cases/
+      - If total test cases ≤ 50: single file set → {story_id}-test-cases.xlsx / .md / .csv
+      - If total test cases > 50: split into parts → {story_id}-test-cases-part1.xlsx, -part2.xlsx, … (same for .md and .csv)
+    </action>
+    <action>Store {part_count} = number of generated file parts (1 if not split, N otherwise)</action>
 
     <output>
       📝 Generating test cases for {story_count} story file(s)...
@@ -80,8 +84,15 @@ Run /aiqa-analyzestory --suite {suite_name} first.</output>
   <step n="4" goal="Self-review — verify artifacts and test case quality">
     <review>
       <artifact-checklist>
-        <file path="{output_folder}/{story_id}/test-cases/{story_id}-test-cases.xlsx" required="true">XLSX test cases — RTL Arabic workbook with 17 columns</file>
-        <file path="{output_folder}/{story_id}/test-cases/{story_id}-test-cases.md"   required="true">Markdown test cases — grouped by test type</file>
+        <check if="{part_count} == 1 (single file, no split)">
+          <file path="{output_folder}/{story_id}/test-cases/{story_id}-test-cases.xlsx" required="true">XLSX test cases — RTL Arabic workbook with 17 columns</file>
+          <file path="{output_folder}/{story_id}/test-cases/{story_id}-test-cases.md"   required="true">Markdown test cases — grouped by test type</file>
+        </check>
+        <check if="{part_count} > 1 (split into multiple parts)">
+          For each part N from 1 to {part_count}:
+          <file path="{output_folder}/{story_id}/test-cases/{story_id}-test-cases-partN.xlsx" required="true">XLSX part N — RTL Arabic workbook with 17 columns</file>
+          <file path="{output_folder}/{story_id}/test-cases/{story_id}-test-cases-partN.md"   required="true">Markdown part N — grouped by test type</file>
+        </check>
       </artifact-checklist>
 
       <quality-checklist>
@@ -124,6 +135,7 @@ Run /aiqa-analyzestory --suite {suite_name} first.</output>
     <action>Update the entry:
       - phases.generate-test-cases: done
       - status: if current rank &lt; rank("test-cases-generated") → set to "test-cases-generated"; otherwise keep existing (never downgrade)
+      - test-cases-parts: {part_count}   ← record number of split files so downstream phases can discover all parts
       - updated: {current_date}
     </action>
     <action>Write the updated content back to TestResult/test-suites.yml</action>
@@ -132,13 +144,20 @@ Run /aiqa-analyzestory --suite {suite_name} first.</output>
 
       ✅ Phase 2 Complete — Test Cases Generated and Verified
 
+      Generated files ({part_count} part(s)):
+      [IF {part_count} == 1]
       📊 {output_folder}/{story_id}/test-cases/{story_id}-test-cases.xlsx
       📄 {output_folder}/{story_id}/test-cases/{story_id}-test-cases.md
+      [ELSE for each part N from 1 to {part_count}]
+      📊 {output_folder}/{story_id}/test-cases/{story_id}-test-cases-partN.xlsx
+      📄 {output_folder}/{story_id}/test-cases/{story_id}-test-cases-partN.md
+      [END]
 
       Summary:
       - Stories processed : {story_count}
       - ACs covered       : {ac_count}
-      - Total test cases  : (count from generated MD file)
+      - Total test cases  : (count from generated MD file(s))
+      - File parts        : {part_count}
       - Language          : {reporting_language}
 
       ⚠️  ACs with only 1 test scenario (coverage risk): (list any, or "none")

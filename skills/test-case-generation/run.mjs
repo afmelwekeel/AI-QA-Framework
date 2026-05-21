@@ -32,9 +32,19 @@ const TC_HEADERS = [
 
 const COL_WIDTHS = [14, 30, 40, 16, 22, 22, 18, 12, 16, 38, 62, 32, 42, 22, 14, 14, 25];
 
+// Split into multiple files when test case count exceeds this threshold
+const SPLIT_THRESHOLD = 50;
+
+function chunkArray(arr, size) {
+  const chunks = [];
+  for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size));
+  return chunks;
+}
+
 /**
  * Phase 2 — Test Case Generation
- * Outputs: /test-cases/<id>.xlsx + /test-cases/<id>.md + /test-cases/<id>.csv
+ * Outputs: /test-cases/<id>-test-cases.xlsx + .md + .csv
+ * When rows > SPLIT_THRESHOLD: /test-cases/<id>-test-cases-part1.xlsx, -part2.xlsx, …
  */
 export default async function run(ctx) {
   const ast = await loadAst(ctx);
@@ -43,22 +53,67 @@ export default async function run(ctx) {
   const outDir = ctx.paths?.testCases ?? join(FRAMEWORK_ROOT, 'test-cases');
   await mkdir(outDir, { recursive: true });
 
-  const xlsxPath = join(outDir, `${ast.id}.xlsx`);
-  const mdPath   = join(outDir, `${ast.id}.md`);
-  const csvPath  = join(outDir, `${ast.id}.csv`);
+  const base = `${ast.id}-test-cases`;
 
-  await Promise.all([
-    writeXlsx(xlsxPath, ast, rows),
-    writeMd(mdPath, ast, rows),
-    writeCsv(csvPath, rows),
-  ]);
+  if (rows.length <= SPLIT_THRESHOLD) {
+    const xlsxPath = join(outDir, `${base}.xlsx`);
+    const mdPath   = join(outDir, `${base}.md`);
+    const csvPath  = join(outDir, `${base}.csv`);
 
-  console.log(`✅ Test cases generated (${rows.length} cases):`);
-  console.log(`   XLSX : ${xlsxPath}`);
-  console.log(`   MD   : ${mdPath}`);
-  console.log(`   CSV  : ${csvPath}`);
+    await Promise.all([
+      writeXlsx(xlsxPath, ast, rows),
+      writeMd(mdPath, ast, rows),
+      writeCsv(csvPath, rows),
+    ]);
 
-  return { xlsxPath, mdPath, csvPath, count: rows.length, storyId: ast.id };
+    console.log(`✅ Test cases generated (${rows.length} cases):`);
+    console.log(`   XLSX : ${xlsxPath}`);
+    console.log(`   MD   : ${mdPath}`);
+    console.log(`   CSV  : ${csvPath}`);
+
+    return {
+      xlsxPath, mdPath, csvPath,
+      xlsxPaths: [xlsxPath], mdPaths: [mdPath], csvPaths: [csvPath],
+      count: rows.length, storyId: ast.id, partCount: 1,
+    };
+  }
+
+  // Large suite — split into multiple part files
+  const chunks = chunkArray(rows, SPLIT_THRESHOLD);
+  const xlsxPaths = [], mdPaths = [], csvPaths = [];
+
+  for (let i = 0; i < chunks.length; i++) {
+    const part  = i + 1;
+    const chunk = chunks[i];
+    const opts  = { partLabel: `(Part ${part}/${chunks.length})` };
+
+    const xlsxPath = join(outDir, `${base}-part${part}.xlsx`);
+    const mdPath   = join(outDir, `${base}-part${part}.md`);
+    const csvPath  = join(outDir, `${base}-part${part}.csv`);
+
+    await Promise.all([
+      writeXlsx(xlsxPath, ast, chunk, opts),
+      writeMd(mdPath, ast, chunk, opts),
+      writeCsv(csvPath, chunk),
+    ]);
+
+    xlsxPaths.push(xlsxPath);
+    mdPaths.push(mdPath);
+    csvPaths.push(csvPath);
+
+    console.log(`✅ Part ${part}/${chunks.length} (${chunk.length} cases):`);
+    console.log(`   XLSX : ${xlsxPath}`);
+    console.log(`   MD   : ${mdPath}`);
+    console.log(`   CSV  : ${csvPath}`);
+  }
+
+  console.log(`\n📊 Total: ${rows.length} test cases across ${chunks.length} files`);
+
+  return {
+    xlsxPath: xlsxPaths[0], mdPath: mdPaths[0], csvPath: csvPaths[0],
+    xlsxPaths, mdPaths, csvPaths,
+    count: rows.length, storyId: ast.id, partCount: chunks.length,
+  };
 }
 
 // ── Data Loading ──────────────────────────────────────────────────────────────
@@ -260,7 +315,7 @@ function defaultPreconditions(type) {
 
 // ── XLSX Writer ───────────────────────────────────────────────────────────────
 
-async function writeXlsx(filePath, ast, rows) {
+async function writeXlsx(filePath, ast, rows, opts = {}) {
   let ExcelJS;
   try {
     ExcelJS = require(join(FRAMEWORK_ROOT, 'node_modules', 'exceljs'));
@@ -283,7 +338,8 @@ async function writeXlsx(filePath, ast, rows) {
 
   // ── Metadata rows ─────────────────────────────────────────────────────────
   const metaStyle = { font: { name: 'Arial', size: 10 }, alignment: { horizontal: 'right' } };
-  const m1 = ws.addRow([`المشروع: ${ast.title ?? ast.id}`, '', '', '', '', `التاريخ: ${new Date().toLocaleDateString('ar-SA')}`, '', '', '', '', '', '', '', '', '', `إجمالي الحالات: ${rows.length}`, '']);
+  const partSuffix = opts.partLabel ? ` ${opts.partLabel}` : '';
+  const m1 = ws.addRow([`المشروع: ${ast.title ?? ast.id}${partSuffix}`, '', '', '', '', `التاريخ: ${new Date().toLocaleDateString('ar-SA')}`, '', '', '', '', '', '', '', '', '', `إجمالي الحالات: ${rows.length}`, '']);
   m1.getCell(1).font  = { bold: true, name: 'Arial', size: 11, color: { argb: 'FF1F4E79' } };
   m1.getCell(6).font  = metaStyle.font;
   m1.getCell(16).font = { bold: true, name: 'Arial', size: 10 };
@@ -421,10 +477,11 @@ async function writeXlsx(filePath, ast, rows) {
 
 // ── Markdown Writer ───────────────────────────────────────────────────────────
 
-async function writeMd(filePath, ast, rows) {
+async function writeMd(filePath, ast, rows, opts = {}) {
   const date = new Date().toLocaleDateString('ar-SA');
+  const partSuffix = opts.partLabel ? ` ${opts.partLabel}` : '';
   const lines = [
-    `# حالات الاختبار — ${ast.title ?? ast.id}`,
+    `# حالات الاختبار — ${ast.title ?? ast.id}${partSuffix}`,
     '',
     `> **المشروع:** ${ast.id} | **التاريخ:** ${date} | **إجمالي الحالات:** ${rows.length}`,
     '',
