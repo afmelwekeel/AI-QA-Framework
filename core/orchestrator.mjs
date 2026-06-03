@@ -89,6 +89,16 @@ async function loadConfig() {
 async function saveConfig(cfg) {
   await mkdir(dirname(CONFIG_PATH), { recursive: true });
   await writeFile(CONFIG_PATH, JSON.stringify(cfg, null, 2), 'utf8');
+  // Write compact config for token-efficient command contexts (Fix 3)
+  const minCfg = {
+    frontend: { framework: cfg.frontend?.framework, baseUrl: cfg.frontend?.baseUrl },
+    backend:  { framework: cfg.backend?.framework,  baseUrl: cfg.backend?.baseUrl  },
+    auth:     { scheme: cfg.auth?.scheme },
+    database: { engine: cfg.database?.engine },
+    routes:   { pages: (cfg.routes?.pages ?? []).slice(0, 8) },
+  };
+  const minPath = CONFIG_PATH.replace('.json', '.min.json');
+  await writeFile(minPath, JSON.stringify(minCfg, null, 2), 'utf8');
 }
 
 async function runSkill(skillName, ctx) {

@@ -63,7 +63,7 @@ Review the spec file against **every item** in this checklist. Fix all failures 
 
 | Check | What to verify | How to fix |
 |-------|---------------|-----------|
-| `TD-1` | `testData.baseUrl` (or equivalent) matches the configured base URL in `project.config.json` | Update the testdata JSON or fix the reference |
+| `TD-1` | `testData.baseUrl` (or equivalent) matches the configured base URL in `project.config.min.json` | Update the testdata JSON or fix the reference |
 | `TD-2` | Every key used in the spec (`testData.adminUser.email`, `testData.validInputs.name`, etc.) exists in the testdata JSON | Add missing keys to the JSON; remove references to non-existent keys |
 | `TD-3` | User credentials come from `testData` or `config.yaml test_users` — NOT hardcoded strings | Replace hardcoded credentials with `testData.adminUser.email` etc. |
 | `TD-4` | `testData.loginPath`, `testData.dashboardPath` etc. are correct URL paths for this project | Update to match actual route structure |
@@ -225,67 +225,23 @@ npx playwright test --headed --grep "{test_name}" {suite_name}.spec.js
 
 ##### F3 — RECORD THE BUG REPORT
 
-Create the file `{output_folder}/{story_id}/bug-reports/BUG-{next_bug_id:04d}.md` with this exact content:
+Create the file `{output_folder}/{story_id}/bug-reports/BUG-{next_bug_id:04d}.md` using the template at `{project-root}/AI-QA-FRAMEWORK/templates/bug-report.template.md`. Fill every `{{PLACEHOLDER}}` with values from this failure:
 
-```markdown
-# BUG-{XXXX} — {test_name}
-
-> **الحالة**: مفتوح | **التاريخ**: {current_date} | **الجولة**: أثناء تنفيذ الاختبار
-
----
-
-## معلومات الخطأ
-
-| الحقل | القيمة |
+| Placeholder | Value |
 |---|---|
-| **Bug ID** | `BUG-{XXXX}` |
-| **عنوان المشكلة** | {test_name} |
-| **نوع الخطأ** | خطأ في ملف الاختبار / خطأ في الكود المصدري |
-| **الملف المُعدَّل** | {path_of_the_file_you_edited_in_F2} |
-| **مستوى الخطورة** | حرجة / عالية / متوسطة / منخفضة |
-| **الأولوية** | عالية / متوسطة / منخفضة |
-
----
-
-## وصف الخطأ
-
-```
-{full_error_message_from_F1}
-```
-
----
-
-## تشخيص السبب الجذري
-
-{specific root cause from F1 — never write "unknown error" or "test failed"}
-
----
-
-## الإصلاح المُطبَّق
-
-{description of the fix you applied in F2}
-
-```javascript
-// قبل الإصلاح (Before):
-{old_code_snippet}
-
-// بعد الإصلاح (After):
-{new_code_snippet}
-```
-
----
-
-## سجل التتبع (Stack Trace)
-
-<details>
-<summary>عرض سجل التتبع</summary>
-
-```
-{full_stack_trace}
-```
-
-</details>
-```
+| `{{BUG_ID}}` | `BUG-{XXXX}` (zero-padded) |
+| `{{TITLE}}` | `{test_name}` |
+| `{{DATE}}` | `{current_date}` |
+| `{{TYPE}}` | `خطأ في ملف الاختبار` or `خطأ في الكود المصدري` (from F1) |
+| `{{MODIFIED_FILE}}` | path of the file edited in F2 |
+| `{{SEVERITY}}` | حرجة / عالية / متوسطة / منخفضة |
+| `{{PRIORITY}}` | عالية / متوسطة / منخفضة |
+| `{{ERROR_MESSAGE}}` | full error message from F1 |
+| `{{ROOT_CAUSE}}` | specific root cause — never write "unknown error" |
+| `{{FIX_DESCRIPTION}}` | description of the change made in F2 |
+| `{{OLD_CODE}}` | code snippet before the fix |
+| `{{NEW_CODE}}` | code snippet after the fix |
+| `{{STACK_TRACE}}` | full stack trace |
 
 Then increment `{next_bug_id}` by 1.
 
