@@ -6,6 +6,23 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [2.11.10] — 2026-06-04
+
+### Performance
+
+#### `/aiqa-runtests` — token optimization (~495 lines removed)
+
+- **`workflows/run-tests/instructions.xml`** rewritten from 357 → 211 lines (−41%):
+  - Pre-flight checklist (Step 4): converted 23 verbose `<check>` blocks + separate `<fix-if-needed>` section into a compact pipe-separated `<checks>` list — preserves all 23 check IDs and descriptions; removes redundant "how to fix" prose Claude can infer
+  - Failure protocol (Step 6): F1–F6 condensed from ~90 lines of gated sub-steps into ~30 compact lines; removed per-step `✋ GATE` markers (enforcement maintained by top-level `<critical>` rule)
+  - Self-review (Step 8): quality checklist + fix-if-needed compressed from ~50 lines to ~18 lines using pipe-separated format
+  - Removed all decorative XML divider comments (`<!-- ═══ -->`) and the redundant `<!-- STATUS ORDER -->` reference comment
+  - Merged 6 header `<critical>` blocks into 2; removed Step 6's duplicate `<critical>` that restated the header rule
+  - All functionality preserved: same steps, same commands, same check IDs, same bug report structure, same output format
+- **`skills/test-execution/prompt.md`** replaced from 358 → 9 lines: was a full duplicate of the workflow instructions; now a stub that delegates to `instructions.xml` — eliminates double-loading when skill is invoked directly
+
+---
+
 ## [2.11.7] — 2026-05-19
 
 ### Enhanced
