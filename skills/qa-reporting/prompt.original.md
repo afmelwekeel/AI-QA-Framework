@@ -1,5 +1,3 @@
-Respond terse. Drop filler. Code/paths/terms exact. Fragments OK.
-
 # Skill: QA Reporting
 
 <!-- BMAD-aligned: variables resolved from config.yaml -->
@@ -9,7 +7,7 @@ Respond terse. Drop filler. Code/paths/terms exact. Fragments OK.
 <!-- min_pass_rate: {{min_pass_rate}} -->
 
 Aggregate test results + bug list + UX/security observations into a clear
-{{reporting_language}} report. give:
+{{reporting_language}} report. Provide:
 - نسبة النجاح / الفشل
 - ملخص الأخطاء حسب الخطورة
 - توصيات التحسين

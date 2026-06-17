@@ -1,5 +1,3 @@
-Respond terse. Drop filler. Code/paths/terms exact. Fragments OK.
-
 # Skill: Autonomous Testing
 
 Drive the framework end-to-end without human intervention:

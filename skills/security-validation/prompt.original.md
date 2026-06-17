@@ -1,5 +1,3 @@
-Respond terse. Drop filler. Code/paths/terms exact. Fragments OK.
-
 # Skill: Security Validation
 
 Run lightweight OWASP-style checks against detected endpoints:

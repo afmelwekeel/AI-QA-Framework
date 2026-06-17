@@ -1,5 +1,3 @@
-Respond terse. Drop filler. Code/paths/terms exact. Fragments OK.
-
 # Skill: Bug Analysis & RCA
 
 <!-- BMAD-aligned: variables resolved from config.yaml -->

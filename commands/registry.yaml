@@ -131,3 +131,29 @@ commands:
     workflow: validate
     description: Smart validator — auto-dispatches to the checklist for the active suite's current phase
     args: [{ name: suite, required: false }]
+
+  # ── Token Minimization ──────────────────────────────────────────────────────
+  - id: aiqa-terse
+    description: Switch terse output mode level (lite | full | ultra | off)
+    args: [{ name: level, required: false, default: full }]
+    notes: >
+      Handled by hooks/prompt-submit.js. No skill script — the hook intercepts
+      /aiqa-terse commands and updates the .aiqa-terse-active flag file.
+
+  - id: aiqa-tokenstats
+    script: core/token-stats.mjs
+    description: Show token usage + savings for current session; --all for lifetime; --since 7d for window
+    args:
+      - { name: session-file, required: false }
+      - { name: all,          required: false, flag: true }
+      - { name: since,        required: false }
+      - { name: share,        required: false, flag: true }
+    notes: >
+      Intercepted by hooks/prompt-submit.js as decision:block — runs token-stats.mjs
+      and returns stats immediately without an AI round-trip.
+
+  - id: aiqa-terse-help
+    description: Show terse mode quick-reference card
+    args: []
+    notes: >
+      One-shot display. Handled inline by qae.md persona. No mode change, no flag write.

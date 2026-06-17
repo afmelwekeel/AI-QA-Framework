@@ -1,6 +1,6 @@
 {
   "name": "ai-qa-framework",
-  "version": "2.11.10",
+  "version": "2.12.0",
   "type": "module",
   "description": "Universal AI QA Automation Framework — project-agnostic, enterprise-grade. Install with npx ai-qa-framework install.",
   "license": "MIT",
@@ -38,8 +38,11 @@
     "core/orchestrator.mjs",
     "core/autonomous-loop.mjs",
     "core/ARCHITECTURE.md",
+    "core/compress-prompts.mjs",
+    "core/token-stats.mjs",
     "agents/",
     "skills/",
+    "hooks/",
     "workflows/",
     "templates/",
     "rules/",
@@ -50,6 +53,7 @@
     "_config/",
     "_memory/",
     "config.yaml",
+    "CLAUDE.md",
     "playwright.config.js",
     "README.md",
     "LICENSE"

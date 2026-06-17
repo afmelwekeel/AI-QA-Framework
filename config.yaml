@@ -51,3 +51,10 @@ db_role_column: "role"             # column that stores the user role (admin / m
 # Saved test users — populated by /aiqa-fetchtestusers
 # Format: { role, username, password, notes }
 test_users: []
+
+# ── Token Minimization ────────────────────────────────────────────────────────
+# Terse mode reduces conversational output tokens ~65% without affecting QA artifacts.
+# Options: off | lite | full | ultra
+# Override per-session: /aiqa-terse lite|full|ultra|off
+# Override via env:     AIQA_TERSE_MODE=ultra
+terse_mode: full

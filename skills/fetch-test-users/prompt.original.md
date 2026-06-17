@@ -1,5 +1,3 @@
-Respond terse. Drop filler. Code/paths/terms exact. Fragments OK.
-
 # Skill: fetch-test-users
 
 ## Purpose
@@ -27,9 +25,9 @@ If one or more story files were provided (as arguments or via `/aiqa-fetchtestus
 
 1. Read **each** story file fully.
 2. Identify every **actor / role** mentioned using these patterns:
-- `as an <role>` / `as a <role>` (formal user story format)
-- Role keywords in acceptance criteria: *admin, manager, supervisor, agent, editor, viewer, guest, customer, owner, operator, employee, staff, reviewer, regular user*
-- Permission statements: "only admins can…", "managers must approve…", "guests should not see…"
+   - `as an <role>` / `as a <role>` (formal user story format)
+   - Role keywords in acceptance criteria: *admin, manager, supervisor, agent, editor, viewer, guest, customer, owner, operator, employee, staff, reviewer, regular user*
+   - Permission statements: "only admins can…", "managers must approve…", "guests should not see…"
 3. De-duplicate and normalise role names (e.g. "system administrator" → "admin", "regular user" → "user").
 4. Display the list:
 
@@ -63,7 +61,7 @@ How would you like to provide test users?
   B) Enter users manually one by one
 ```
 
-If user chooses **A** and `{db_connection_string}` is empty, ask the user to give:
+If user chooses **A** and `{db_connection_string}` is empty, ask the user to provide:
 - Database connection string
 - Users table name (default: `users`)
 - Username column (default: `email`)
@@ -74,14 +72,14 @@ Save all provided values to `config.yaml` before continuing.
 
 ### Step 4a — Fetch from database (Path A)
 
-run the orchestrator skill to run the database query:
+Execute the orchestrator skill to run the database query:
 ```
 node {project-root}/AI-QA-FRAMEWORK/core/orchestrator.mjs fetch-test-users [--stories "path1 path2"]
 ```
 
 The skill will:
 1. Detect DB type from the connection string
-2. Generate and run a parameterised query filtered by the required roles
+2. Generate and execute a parameterised query filtered by the required roles
 3. Return a JSON result with `{ rolesNeeded, usersFound, source, dbType, count }`
 
 Display results as a table:

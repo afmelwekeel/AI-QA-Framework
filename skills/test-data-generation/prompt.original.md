@@ -1,5 +1,3 @@
-Respond terse. Drop filler. Code/paths/terms exact. Fragments OK.
-
 # Test Data Generation Prompt
 
 ## Role
@@ -28,7 +26,7 @@ Generate a `test-data/{{suite}}.testdata.json` file containing:
 
 ## User Review Checkpoint (MANDATORY — do NOT skip)
 
-After generating the data files, run this review loop **for each generated file**:
+After generating the data files, execute this review loop **for each generated file**:
 
 ### Step R1 — Display the file content
 Show the **full content** of the generated file to the user inside a code block. Do not summarize — show the raw JSON.
