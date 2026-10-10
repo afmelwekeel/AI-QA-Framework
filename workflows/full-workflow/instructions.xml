@@ -1,5 +1,5 @@
 <workflow>
-  <critical>Communicate in {communication_language}. Chains the 3 prompts. Each prompt keeps its own rules and stop point; between prompts the user confirms. Browser visible unless the user asked for headless.</critical>
+  <critical>Communicate in {communication_language}. Chains the 3 prompts. Each prompt keeps its own rules and stop point; between prompts the user confirms. Every step ends with its own mandatory REVIEW AND FIX pass (find issues in its own output, fix them, report found/fixed/open) before the confirmation question. Browser visible unless the user asked for headless.</critical>
 
   <step n="1" goal="Setup check">
     <action>If {output_folder}/EXECUTION-GUIDE.md is missing or has TODO values → run workflows/setup first</action>

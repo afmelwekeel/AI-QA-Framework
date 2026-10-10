@@ -24,9 +24,22 @@ You are a senior {tech_stack} developer on {project_name}. Read {code_standards_
      allowed it), then repeat the reproduction steps and confirm the expected result
 6. Update the BUG FILE: Status = Fixed, fill "Fix Notes" (root cause, files changed, how verified).
    Update its row in BUGS-INDEX.md to Fixed. If the fix failed: Status = "Fix Failed" with notes.
-7. Commit on the current branch with a message that references the bug ID (type(scope): summary),
-   then tell me what changed. Stop. Do not fix other bugs.
+7. REVIEW AND FIX (mandatory, before the commit). Review your own change as a code reviewer:
+   run `git diff` against the "Review checklist" below. Fix each issue, then re-run build, tests
+   and the reproduction. Max 2 rounds.
+8. Commit on the current branch with a message that references the bug ID (type(scope): summary),
+   then tell me what changed and the review result: issues found / fixed / left open. Stop.
+   Do not fix other bugs.
 ```
+
+## Review checklist (step 7)
+
+- The diff contains only the fix and its test. No debug code, no unrelated or formatting-only changes.
+- Root cause is fixed, not the symptom. The same defect pattern elsewhere is reported, not fixed.
+- Follows {code_standards_files}; no secrets; no edits in {ignored_paths}; no edited old migration.
+- Edge cases of the bug area (null/empty, roles, boundaries) are not broken by the change.
+- Build and tests pass; the new test fails without the fix. Reproduction now shows the expected result.
+- Bug file: Status, Fix Notes (root cause, files, verification) and BUGS-INDEX.md row are accurate.
 
 ## Rules the prompt enforces
 

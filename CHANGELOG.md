@@ -6,6 +6,11 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Added
+- Mandatory **REVIEW AND FIX** step at the end of setup, write-test-cases, execute-tests (incl. `--summary`) and fix-bug prompts, skills and workflows. Each reviews its own output against a checklist, fixes issues (max 2 rounds) and reports found / fixed / open. In fix-bug the review runs before the commit.
+
 ## [3.0.0] — 2026-10-10
 
 ### Breaking — framework rebuilt on 3 prompts

@@ -38,9 +38,25 @@ Write test-case text in {document_output_language}. Use exact UI texts in their 
 8. Record every mismatch between story/requirement and code as a gap G-<SCREEN>-<n>. Mark
    "likely defect" with severity when the code contradicts an AC. Do not hide gaps.
 9. Add the new files to INDEX.md (table row: story, screen, route, file link, case count, status
-   "Ready" + the file's gap table). Then give me the file list and case counts. Stop.
-   Output is Markdown only. No XLSX, no generated spec files.
+   "Ready" + the file's gap table).
+10. REVIEW AND FIX (mandatory, before the final report). Re-read every file you wrote, as a
+    reviewer, against the "Review checklist" below. Fix each issue in the file itself, then
+    re-check the fixed parts. Max 2 rounds. Fix only what you wrote; never touch app code.
+11. Give me the file list, case counts and the review result: issues found / fixed / left open
+    (with reason). Stop.
+    Output is Markdown only. No XLSX, no generated spec files.
 ```
+
+## Review checklist (step 10)
+
+- Every AC has ≥1 case; every guide role touching the screen has an RBAC case.
+- Every UI text, element id, route, role is traceable to code, story or DB. Remove or correct invented ones.
+- Case ids unique, sequential, correctly formatted. No duplicate or near-duplicate cases.
+- Each case has all fields; expected result is checkable; preconditions name exact user and placeholder.
+- Steps are in the right order and reproducible by someone who does not know the app.
+- Data-changing cases state clean-up. Cases needing a missing role carry ⚠.
+- Gaps G-… recorded for every story↔code mismatch; nothing in "Deferred" is also tested as a bug.
+- INDEX.md row matches the file: path, case count, status, gaps.
 
 ## Quality bar (self-check before finishing)
 

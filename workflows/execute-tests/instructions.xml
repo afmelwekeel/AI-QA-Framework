@@ -3,7 +3,7 @@
 
   <step n="1" goal="Pre-check">
     <action>Confirm {output_folder}/EXECUTION-GUIDE.md exists and has no TODO values; else tell the user to run /aiqa-setup and stop</action>
-    <action>Test file = command argument; if none, list files in {output_folder}/test-cases/ with status from INDEX.md and ask. If argument is --summary go to step 4</action>
+    <action>Test file = command argument; if none, list files in {output_folder}/test-cases/ with status from INDEX.md and ask. If argument is --summary go to step 5</action>
     <action>Browser mode: visible by default. Ask nothing unless config show_browser is false or user said headless</action>
   </step>
 
@@ -12,11 +12,15 @@
     <action>Write the results file after EACH case. Resume if a results file exists</action>
   </step>
 
-  <step n="3" goal="Summary and stop">
-    <output>Pass / Fail / Blocked / Not Run counts · Blocked reasons · bugs created (ID, severity, title). Pass-rate vs {min_pass_rate}%. Next: /aiqa-fixbug &lt;bug-file&gt; or the next test file. Do not start another file.</output>
+  <step n="3" goal="Review and fix (mandatory)">
+    <action>Run the "Review checklist" in execute-tests.prompt.md over the results file, screenshots and bug files; fix issues (re-run doubtful cases); max 2 rounds. No app changes</action>
   </step>
 
-  <step n="4" goal="Final session (only with --summary)">
+  <step n="4" goal="Summary and stop">
+    <output>Pass / Fail / Blocked / Not Run counts · Blocked reasons · bugs created (ID, severity, title) · review result (found / fixed / open). Pass-rate vs {min_pass_rate}%. Next: /aiqa-fixbug &lt;bug-file&gt; or the next test file. Do not start another file.</output>
+  </step>
+
+  <step n="5" goal="Final session (only with --summary)">
     <action>Run the "Final session variant" in execute-tests.prompt.md: restore check with read-only queries, then write test-results/SUMMARY.md from templates/SUMMARY.template.md</action>
   </step>
 </workflow>

@@ -42,24 +42,66 @@ Two helpers support them:
 | `/aiqa-setup` | Run **once per project**. Collects facts about your app (URL, login, test users, database) and writes the guide the 3 prompts read. |
 | `/aiqa-fullworkflow` | Chains write → execute → fix and asks you before each step. |
 
+### The big picture
+
+```mermaid
+flowchart TD
+    A([You: user story file]) --> S
+
+    S["<b>1. /aiqa-setup</b><br/>once per project"]
+    S -->|writes| G[("EXECUTION-GUIDE.md<br/>INDEX.md<br/>DATABASE-TABLES.md")]
+    G --> R{{"You review the guide<br/>say OK"}}
+    R --> W
+
+    W["<b>2. /aiqa-writetestcases</b> &lt;story&gt;"]
+    W -->|one file per screen| TC[/"test-cases/story/<br/>01-screen.test-cases.md"/]
+    TC --> R2{{"You review<br/>the test cases"}}
+    R2 --> E
+
+    E["<b>3. /aiqa-executetests</b> &lt;test-file&gt;<br/>live browser, you watch"]
+    E --> RES[/"results.md + screenshots"/]
+    E --> Q{Real defect<br/>found?}
+    Q -->|yes| BUG[/"bugs/BUG-*.md"/]
+    Q -->|no| MORE
+    BUG --> F["<b>4. /aiqa-fixbug</b> &lt;bug-file&gt;<br/>reproduce, fix, verify, commit"]
+    F -->|re-run the file| E
+    RES --> MORE{More test<br/>files?}
+    MORE -->|yes, new session| E
+    MORE -->|no| SUM["<b>5. /aiqa-executetests --summary</b>"]
+    SUM --> DONE([SUMMARY.md])
+
+    FW["/aiqa-fullworkflow &lt;story&gt;<br/>runs steps 2 to 5 and asks before each"] -.-> W
+
+    classDef you fill:#fff3cd,stroke:#b58900,color:#000;
+    classDef cmd fill:#d1e7ff,stroke:#0b5ed7,color:#000;
+    classDef out fill:#e2f5e9,stroke:#198754,color:#000;
+    class A,R,R2 you;
+    class S,W,E,F,SUM,FW cmd;
+    class G,TC,RES,BUG,DONE out;
 ```
-/aiqa-setup  (once)
-     │  EXECUTION-GUIDE.md · INDEX.md · DATABASE-TABLES.md
-     ▼
-/aiqa-writetestcases <story>  ──►  test-cases/<story>/01-screen.test-cases.md
-     ▼
-/aiqa-executetests <file>     ──►  test-results/<story>/01-screen.results.md  +  screenshots
-     │                             test-results/bugs/BUG-*.md
-     ▼
-/aiqa-fixbug <bug-file>       ──►  fix + tests + commit
-     ▼
-/aiqa-executetests --summary  ──►  test-results/SUMMARY.md
+
+**Legend:** yellow = you, blue = command Rayan runs, green = file created.
+
+### Which command do I need?
+
+```mermaid
+flowchart LR
+    Start([What do you want?]) --> N{First time<br/>in this project?}
+    N -->|yes| A["/aiqa-setup"]
+    N -->|no| B{What do you have?}
+    B -->|a story file| C["/aiqa-writetestcases"]
+    B -->|a test-case file| D["/aiqa-executetests"]
+    B -->|a bug file| E["/aiqa-fixbug"]
+    B -->|all tests executed| F["/aiqa-executetests --summary"]
+    B -->|just a story,<br/>want everything| G["/aiqa-fullworkflow"]
+    B -->|not sure| H["/aiqa-help"]
 ```
 
 Key ideas:
 
 - **Tests run live.** Rayan drives a real browser through the Playwright MCP server. **The browser is visible by default.** You watch every click.
 - **No generated test scripts, no Excel.** Test cases and results are Markdown files you can read, review and commit.
+- **Self-review after every step.** Setup, write, execute and fix each end with a mandatory review pass: Rayan re-reads its own output against a checklist, fixes the issues it finds (max 2 rounds) and reports *found / fixed / open*. Example: missing AC coverage or invented UI texts in test cases, false Fails or incomplete bug files in results, unrelated changes in a bug-fix diff.
 - **One unit per session.** One story, one test file, one bug per run. Each command stops after its summary. This keeps the context small and the results reliable.
 - **Reads your code first.** Texts, element ids, routes and roles in the test cases come from your source, not from guesses.
 
@@ -154,6 +196,28 @@ Each file contains: header (route, roles, ACs covered) · **known gaps** between
 /aiqa-executetests TestResult/test-cases/2-1-orders/01-orders-list.test-cases.md
 ```
 
+```mermaid
+sequenceDiagram
+    actor You
+    participant Rayan
+    participant App as Your app (browser)
+    participant Files as TestResult/
+    You->>Rayan: /aiqa-executetests 01-screen.test-cases.md
+    Rayan->>App: Is the app up?
+    App-->>Rayan: yes (if no, Rayan stops and tells you)
+    Rayan->>App: Record baseline values
+    loop every test case, in order
+        Rayan->>App: Log in as the right role, run steps
+        App-->>Rayan: Actual result
+        Rayan->>Files: Append result (Pass / Fail / Blocked)
+        opt Fail
+            Rayan->>Files: Screenshot + BUG-*.md
+        end
+    end
+    Rayan->>App: Restore test data
+    Rayan-->>You: Summary, then stops
+```
+
 Rayan:
 1. Checks that the app (and database) answer. If down, it stops and tells you.
 2. Records baseline values before touching anything.
@@ -178,6 +242,15 @@ Rayan asks you only before **global changes** (for example activating another pl
 
 ```text
 /aiqa-fixbug TestResult/test-results/bugs/BUG-2-1-001-duplicate-error-under-both-fields.md
+```
+
+```mermaid
+flowchart LR
+    B[/BUG file/] --> R{Reproduce}
+    R -->|cannot| CR([Status: Cannot Reproduce, stop])
+    R -->|yes| RC[Find root cause] --> FX[Smallest fix] --> T[Build + tests] --> V{Bug gone?}
+    V -->|no| FX
+    V -->|yes| U[Update bug file + index] --> CM([Commit with bug id])
 ```
 
 Rayan reproduces the bug first. If it cannot, it sets the status to **Cannot Reproduce** and stops. Otherwise it finds the root cause, makes the smallest fix, runs your build and tests, repeats the reproduction, updates the bug file (Status = Fixed, Fix Notes) and the index, and commits with the bug id in the message.

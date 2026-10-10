@@ -6,12 +6,16 @@
     <action>Generate EXECUTION-GUIDE.md, INDEX.md, DATABASE-TABLES.md in {output_folder} from templates/</action>
   </step>
 
-  <step n="2" goal="Hard stop — user review">
+  <step n="2" goal="Review and fix (mandatory)">
+    <action>Review the three generated documents as the setup skill's REVIEW AND FIX step says; fix issues before showing the user. Max 2 rounds</action>
+  </step>
+
+  <step n="3" goal="Hard stop — user review">
     <action>Show the filled EXECUTION-GUIDE.md (URLs, users, data rules, protected settings)</action>
     <action>Ask: "Is everything correct?" WAIT for explicit confirmation. Apply corrections. Repeat until confirmed.</action>
   </step>
 
-  <step n="3" goal="Report">
+  <step n="4" goal="Report">
     <output>Files written · remaining TODO items · next: /aiqa-writetestcases &lt;story-file&gt;</output>
   </step>
 </workflow>

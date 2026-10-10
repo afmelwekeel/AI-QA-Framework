@@ -48,10 +48,28 @@ You are a QA tester for {project_name}. UI language: {ui_language} ({ui_directio
    Fill "Suspected Location" by reading the related source code ({source_roots}) and give file:line.
    If the source code is not available, write "source not available".
 9. Update the file's row in INDEX.md (status "Executed <date>", counts).
-10. When the file is done, give me a summary: Pass / Fail / Blocked / Not Run counts, the Blocked
-    cases with reasons, and the bugs created (ID, severity, title). Then stop.
+10. REVIEW AND FIX (mandatory, before the summary). Review the results file, screenshots and bug
+    files you wrote against the "Review checklist" below. Fix each issue (edit the results/bug
+    files; re-run a suspect case in the browser when the evidence is doubtful). Max 2 rounds.
+    Never change app code or data outside the guide's rules. After any re-run, clean up test rows
+    again and refresh the INDEX.md row (step 9) so counts match the corrected results.
+11. When the file is done, give me a summary: Pass / Fail / Blocked / Not Run counts, the Blocked
+    cases with reasons, the bugs created (ID, severity, title) and the review result: issues
+    found / fixed / left open. Then stop.
     Do not start another test file.
 ```
+
+## Review checklist (step 10)
+
+- Every case in the TEST FILE has exactly one result (Pass/Fail/Blocked/Not Run); counts add up.
+- Every Fail has actual result, evidence (screenshot) and a bug or known-gap reference. Every Blocked has a reason.
+- No false Fail: re-read the case's expected result and "Conventions"; if the Fail came from a wrong
+  selector, timing, wrong user or misread text, re-run the case and correct the result.
+- No false Pass: a Pass has the expected text/value actually observed, not assumed.
+- Bug files: complete per the guide format, correct severity, steps reproduce, `file:line` filled,
+  no duplicates in BUGS-INDEX.md, known gaps not filed as bugs.
+- Baseline restored and no test rows left (read-only queries). INDEX.md row and counts match.
+- Secrets masked (`****`) in every file written.
 
 ## Final session variant (after all files)
 
@@ -60,7 +78,9 @@ Read {output_folder}/EXECUTION-GUIDE.md. Do not execute test cases.
 Check with read-only queries that every baseline value is restored and that no test rows remain.
 Report any difference to me; do not fix data yourself.
 Then write {output_folder}/test-results/SUMMARY.md (totals per story and file, all bugs with severity
-from BUGS-INDEX.md, confirmed gaps). Stop.
+from BUGS-INDEX.md, confirmed gaps).
+REVIEW AND FIX: re-read SUMMARY.md against the results files and BUGS-INDEX.md. Totals, bug counts,
+severities and statuses must match the source files exactly; fix any mismatch (max 2 rounds). Stop.
 ```
 Command: `/aiqa-executetests --summary`.
 
