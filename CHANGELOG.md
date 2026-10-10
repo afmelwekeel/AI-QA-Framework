@@ -6,6 +6,11 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [3.2.0] — 2026-10-10
+
+### Changed
+- `TestResult/TEST-CASES-LOG.yaml` now has one entry per test-case file (story, file path, case count, overall file status, updated) instead of one per case. File status is derived from its cases: Pending / In Progress / Pass / Fail / Blocked. Totals count files. Per-case status stays in the test-case and results files. Prompts, skills, templates, README and reset updated to match.
+
 ## [3.1.1] — 2026-10-10
 
 ### Fixed

@@ -40,8 +40,8 @@ Write test-case text in {document_output_language}. Use exact UI texts in their 
    "likely defect" with severity when the code contradicts an AC. Do not hide gaps.
 9. Add the new files to INDEX.md (table row: story, screen, route, file link, case count, status
    "Ready" + the file's gap table).
-   Add one entry per case to {output_folder}/TEST-CASES-LOG.yaml (story, id, title, file path relative to {output_folder},
-   status "Pending", updated date) and refresh its `totals` block. Create the log from
+   Add one entry per test-case FILE (not per case) to {output_folder}/TEST-CASES-LOG.yaml (story, file path
+   relative to {output_folder}, case count, status "Pending", updated date) and refresh its `totals` block. Create the log from
    templates/TEST-CASES-LOG.template.yaml if missing. Never delete entries of other stories; if the story
    already has entries (re-write), replace only that story's entries.
 10. REVIEW AND FIX (mandatory, before the final report). Re-read every file you wrote, as a
@@ -63,8 +63,8 @@ Write test-case text in {document_output_language}. Use exact UI texts in their 
 - Data-changing cases state clean-up. Cases needing a missing role carry ⚠.
 - Gaps G-… recorded for every story↔code mismatch; nothing in "Deferred" is also tested as a bug.
 - INDEX.md row matches the file: path, case count, status, gaps.
-- TEST-CASES-LOG.yaml has exactly one entry per case (no missing, no duplicate), correct file path
-  (the path resolves), status Pending, `totals` equal to the entry count, and is valid YAML.
+- TEST-CASES-LOG.yaml has exactly one entry per test-case file (no missing, no duplicate), correct file path
+  (the path resolves), correct case count, status Pending, `totals` equal to the entry count, and is valid YAML.
 
 ## Quality bar (self-check before finishing)
 

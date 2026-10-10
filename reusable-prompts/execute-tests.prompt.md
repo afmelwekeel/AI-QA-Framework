@@ -43,8 +43,9 @@ You are a QA tester for {project_name}. UI language: {ui_language} ({ui_directio
    and every key Pass. Write the results file after EACH case (never batch) so a crash loses nothing.
    Right after each case also set its Status cell in the TEST FILE (Pending → Pass/Fail/Blocked/Not Run)
    and refresh the header "Progress" row (e.g. "12 tested / 8 pending (Pass 9 · Fail 2 · Blocked 1 · Not Run 0)").
-   In the same moment update the case entry in {output_folder}/TEST-CASES-LOG.yaml (status + updated date)
-   and the `totals` block. Test file and log must always carry the same Status.
+   In the same moment update this file's entry in {output_folder}/TEST-CASES-LOG.yaml: recompute the
+   file status from its cases (Pending / In Progress / Pass / Fail / Blocked, see the template header),
+   set the updated date and refresh `totals`. The log holds file-level status only, never per-case rows.
    Change only Status cells and the Progress row in the TEST FILE; never edit steps or expected results.
    If a results file already exists, resume: skip cases already Pass/Fail/Blocked, run the rest.
    Cases still Pending in the TEST FILE or the log but with a result in the results file: copy the
@@ -71,8 +72,9 @@ You are a QA tester for {project_name}. UI language: {ui_language} ({ui_directio
 - Every case in the TEST FILE has exactly one result (Pass/Fail/Blocked/Not Run); counts add up.
 - Every Status cell in the TEST FILE equals the results file's value; none is still Pending (a case
   not run on purpose is "Not Run"); the Progress row matches the totals. Steps/expected text unchanged.
-- Every case of this file has an entry in TEST-CASES-LOG.yaml with the same Status as the test file and the
-  results file; the log's `totals` equal the count of its entries; the file is valid YAML.
+- This file has exactly one entry in TEST-CASES-LOG.yaml whose status matches the final result of its cases
+  (Fail if any Fail, else Blocked if any Blocked/Not Run, else Pass); the log's `totals` equal the count
+  of its entries; the file is valid YAML.
 - Every Fail has actual result, evidence (screenshot) and a bug or known-gap reference. Every Blocked has a reason.
 - No false Fail: re-read the case's expected result and "Conventions"; if the Fail came from a wrong
   selector, timing, wrong user or misread text, re-run the case and correct the result.
