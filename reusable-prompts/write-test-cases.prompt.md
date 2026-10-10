@@ -1,0 +1,51 @@
+# Prompt 2 — Write the test cases for one story
+
+Command: `/aiqa-writetestcases <story-file>` · One new session per story.
+Generic: no project text. Project facts come from the **Execution Guide**, **INDEX**, **DATABASE-TABLES**.
+
+```text
+STORY FILE: {{story_file}}        # or several files of the same feature: merge them into one story folder
+
+You are a QA analyst for {project_name}. UI language: {ui_language} ({ui_direction}).
+Write test-case text in {document_output_language}. Use exact UI texts in their original language.
+
+1. Read {output_folder}/EXECUTION-GUIDE.md, {output_folder}/INDEX.md, {output_folder}/DATABASE-TABLES.md
+   and the STORY FILE (acceptance criteria, tasks, dev notes, file list, review notes).
+   If the guide is missing or has "<TODO>" values, stop and tell me to run /aiqa-setup.
+2. Read the requirement the story implements and its epic/parent (paths in the story, or in
+   {project_knowledge}). Note requirement ids and exact quotes.
+3. Read every source file in the story "File List" (controllers/handlers, views/components with inline
+   JS, models, menu/route config). Take exact UI texts, element ids, routes and roles from the code.
+   If there is no file list, locate the code from routes named in the story.
+4. Use an existing file in {output_folder}/test-cases/ as the format template. If none exists, use
+   templates/test-cases.template.md. Keep these sections: header table, "Known story/requirement ↔
+   code gaps", "Deferred / not in scope", "Conventions" (exact texts), "Test data", test-case tables
+   by section, "Playwright notes".
+5. Cover, per screen, every applicable section:
+   RBAC / access · functional (happy path) · validation (required, format, length, boundary,
+   duplicate) · data (DB effect, counts, state change) · negative / error handling ·
+   export / print · UI / layout / direction / responsive · security (injection, XSS, IDOR, CSRF
+   token, forced browsing) · accessibility basics (labels, keyboard, focus) · regression of
+   neighbouring screens. Trace each case to an AC id. Every AC has ≥1 case; say so in the header.
+6. Write one file per screen to {output_folder}/test-cases/<story-folder>/<NN>-<screen>.test-cases.md.
+   <story-folder> = story file name without extension. Case ids: TC-<E><S>-<SCREEN>-<NNN>
+   (epic, story, 2-4 letter screen code, 3-digit number). Use only users and placeholders defined
+   in the guide. Mark a case that needs a missing role with ⚠.
+   Each case: id · title · preconditions · user/role · steps · expected result (exact text) ·
+   priority (Critical/High/Medium/Low) · type · AC/requirement ref.
+   Split files above ~60 cases into parts.
+7. Verify test data with read-only queries only. Do not change data or code.
+8. Record every mismatch between story/requirement and code as a gap G-<SCREEN>-<n>. Mark
+   "likely defect" with severity when the code contradicts an AC. Do not hide gaps.
+9. Add the new files to INDEX.md (table row: story, screen, route, file link, case count, status
+   "Ready" + the file's gap table). Then give me the file list and case counts. Stop.
+   Output is Markdown only. No XLSX, no generated spec files.
+```
+
+## Quality bar (self-check before finishing)
+
+- Each AC → ≥1 case. Each role in the guide that touches the screen → ≥1 RBAC case.
+- No invented texts, ids, routes: all from code, story or DB.
+- Expected results are checkable (exact text, count, URL, DB value).
+- Preconditions name the exact test user and placeholder.
+- Data-changing cases state their clean-up.

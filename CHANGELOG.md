@@ -6,6 +6,33 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [3.0.0] — 2026-10-10
+
+### Breaking — framework rebuilt on 3 prompts
+
+Based on a field-proven reference (test-cases / execution guide / bug files). The 9-phase pipeline is gone.
+
+#### Added
+- `reusable-prompts/write-test-cases.prompt.md`, `execute-tests.prompt.md`, `fix-bug.prompt.md` — generic versions of the 3 reference prompts (resume support, flaky re-run, 2-attempt locate limit, duplicate-bug check, headless only on request).
+- Commands: `/aiqa-setup`, `/aiqa-writetestcases`, `/aiqa-executetests` (`--headless`, `--summary`), `/aiqa-fixbug`, `/aiqa-fullworkflow` (chains them with user confirmation).
+- Skills `project-setup`, `write-test-cases`, `execute-tests`, `fix-bug` + `skills/_shared/prompt-skill.mjs`.
+- Templates: EXECUTION-GUIDE, INDEX, DATABASE-TABLES, test-cases, results, bug-report, BUGS-INDEX, SUMMARY.
+- `config.yaml`: `show_browser`, `viewport`, `app_url`, `ui_language`, `ui_direction`, `source_roots`, `ignored_paths`, `code_standards_files`, `tech_stack`, `build_command`, `test_command`, `restart_command`, `allow_ai_restart`.
+
+#### Changed
+- Tests run live through the Playwright MCP browser, **visible by default**.
+- Output layout: `test-cases/<story>/`, `test-results/<story>/`, `test-results/bugs/`, `SUMMARY.md`.
+- `agents/qae.md`, `qae-compact.md`, `qae-init.md`, `bin/utils/init.mjs`, registry, manifests, `rules/quality-gates.yaml`, README, CLAUDE.md rewritten.
+- Installer: single `core` module.
+
+#### Removed
+- XLSX output and `exceljs`; generated Playwright POM/spec and test-data files; validate workflows; skills `user-story-analysis`, `test-case-generation`, `playwright-generation`, `test-data-generation`, `test-execution`, `bug-analysis`, `qa-reporting`, `bug-fixing`, `fetch-test-users` (merged into setup), `security-validation`, `accessibility-validation`, `regression-testing`, `autonomous-testing`; `@axe-core/playwright`.
+
+#### Pending (needs owner approval — protected files)
+- `core/orchestrator.mjs` `COMMAND_TO_SKILL` still maps the removed v2 skills; new commands are not routed through the node CLI yet. `core/autonomous-loop.mjs` and `core/compress-prompts.mjs` list removed skills.
+
+---
+
 ## [2.11.10] — 2026-06-04
 
 ### Performance

@@ -1,0 +1,10 @@
+{
+  "id": "fix-bug",
+  "name": "Fix Bug",
+  "version": "3.0.0",
+  "description": "Reproduce one bug, make the smallest fix, verify (build + tests + repro), update bug file and index, commit.",
+  "inputs": { "bug": "bug file path (required)" },
+  "outputs": { "bugFile": "Status + Fix Notes updated", "index": "BUGS-INDEX.md row", "commit": "git commit referencing bug id" },
+  "prompt": "reusable-prompts/fix-bug.prompt.md",
+  "mcp": { "tool": "qa.fix_bug" }
+}

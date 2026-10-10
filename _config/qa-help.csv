@@ -1,6 +1,6 @@
 trigger,response
-"/qa-help","Here are the things Rayan can help you with:\n\n1. **Analyze Project** [AP] — Detect your tech stack automatically\n2. **Analyze Story** [AS] — Parse a user story file to extract ACs and risks\n3. **Full Workflow** [FW] — Run all 7 QA phases for a story end-to-end\n4. **Generate E2E** [GE] — Create Playwright Page Object + spec files\n5. **Run Tests** [RT] — Execute tests visually in browser\n6. **Generate Report** [GR] — Create Arabic QA summary reports\n7. **Security Scan** [SS] — OWASP-style endpoint validation\n8. **List Skills** [LS] — See all available skills\n9. **List Workflows** [LW] — See all available workflows"
-"/qa-help where should I start","Start with [AP] Analyze Project to detect your stack, then [AS] Analyze Story with your story file. For a complete run, use [FW] Full Workflow."
-"/qa-help new story","Use [FW] Full Workflow and provide the path to your story file. Example: node core/orchestrator.mjs full-workflow path/to/story.md"
-"/qa-help story analysis","Use [AS] Analyze Story. Provide the path to your user story markdown file. The skill will extract acceptance criteria, scenarios, risks, and edge cases."
-"/qa-help test failed","Use [GR] Generate Report to see the full failure summary, or check the bug-reports folder in your output directory for Arabic bug reports."
+"/qa-help","Rayan commands:\n\n1. **/aiqa-setup** — one-time project bootstrap (guide, index, DB tables)\n2. **/aiqa-writetestcases <story>** — Prompt 2: story → test-case Markdown\n3. **/aiqa-executetests <test-file>** — Prompt 1: run cases with Playwright MCP (browser visible)\n4. **/aiqa-fixbug <bug-file>** — Prompt 3: fix one bug\n5. **/aiqa-fullworkflow <story>** — chain all of the above\n6. **/aiqa-executetests --summary** — final restore check + SUMMARY.md"
+"/qa-help where should I start","Run /aiqa-setup once. Then /aiqa-writetestcases <story-file>."
+"/qa-help new story","Run /aiqa-writetestcases <story-file>, review the files, then /aiqa-executetests <test-file> for each file."
+"/qa-help test failed","Check test-results/bugs/BUGS-INDEX.md. Fix one with /aiqa-fixbug <bug-file>, then re-run the file with /aiqa-executetests."
+"/qa-help hide browser","Say 'run headless' / use /aiqa-executetests <file> --headless. Default is a visible browser."

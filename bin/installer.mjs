@@ -46,12 +46,7 @@ function runCmd(cmd, args, cwd) {
 
 // ── Module / tool definitions ─────────────────────────────────────────────────
 const MODULES = [
-  { id: 'core',               label: 'Core',               required: true,  description: 'Orchestrator, detectors, adapters, Rayan agent' },
-  { id: 'e2e-playwright',     label: 'E2E Playwright',      default: true,   description: 'Generate and run Playwright Page Object tests' },
-  { id: 'test-cases-xlsx',    label: 'Test Cases XLSX',     default: true,   description: 'Generate structured XLSX test cases from user stories' },
-  { id: 'security-scan',      label: 'Security Scan',       default: false,  description: 'OWASP-style security validation' },
-  { id: 'accessibility-scan', label: 'Accessibility Scan',  default: false,  description: 'axe-core a11y audit' },
-  { id: 'regression-testing', label: 'Regression Testing',  default: false,  description: 'Baseline diff testing against previous runs' },
+  { id: 'core', label: 'Core', required: true, description: 'Rayan agent, the 3 prompts (write test cases / execute tests / fix bug), setup, workflows, templates' },
 ];
 
 const TOOLS = [

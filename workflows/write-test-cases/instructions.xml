@@ -1,0 +1,22 @@
+<workflow>
+  <critical>Communicate in {communication_language}. Test-case text in {document_output_language}. Markdown only — no XLSX, no generated spec files.</critical>
+
+  <step n="1" goal="Pre-check">
+    <action>Confirm {output_folder}/EXECUTION-GUIDE.md exists and has no TODO values; else tell the user to run /aiqa-setup and stop</action>
+    <action>Story file(s) = command arguments; if none, ask. Several files of one feature → one story folder named after the first</action>
+  </step>
+
+  <step n="2" goal="Write test cases">
+    <action>Load and follow {project-root}/AI-QA-FRAMEWORK/reusable-prompts/write-test-cases.prompt.md with {{story_file}} = the story path</action>
+    <action>Write each file to disk as soon as it is complete</action>
+  </step>
+
+  <step n="3" goal="Self-check">
+    <check>Every AC has at least one case; every guide role touching the screen has an RBAC case</check>
+    <check>Texts, ids, routes come from code/story/DB; gaps table filled; INDEX.md updated</check>
+  </step>
+
+  <step n="4" goal="Report and stop">
+    <output>File list + case counts. Next: /aiqa-executetests &lt;test-case-file&gt;</output>
+  </step>
+</workflow>

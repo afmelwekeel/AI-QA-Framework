@@ -1,0 +1,17 @@
+<workflow>
+  <critical>Communicate in {communication_language}. Read-only on the app and database.</critical>
+
+  <step n="1" goal="Run project setup skill">
+    <action>Load and follow {project-root}/AI-QA-FRAMEWORK/skills/project-setup/prompt.md fully</action>
+    <action>Generate EXECUTION-GUIDE.md, INDEX.md, DATABASE-TABLES.md in {output_folder} from templates/</action>
+  </step>
+
+  <step n="2" goal="Hard stop — user review">
+    <action>Show the filled EXECUTION-GUIDE.md (URLs, users, data rules, protected settings)</action>
+    <action>Ask: "Is everything correct?" WAIT for explicit confirmation. Apply corrections. Repeat until confirmed.</action>
+  </step>
+
+  <step n="3" goal="Report">
+    <output>Files written · remaining TODO items · next: /aiqa-writetestcases &lt;story-file&gt;</output>
+  </step>
+</workflow>

@@ -16,23 +16,40 @@ reporting_language: en                   # ISO 639-1: en = English, ar = Arabic
 
 # ── Output Paths ──────────────────────────────────────────────────────────────
 output_folder: "{project-root}/ai-qa-framework/TestResult"
-test_cases_folder: "{output_folder}/{story-id}/test-cases"
-e2e_folder: "{output_folder}/{story-id}/e2e"
-test_data_folder: "{output_folder}/{story-id}/test-data"
-bug_reports_folder: "{output_folder}/{story-id}/bug-reports"
-reports_folder: "{output_folder}/{story-id}/reports"
+# Layout under output_folder:
+#   EXECUTION-GUIDE.md  INDEX.md  DATABASE-TABLES.md              (made by /aiqa-setup)
+#   test-cases/<story>/<NN>-<screen>.test-cases.md                 (/aiqa-writetestcases)
+#   test-results/<story>/<NN>-<screen>.results.md + screenshots/   (/aiqa-executetests)
+#   test-results/bugs/BUG-*.md + BUGS-INDEX.md                     (/aiqa-executetests, /aiqa-fixbug)
+#   test-results/SUMMARY.md                                        (/aiqa-executetests --summary)
+test_cases_folder: "{output_folder}/test-cases"
+test_results_folder: "{output_folder}/test-results"
+bug_reports_folder: "{output_folder}/test-results/bugs"
 
 # ── Project Knowledge ─────────────────────────────────────────────────────────
 project_knowledge: "{project-root}/docs"
 implementation_artifacts: "{project-root}/docs/stories"
 
 # ── Test Settings ─────────────────────────────────────────────────────────────
-test_mode: headed               # headed | headless
+# Tests run live through the Playwright MCP browser. The browser is VISIBLE by default.
+# Set show_browser: false only if you do not want to see the browser (or say "run headless").
+show_browser: true              # true = headed (visible) | false = headless
+viewport: "1920x1080"
 default_browser: chromium       # chromium | firefox | webkit
-slow_mo_ms: 60
-retries_local: 1
-retries_ci: 2
-parallel: false
+max_locate_attempts: 2          # failed attempts to find an element before marking Blocked
+
+# ── Target Application (filled by /aiqa-setup) ───────────────────────────────
+app_url: ""                     # e.g. https://localhost:7263
+ui_language: ""                 # e.g. Arabic / English
+ui_direction: ltr               # ltr | rtl
+restart_command: ""             # empty = AI never starts/restarts the app
+allow_ai_restart: false
+source_roots: []                # code folders: "Suspected Location" and bug fixes
+ignored_paths: []               # legacy folders never read or touched
+code_standards_files: []        # e.g. CODE_STANDARDS.md
+tech_stack: ""                  # e.g. ASP.NET Core 8 MVC
+build_command: ""               # used by /aiqa-fixbug
+test_command: ""                # used by /aiqa-fixbug
 
 # ── Quality Gates ─────────────────────────────────────────────────────────────
 min_pass_rate: 95
@@ -48,7 +65,7 @@ db_username_column: "email"        # column for username / email
 db_password_column: "password"     # column for password
 db_role_column: "role"             # column that stores the user role (admin / manager / user / …)
 
-# Saved test users — populated by /aiqa-fetchtestusers
+# Saved test users — populated by /aiqa-setup
 # Format: { role, username, password, notes }
 test_users: []
 

@@ -1,29 +1,13 @@
 # Skills
 
-Each subfolder is one **atomic AI QA capability**, structured for triple
-compatibility (CLI · MCP · VS Code extension):
+Each subfolder is one capability: `skill.json` (descriptor) · `prompt.md` (instructions) · `run.mjs` (validates input, returns the instruction envelope).
 
-```
-skills/<id>/
-  skill.json   # MCP tool descriptor (id, inputs, outputs)
-  prompt.md    # Reusable LLM prompt
-  run.mjs      # Deterministic Node handler invoked by the orchestrator
-```
+| Skill | Command | Purpose |
+|---|---|---|
+| project-setup | `/aiqa-setup` | Fill config + EXECUTION-GUIDE / INDEX / DATABASE-TABLES |
+| project-analysis | (used by setup) | Detect stack, routes, auth, DB |
+| write-test-cases | `/aiqa-writetestcases` | Prompt 2 — story → test-case Markdown |
+| execute-tests | `/aiqa-executetests` | Prompt 1 — run cases with Playwright MCP, results + bugs |
+| fix-bug | `/aiqa-fixbug` | Prompt 3 — reproduce, fix, verify, commit one bug |
 
-| Skill | Purpose |
-|---|---|
-| project-analysis | Detect stack, routes, auth, DB |
-| user-story-analysis | Parse stories into testable units |
-| test-case-generation | Arabic CSV test cases |
-| playwright-generation | POM + spec scaffolding |
-| test-execution | Headed Playwright run |
-| bug-analysis | Triage failures + Arabic bug reports |
-| qa-reporting | Arabic summary (MD + HTML + CSV) |
-| regression-testing | Baseline diff |
-| security-validation | OWASP-style probe |
-| accessibility-validation | axe-core a11y scan |
-| autonomous-testing | Full pipeline driver |
-
-To add a new skill:
-1. Create the folder triplet above.
-2. Register the command in `commands/registry.yaml` AND `core/orchestrator.mjs`.
+`_shared/prompt-skill.mjs` is the common handler. The canonical prompts live in `reusable-prompts/`.

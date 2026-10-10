@@ -1,6 +1,6 @@
 # AI QA Framework
 
-> Give any project a **Senior AI QA Engineer** — from user story to full QA report, automatically.
+> A **Senior AI QA Engineer** for any project. Give it a user story. It writes test cases, runs them in a browser you can watch, files bug reports, and can fix the bugs.
 
 [![npm version](https://img.shields.io/npm/v/ai-qa-framework.svg)](https://www.npmjs.com/package/ai-qa-framework)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -8,573 +8,386 @@
 
 ---
 
-## What Is This?
+## Contents
 
-AI QA Framework installs a QA agent named **Rayan** into your AI assistant (Claude Code, Cursor, GitHub Copilot, Windsurf). You give Rayan a user story file and he runs the full QA lifecycle — detecting your stack, generating test cases, writing Playwright E2E tests, executing them, fixing failures, and producing a professional QA report.
-
-**Works with any project stack** — React, Angular, Vue, .NET, Node.js, Python, any database.  
-**All QA documents generated in Arabic by default** (configurable to any language).
+1. [How it works](#1-how-it-works)
+2. [Before you start](#2-before-you-start)
+3. [Install](#3-install)
+4. [Connect the Playwright browser](#4-connect-the-playwright-browser)
+5. [Walkthrough: first story in 5 steps](#5-walkthrough-first-story-in-5-steps)
+6. [Command reference](#6-command-reference)
+7. [What you get (output folders)](#7-what-you-get-output-folders)
+8. [Safety rules](#8-safety-rules)
+9. [Configuration](#9-configuration)
+10. [Tips and troubleshooting](#10-tips-and-troubleshooting)
+11. [Upgrading from v2](#11-upgrading-from-v2)
+12. [Project layout](#12-project-layout)
 
 ---
 
-## Quick Start
+## 1. How it works
 
-**1 — Install**
+The framework installs a QA agent named **Rayan** into your AI assistant (Claude Code, Cursor, GitHub Copilot, Windsurf). Rayan works from **3 prompts**:
+
+| Prompt | Command | Input | Output |
+|---|---|---|---|
+| **Write** test cases | `/aiqa-writetestcases` | a story file | test-case Markdown files, one per screen |
+| **Execute** tests | `/aiqa-executetests` | one test-case file | results, screenshots, bug files |
+| **Fix** a bug | `/aiqa-fixbug` | one bug file | code fix, verified, committed |
+
+Two helpers support them:
+
+| Command | Use |
+|---|---|
+| `/aiqa-setup` | Run **once per project**. Collects facts about your app (URL, login, test users, database) and writes the guide the 3 prompts read. |
+| `/aiqa-fullworkflow` | Chains write → execute → fix and asks you before each step. |
+
+```
+/aiqa-setup  (once)
+     │  EXECUTION-GUIDE.md · INDEX.md · DATABASE-TABLES.md
+     ▼
+/aiqa-writetestcases <story>  ──►  test-cases/<story>/01-screen.test-cases.md
+     ▼
+/aiqa-executetests <file>     ──►  test-results/<story>/01-screen.results.md  +  screenshots
+     │                             test-results/bugs/BUG-*.md
+     ▼
+/aiqa-fixbug <bug-file>       ──►  fix + tests + commit
+     ▼
+/aiqa-executetests --summary  ──►  test-results/SUMMARY.md
+```
+
+Key ideas:
+
+- **Tests run live.** Rayan drives a real browser through the Playwright MCP server. **The browser is visible by default.** You watch every click.
+- **No generated test scripts, no Excel.** Test cases and results are Markdown files you can read, review and commit.
+- **One unit per session.** One story, one test file, one bug per run. Each command stops after its summary. This keeps the context small and the results reliable.
+- **Reads your code first.** Texts, element ids, routes and roles in the test cases come from your source, not from guesses.
+
+---
+
+## 2. Before you start
+
+You need:
+
+- **Node.js 18+** and npm
+- An AI assistant: Claude Code, Cursor, GitHub Copilot or Windsurf
+- The **Playwright MCP server** connected to that assistant ([step 4](#4-connect-the-playwright-browser))
+- Your application **running** (Rayan never starts it unless you allow it)
+- Story files (Markdown) that describe the feature and its acceptance criteria (ACs)
+- Optional: read-only database access, so Rayan can find test users and check data
+
+---
+
+## 3. Install
+
+In your project folder:
+
 ```bash
 npx ai-qa-framework install
 ```
-This copies the framework into `./ai-qa-framework/` and creates `config.yaml` for your project.
 
-**2 — Activate Rayan**
+The installer asks for project name, language, test mode and AI tools, then copies the framework into `./ai-qa-framework/` and registers the `/aiqa-*` commands for your tool(s).
 
-Open your AI assistant and load the agent:
-- **Claude Code**: type `/aiqa-help` in the chat
-- **Cursor / Copilot / Windsurf**: reference `./ai-qa-framework/agents/qae.md`
+Non-interactive: `npx ai-qa-framework install --yes --tools claude-code`
 
-**3 — Run QA on a user story**
-```
-/aiqa-fullworkflow docs/stories/1-1-login-feature.md
-```
-
-That's it. Rayan handles everything from stack detection to final report.
+If the commands do not show up, run `/aiqa-init` inside your AI assistant. It is safe to re-run.
 
 ---
 
-## Complete Workflow
+## 4. Connect the Playwright browser
 
+Executing tests needs the Playwright MCP server. Example for Claude Code:
+
+```bash
+claude mcp add playwright -- npx @playwright/mcp@latest
 ```
-  Your User Story File(s)
-           |
-           v
-+==================================================================+
-|         /aiqa-fullworkflow  story.md  [story2.md ...]           |
-|                  RUNS ALL 8 PHASES AUTOMATICALLY                 |
-+==================================================================+
-           |
-           |  -- OR -- run each phase separately (same result):
-           |
-           v
-+------------------------------------------------------------------+
-|  Phase 0 .  /aiqa-analyzeproject                                 |
-|             Scan the project -> detect framework, base URL,      |
-|             database, auth scheme, and all routes                |
-|             Output -> AI-QA-FRAMEWORK/core/project.config.json  |
-+-------------------------------+----------------------------------+
-                                |
-                         [optional] /aiqa-analyzeproject-validate
-                         Verify config accuracy; fix by severity
-                         (or use /aiqa-validate -- auto-detects phase)
-                                |
-                                v
-+------------------------------------------------------------------+
-|  Phase 1 .  /aiqa-analyzestory  story.md  [story2.md ...]        |
-|             Read story file(s) -> extract acceptance criteria,   |
-|             positive/negative scenarios, edge cases, security    |
-|             scenarios, risks                                     |
-|             Output -> AI-QA-FRAMEWORK/reports/story-asts/       |
-+-------------------------------+----------------------------------+
-                                |
-                         [optional] /aiqa-analyzestory-validate
-                         Verify AC completeness; fix by severity
-                         (or use /aiqa-validate -- auto-detects phase)
-                                |
-                                v
-+------------------------------------------------------------------+
-|  Phase 2 .  /aiqa-generatetestcases [suitename]                  |
-|             Generate structured test cases covering all ACs      |
-|             (functional, validation, boundary, security, RBAC)   |
-|             Output -> TestResult/{suite}/test-cases/             |
-|                      {suite}-test-cases.xlsx  (Arabic, RTL)      |
-|                      {suite}-test-cases.md                       |
-+-------------------------------+----------------------------------+
-                                |
-                         [optional] /aiqa-generatetestcases-validate
-                         Verify coverage & quality; fix by severity
-                         (or use /aiqa-validate -- auto-detects phase)
-                                |
-                                v
-+------------------------------------------------------------------+
-|  Phase 3 .  /aiqa-generatee2e [suitename]                        |
-|             Scaffold Playwright E2E tests in JavaScript          |
-|             Page Object Model + spec file per suite              |
-|             [!] URL review checkpoint -- Rayan shows all         |
-|                 page.goto() paths and waits for your OK          |
-|             Output -> TestResult/{suite}/e2e/                    |
-|                       pages/{suite}.page.js                      |
-|                       tests/{suite}.spec.js                      |
-+-------------------------------+----------------------------------+
-                                |
-                         [optional] /aiqa-generatee2e-validate
-                         Verify POM, spec, URLs; fix by severity
-                         (or use /aiqa-validate -- auto-detects phase)
-                                |
-                                v
-+------------------------------------------------------------------+
-|  Phase 4 .  /aiqa-generatetestdata [suitename]                   |
-|             Generate 3 JSON data files per suite:                |
-|               - valid.json    -- realistic positive data         |
-|               - edge.json     -- boundary, empty, special chars  |
-|               - security.json -- SQL injection, XSS, CSRF        |
-|             [!] Data review checkpoint -- Rayan shows each file  |
-|                 and waits for your OK before continuing          |
-|             Output -> TestResult/{suite}/test-data/              |
-|             (Runs /aiqa-fetchtestusers if no test users saved)   |
-+-------------------------------+----------------------------------+
-                                |
-                         [optional] /aiqa-generatetestdata-validate
-                         Verify data files & field names; fix by severity
-                         (or use /aiqa-validate -- auto-detects phase)
-                                |
-                                v
-+------------------------------------------------------------------+
-|  Phase 5 .  /aiqa-runtests [suitename]                           |
-|             1. Pre-flight spec review -- fix all blockers first  |
-|             2. Run each test individually (headed browser)       |
-|             3. On failure: diagnose -> fix -> record bug ->      |
-|                retest -> then move to next test                  |
-|             Output -> TestResult/{suite}/                        |
-|                       test-checklist.md  (pass/fail per test)   |
-|                       reports/junit.xml                          |
-|                       bug-reports/BUG-0001.md ...               |
-+-------------------------------+----------------------------------+
-                                |
-                                v
-+------------------------------------------------------------------+
-|  Phase 6 .  /aiqa-analyzebugs [suitename]                        |
-|             Read junit.xml -> triage every failure -> generate   |
-|             one Arabic bug report per failed test with:          |
-|             severity, root cause, steps to reproduce, fix hint   |
-|             Output -> TestResult/{suite}/bug-reports/            |
-+-------------------------------+----------------------------------+
-                                |
-                         [optional] /aiqa-analyzebugs-validate
-                         Verify report completeness; fix by severity
-                         (or use /aiqa-validate -- auto-detects phase)
-                                |
-                                v
-+------------------------------------------------------------------+
-|  Phase 7 .  /aiqa-generatereport [suitename]                     |
-|             Aggregate all phase results into a QA summary:       |
-|               - qa-report.html  -- interactive dashboard         |
-|               - qa-report.xlsx  -- Arabic spreadsheet summary    |
-|               - qa-report.md    -- Markdown report               |
-|             Quality gate: pass rate must reach min_pass_rate %   |
-|             Output -> TestResult/{suite}/reports/                |
-+-------------------------------+----------------------------------+
-                                |
-                         [optional] /aiqa-generatereport-validate
-                         Verify pass rate, bug count, quality gate
-                         (or use /aiqa-validate -- auto-detects phase)
-                                |
-                                v
-                    [OK]  QA Cycle Complete
-```
+
+Other tools: add the same server in their MCP settings (`npx @playwright/mcp@latest`).
+
+- The MCP browser opens **headed (visible)** unless the server was started with `--headless`. If you do not see a browser during execution, remove that flag. Rayan will also tell you.
+- If you **do not want to see the browser**, say "run headless", pass `--headless`, or set `show_browser: false` in `config.yaml`.
 
 ---
 
-## All Commands
+## 5. Walkthrough: first story in 5 steps
 
-Once the framework is installed, run commands from inside `./ai-qa-framework/`:
+Open your AI assistant in the project and follow along. Paths below are examples.
 
-| npm script | Phase | What it does |
+### Step 1 — Setup (once)
+
+```text
+/aiqa-setup
+```
+
+Rayan:
+1. Detects your stack and routes.
+2. Asks only what it cannot find: app URL, login method, UI language/direction, source folders, build and test commands, database (read-only).
+3. Finds test users for the roles in your stories (database lookup with SELECT only, or you type them).
+4. Writes three files in `TestResult/`:
+   - `EXECUTION-GUIDE.md` — environment, login, test users, placeholders, data rules, result and bug formats
+   - `INDEX.md` — list of test-case files with status, plus known gaps
+   - `DATABASE-TABLES.md` — tables Rayan may query (read-only)
+5. **Shows you the guide and waits.** Read it. Fix wrong URLs, users or data rules. Say "OK" when it is right.
+
+Anything marked `<TODO>` must be filled before you execute tests.
+
+### Step 2 — Write the test cases
+
+```text
+/aiqa-writetestcases docs/stories/2-1-orders.md
+```
+
+Rayan reads the story, the requirement it implements, and the source files in the story's file list. Then it writes one file per screen:
+
+```
+TestResult/test-cases/2-1-orders/01-orders-list.test-cases.md
+TestResult/test-cases/2-1-orders/02-order-form.test-cases.md
+```
+
+Each file contains: header (route, roles, ACs covered) · **known gaps** between story and code · **deferred / out of scope** items · exact UI texts · test data needed · case tables (access, functional, validation, data, negative, security, export, UI/accessibility, regression) · Playwright notes (selectors, modals, waits).
+
+**Review these files before executing.** Edit anything wrong. Case ids look like `TC-21-OR-001`.
+
+### Step 3 — Execute one test file
+
+```text
+/aiqa-executetests TestResult/test-cases/2-1-orders/01-orders-list.test-cases.md
+```
+
+Rayan:
+1. Checks that the app (and database) answer. If down, it stops and tells you.
+2. Records baseline values before touching anything.
+3. Opens the **visible** browser and runs **every case in order**, logging in as the right role for each one.
+4. Writes the results file **after each case** (a crash loses nothing). Re-run the same command to resume.
+5. Takes a screenshot for every failure and key pass.
+6. Creates one bug file per real defect (after checking `BUGS-INDEX.md` for duplicates).
+7. Restores test data, then prints a summary: Pass / Fail / Blocked / Not Run, blocked reasons, bugs created. **Then it stops.** Run the command again for the next file.
+
+Case results:
+
+| Result | Meaning |
+|---|---|
+| Pass | Behaviour matches expected result |
+| Fail | Behaviour differs. Evidence saved. Bug filed if real defect |
+| Blocked | Cannot run: missing role/data/approval, or element not found after 2 attempts. Reason is written |
+| Not Run | Skipped on purpose |
+
+Rayan asks you only before **global changes** (for example activating another plan or creating a user).
+
+### Step 4 — Fix a bug (optional)
+
+```text
+/aiqa-fixbug TestResult/test-results/bugs/BUG-2-1-001-duplicate-error-under-both-fields.md
+```
+
+Rayan reproduces the bug first. If it cannot, it sets the status to **Cannot Reproduce** and stops. Otherwise it finds the root cause, makes the smallest fix, runs your build and tests, repeats the reproduction, updates the bug file (Status = Fixed, Fix Notes) and the index, and commits with the bug id in the message.
+
+Then re-run the test file that found the bug to confirm.
+
+### Step 5 — Final summary
+
+After all test files are executed:
+
+```text
+/aiqa-executetests --summary
+```
+
+Rayan checks (read-only) that baseline values are restored and no test rows remain, then writes `TestResult/test-results/SUMMARY.md` with totals per story and file, bugs by severity, confirmed gaps and a recommendation.
+
+### Shortcut: do it all
+
+```text
+/aiqa-fullworkflow docs/stories/2-1-orders.md
+```
+
+Runs steps 2 → 5 and asks "continue?" between steps.
+
+---
+
+## 6. Command reference
+
+| Command | Arguments | Notes |
 |---|---|---|
-| `npm run detect` | 0 | Auto-detect stack |
-| `npm run analyze-story` | 1 | Parse user story |
-| `npm run test-cases` | 2 | Generate XLSX test cases |
-| `npm run e2e` | 3 | Generate Playwright tests |
-| `npm run test-data` | 4 | Generate test data |
-| `npm run run-tests` | 5 | Execute tests (headed) |
-| `npm run bugs` | 6 | Analyze failures |
-| `npm run report` | 7 | Generate QA summary |
-| `npm run full` | 0–7 | All phases in sequence |
+| `/aiqa-setup` | — | Run first. Re-run to refresh the guide. Existing filled values are kept |
+| `/aiqa-writetestcases` | `<story-file>` | Several files of one feature = one story folder (named after the first) |
+| `/aiqa-executetests` | `<test-case-file>` | One file per run. Resumes if results exist |
+| | `--headless` | Hide the browser. Only when you ask |
+| | `--summary` | Final restore check + `SUMMARY.md` |
+| `/aiqa-fixbug` | `<bug-file>` | One bug per run |
+| `/aiqa-fullworkflow` | `<story-file>` | Chain with confirmations |
+| `/aiqa-help` | — | Rayan's menu |
+| `/aiqa-init` | — | Register commands for your AI tools |
+| `/aiqa-reset` | — | Delete generated outputs (asks `YES`). Keeps the guide unless you say so |
+| `/aiqa-listskills`, `/aiqa-listworkflows` | — | List what is installed |
+| `/aiqa-chat` | — | Ask Rayan any QA question |
+| `/aiqa-terse [lite\|full\|ultra\|off]` | level | Shorter chat replies (saves tokens). Files are never shortened |
+| `/aiqa-tokenstats [--all] [--since 7d]` | — | Token usage and savings |
+| `/aiqa-terse-help` | — | Terse mode card |
 
-Or tell Rayan directly in your AI tool:
-
-```
-# ── MASTER COMMAND ─────────────────────────────────────────────────────────────
-/aiqa-fullworkflow <story.md> [story2.md ...]
-   Runs all 8 phases end-to-end in one command.
-   Multiple story files are merged into one unified suite.
-   Includes two mandatory review checkpoints:
-     - URL review after Phase 3 (confirm page routes before tests run)
-     - Data review after Phase 4 (confirm test data values before tests run)
-
-# ── SUITE SYSTEM ───────────────────────────────────────────────────────────────
-# Phases 1-7 use a suite registry (TestResult/test-suites.yml) to track progress.
-# After /aiqa-analyzestory runs, a suite entry is created and set as the active suite.
-# All subsequent phase commands automatically use the active suite — no need to
-# pass the story file path again. Pass a suitename to override the active suite.
-#
-# Suite status progression (enforced — commands won't run out of order):
-#   story-analyzed -> test-cases-generated -> e2e-generated ->
-#   test-data-generated -> tests-executed -> bugs-analyzed -> report-generated
-#
-# Switch active suite:  /aiqa-analyzestory --activate <suitename>
-
-# ── PHASE COMMANDS (same result as /aiqa-fullworkflow, run in this order) ──────
-/aiqa-analyzeproject
-   Phase 0 — Scan the project and auto-detect the full technology stack:
-   frontend framework, backend, database, auth scheme, routes and API endpoints.
-   Saves results to: AI-QA-FRAMEWORK/core/project.config.json
-   Run this first. All later phases read from this file.
-
-/aiqa-analyzestory <story.md> [story2.md ...] [--suite <suitename>]
-   Phase 1 — Read one or more story files and extract: acceptance criteria (ACs),
-   positive and negative test scenarios, edge cases, security scenarios, and risks.
-   Multiple stories are merged into one unified AC set (duplicates removed).
-   Creates/updates the suite entry in TestResult/test-suites.yml and sets it active.
-   --suite <name>  : override the suite name (default: derived from first filename)
-   --activate <name> : just switch the active suite, skip analysis
-   Saves AST to: AI-QA-FRAMEWORK/reports/story-asts/{suitename}.json
-
-/aiqa-generatetestcases [suitename]
-   Phase 2 — Generate structured Arabic test cases covering every AC.
-   Requires suite status: story-analyzed (or higher).
-   Uses active suite from test-suites.yml if no suitename is given.
-   Covers all test types: functional, validation, boundary, security, RBAC.
-   Each test case includes: ID, title, preconditions, numbered steps,
-   test data, expected result, severity, priority, and UAT eligibility.
-   Output: TestResult/{suite}/test-cases/{suite}-test-cases.xlsx (Arabic RTL)
-           TestResult/{suite}/test-cases/{suite}-test-cases.md
-
-/aiqa-generatee2e [suitename]
-   Phase 3 — Scaffold Playwright E2E tests in JavaScript using Page Object Model.
-   Requires suite status: story-analyzed (or higher).
-   Uses active suite from test-suites.yml if no suitename is given.
-   Generates a .page.js (locators and actions) and a .spec.js (test cases).
-   Also generates test-checklist.md — one checkbox per test, updated after Phase 5.
-   Output: TestResult/{suite}/e2e/pages/{suite}.page.js
-           TestResult/{suite}/e2e/tests/{suite}.spec.js
-           TestResult/{suite}/test-checklist.md
-   [STOP] URL review checkpoint: Rayan lists all page.goto() paths and waits
-   for your confirmation before finishing. Correct wrong routes here.
-
-/aiqa-generatetestdata [suitename]
-   Phase 4 — Generate three JSON data files per suite.
-   Requires suite status: e2e-generated (or higher).
-   Uses active suite from test-suites.yml if no suitename is given.
-     - {suite}-valid.json    : realistic positive data (emails, names, form values)
-     - {suite}-edge.json     : boundary values, empty strings, nulls, special chars
-     - {suite}-security.json : SQL injection, XSS, CSRF, oversized inputs
-   If no test users are saved in config.yaml, runs /aiqa-fetchtestusers first.
-   Output: TestResult/{suite}/test-data/
-   [STOP] Data review checkpoint: Rayan shows each file in full and waits
-   for your confirmation before proceeding to Phase 5.
-
-/aiqa-runtests [suitename]
-   Phase 5 — Execute tests one at a time in headed mode (browser visible).
-   Requires suite status: test-data-generated (or higher).
-   Uses active suite from test-suites.yml if no suitename is given.
-   Before any test runs: full pre-flight spec review fixes all blockers
-   (imports, test data keys, missing awaits, wrong selectors, page object issues).
-   For every failing test, Rayan completes this protocol before the next test:
-     F1 - Diagnose: read error + stack trace, classify as test bug or source bug
-     F2 - Fix: apply the minimal fix and save to disk
-     F3 - Create BUG-XXXX.md with: error, root cause, fix applied, before/after code
-     F4 - Retest: run the same test again to verify the fix worked
-     F5 - Record outcome: append fixed or still-failing result to the bug report
-     F6 - Update test-checklist.md with final pass/fail status
-   Output: TestResult/{suite}/test-checklist.md
-           TestResult/{suite}/reports/junit.xml
-           TestResult/{suite}/bug-reports/BUG-0001.md ...
-           TestResult/{suite}/bug-reports/INDEX.md
-
-/aiqa-analyzebugs [suitename]
-   Phase 6 — Read junit.xml and generate one Arabic bug report per failed test.
-   Requires suite status: tests-executed (or higher).
-   Uses active suite from test-suites.yml if no suitename is given.
-   Each report contains: bug ID, title, description, steps to reproduce,
-   actual vs expected result, severity, priority, root cause analysis,
-   suggested fix, and attachment paths (screenshots, videos, traces).
-   Severity classification:
-     Critical : 5xx errors, login broken, payment broken
-     High     : functional flow blocked with no workaround
-     Medium   : UI defect that has a workaround
-     Low      : cosmetic or minor wording issue
-   Output: TestResult/{suite}/bug-reports/
-
-/aiqa-generatereport [suitename]
-   Phase 7 — Aggregate all results into a final QA summary report in 3 formats.
-   Requires suite status: tests-executed (or higher).
-   Uses active suite from test-suites.yml if no suitename is given.
-     - qa-report.html : interactive dashboard with test results table
-     - qa-report.xlsx : Arabic spreadsheet summary
-     - qa-report.md   : Markdown report (pass rate, failed tests, severity breakdown,
-                        recommended next actions)
-   Evaluates quality gate: PASSED if pass rate >= min_pass_rate, FAILED if below.
-   Output: TestResult/{suite}/reports/
-
-# ── VALIDATE COMMANDS (run after each phase to verify output quality) ──────────
-# Each validate command inspects the output of its corresponding phase command,
-# classifies all issues by severity, and asks how you want to handle them:
-#   A) Fix ALL issues       — resolve every finding regardless of severity
-#   B) Fix Critical + High  — only the issues that will block or break tests
-#   C) Skip                 — view the report only, apply no fixes
-#
-# Run validate commands any time after the phase completes — they are standalone
-# and non-destructive. No status changes are made to test-suites.yml.
-
-/aiqa-analyzeproject-validate
-   Validates Phase 0 output: project.config.json
-   Checks (7 total):
-     Critical : config missing or invalid JSON
-     High     : frontend/backend/routes fields wrong or empty (tests will get wrong URLs)
-     Medium   : database or auth scheme not specified
-     Low      : placeholder values remain in any field
-
-/aiqa-analyzestory-validate [suitename]
-   Validates Phase 1 output: story AST JSON
-   Checks (9 total):
-     Critical : AST missing, invalid JSON, or ACs fewer than story files contain
-     High     : AC text paraphrased (meaning changed), fewer than 2 positive scenarios,
-                or fewer than 1 negative scenario per AC
-     Medium   : edge cases section empty, security scenarios missing
-     Low      : risks or data-needed sections sparsely populated
-
-/aiqa-generatetestcases-validate [suitename]
-   Validates Phase 2 output: XLSX and MD test case files
-   Checks (11 total):
-     Critical : files missing, or any AC has zero test coverage
-     High     : no negative tests, required fields blank, or duplicate test IDs
-     Medium   : edge/security cases missing, placeholder values, vague expected results
-     Low      : wrong language, missing test type categories
-
-/aiqa-generatee2e-validate [suitename]
-   Validates Phase 3 output: .page.js and .spec.js files
-   Checks (12 total):
-     Critical : files missing or wrong location, unverifiable URL routes
-     High     : ACs not covered, no assertions, hardcoded base URLs, missing negative tests
-     Medium   : TypeScript syntax used, POM pattern violations, arbitrary waitForTimeout()
-     Low      : (none specific — all issues are Medium or above for E2E)
-
-/aiqa-generatetestdata-validate [suitename]
-   Validates Phase 4 output: valid.json, edge.json, security.json
-   Checks (8 total):
-     Critical : files missing or invalid JSON syntax
-     High     : credentials not sourced from config.yaml, field names mismatch the spec
-     Medium   : generic placeholder values, missing edge cases, missing security payloads
-     Low      : wrong expected success/error messages
-
-/aiqa-analyzebugs-validate [suitename]
-   Validates Phase 6 output: BUG-XXXX.md reports in bug-reports/
-   Checks (8 total):
-     Critical : undocumented failures (fewer bug reports than failed tests),
-                or reports missing required fields
-     High     : vague root cause analysis, duplicate or out-of-sequence bug IDs
-     Medium   : missing evidence (screenshots/traces), incorrect severity classification,
-                no suggested fix
-     Low      : wrong language
-
-/aiqa-generatereport-validate [suitename]
-   Validates Phase 7 output: qa-report.html, qa-report.xlsx, qa-report.md
-   Checks (8 total):
-     Critical : report files missing, pass rate incorrect, bug count incorrect
-     High     : test results omitted, quality gate result not stated
-     Medium   : broken HTML structure, missing MD sections
-     Low      : wrong language
-
-/aiqa-validate [suitename]
-   Smart validator — reads the active suite's current status and automatically
-   validates the artifacts for THAT exact phase. No need to pick the right
-   -validate command; just run /aiqa-validate and it dispatches to the correct
-   phase checklist based on where the active suite currently is.
-   Dispatch table (current_status → checks run):
-     story-analyzed       → SA-1 through SA-9  (story AST quality)
-     test-cases-generated → TC-1 through TC-11 (XLSX + MD test cases)
-     e2e-generated        → E2E-1 through E2E-12 (Playwright POM + spec)
-     test-data-generated  → TD-1 through TD-8  (JSON data files)
-     tests-executed       → P5-1 through P5-8  (execution results)
-     bugs-analyzed        → BG-1 through BG-8  (bug reports)
-     report-generated     → QR-1 through QR-8  (QA reports)
-   After checking, reports issues by severity and asks:
-     A) Fix ALL issues
-     B) Fix only Critical + High
-     C) Skip — no fixes
-   Uses active suite from TestResult/test-suites.yml; pass [suitename] to
-   target a specific suite instead.
-
-# ── UTILITY COMMANDS ───────────────────────────────────────────────────────────
-/aiqa-fetchtestusers [suitename]
-   Collect and save test user credentials to config.yaml.
-   If a suitename is given (or an active suite is set), story files are loaded
-   automatically to extract the required roles for targeted DB queries.
-   Option A: fetch from your database (SQL Server, PostgreSQL, MySQL, MongoDB, SQLite)
-             filtered by the roles required by the story.
-   Option B: enter users manually one by one.
-   Saved credentials are reused automatically in Phases 4 and 5.
-   Passwords are always masked as **** in all output.
-
-/aiqa-securityscan
-   OWASP Top 10 security scan on all endpoints detected in Phase 0.
-   Tests for: SQL injection, XSS, CSRF, authentication bypass,
-   broken access control, insecure input handling.
-   Requires Phase 0 to have run first (project.config.json must exist).
-   Output: TestResult/security-report/ (Arabic, grouped by severity)
-
-/aiqa-accessibilityscan
-   WCAG 2.1 AA accessibility audit on all pages detected in Phase 0.
-   Checks: keyboard navigation, ARIA labels, color contrast, alt text,
-   form label associations, semantic HTML, screen reader compatibility.
-   Requires Phase 0 to have run first.
-   Output: TestResult/accessibility-report/ (Arabic, grouped by severity)
-
-/aiqa-regressiontest
-   Re-run all tests tagged @regression and diff against the saved baseline.
-   Reports newly passing, newly failing, and changed tests since last baseline.
-   Use after code changes to catch regressions before merging.
-
-/aiqa-autorun
-   Full autonomous pipeline — same as /aiqa-fullworkflow but skips all
-   review checkpoints. Rayan makes all decisions without pausing.
-   Use in CI/CD or for repeat runs where data and URLs are already verified.
-   Not recommended for first-time runs on a new story.
-
-# ── FRAMEWORK MANAGEMENT ───────────────────────────────────────────────────────
-/aiqa-init
-   Register Rayan in the agents dropdown and create all /aiqa-* prompt files
-   for VS Code / GitHub Copilot autocomplete.
-   Creates: .github/agents/ai-qa-framework-qae.agent.md
-            .github/prompts/aiqa-*.prompt.md (one per command)
-   Safe to re-run — skips files that already exist.
-   After running: reload VS Code (Ctrl+Shift+P -> Developer: Reload Window).
-
-/aiqa-help
-   Show the full command menu and current config summary:
-   project name, language, test mode, browser, output folder, min pass rate.
-
-/aiqa-chat
-   Free-form chat with Rayan about any QA topic.
-   Does not run any workflow or modify any files.
-
-/aiqa-listskills
-   Show all available QA skills with descriptions, output artifacts, and phase.
-
-/aiqa-listworkflows
-   Show all available workflows with descriptions and corresponding commands.
-
-/aiqa-reset
-   Wipe all test outputs and QA history for a fresh cycle.
-   Deletes: TestResult/, test-results/ cache, QA history log,
-            .github/agents/aiqa-* and .github/prompts/aiqa-* files.
-   Does NOT delete: config.yaml, preferences, skills, or workflows.
-   After reset, run /aiqa-init then start fresh with /aiqa-analyzeproject.
-
-/aiqa-exit
-   End the current Rayan session.
-   Does not delete any files or outputs.
-```
+You can also paste a prompt from `reusable-prompts/` into any new AI session. Replace the path on the first line.
 
 ---
 
-## Outputs
-
-All generated files are saved under `TestResult/` — never in your project source:
+## 7. What you get (output folders)
 
 ```
 TestResult/
-+-- test-suites.yml                    <- suite registry (status, stories, phase completion)
-+-- {suite}/                           <- one folder per story suite
-    +-- test-cases/
-    |   +-- {suite}-test-cases.xlsx    <- Phase 2 -- Arabic test cases
-    |   +-- {suite}-test-cases.md
-    +-- e2e/
-    |   +-- pages/{suite}.page.js      <- Phase 3 -- Page Object Model
-    |   +-- tests/{suite}.spec.js      <- Phase 3 -- Playwright spec
-    +-- test-data/
-    |   +-- {suite}-valid.json         <- Phase 4 -- positive data
-    |   +-- {suite}-edge.json          <- Phase 4 -- edge cases
-    |   +-- {suite}-security.json      <- Phase 4 -- security payloads
-    +-- test-checklist.md              <- Phase 5 -- pass/fail per test
-    +-- bug-reports/
-    |   +-- INDEX.md                   <- Phase 5/6 -- bug summary table
-    |   +-- BUG-0001.md ...            <- Phase 5/6 -- one report per failure
-    +-- reports/
-        +-- junit.xml                  <- Phase 5 -- raw test results
-        +-- qa-report.html             <- Phase 7 -- interactive dashboard
-        +-- qa-report.xlsx             <- Phase 7 -- Arabic summary
-        +-- qa-report.md               <- Phase 7 -- Markdown summary
+├── EXECUTION-GUIDE.md          project facts (from /aiqa-setup)
+├── INDEX.md                    test files, status, known gaps
+├── DATABASE-TABLES.md          schema notes for read-only checks
+├── test-cases/
+│   └── <story>/
+│       └── 01-<screen>.test-cases.md
+└── test-results/
+    ├── <story>/
+    │   ├── 01-<screen>.results.md
+    │   └── screenshots/TC-21-OR-001.png
+    ├── bugs/
+    │   ├── BUGS-INDEX.md
+    │   └── BUG-2-1-001-<short-title>.md
+    └── SUMMARY.md
 ```
+
+**Test-case file ids:** `TC-<epic><story>-<SCREEN>-<number>`, for example `TC-21-OR-001` = story 2.1, orders screen, case 1.
+
+**Bug file:** status, severity (Critical / High / Medium / Low), steps to reproduce, expected vs actual, evidence, suspected code location (`file:line`), and Fix Notes (filled by `/aiqa-fixbug`).
+
+Everything is plain Markdown. Commit the folders you want to keep.
 
 ---
 
-## Configuration
+## 8. Safety rules
 
-Edit `ai-qa-framework/config.yaml` after install. All values are read at runtime — no restart needed.
+Built into the execute prompt:
+
+- Results are real. Rayan never invents Pass/Fail.
+- **No changes** to application code, config, migrations or job settings while testing.
+- Data changes only **through the UI**, on **test-prefixed rows** (for example names starting with `99` or `E2E`), exactly as your guide allows. The baseline is restored at the end of each file.
+- Database access is **SELECT only**. No INSERT/UPDATE/DELETE/DDL.
+- Passwords are never written to files. They show as `****`.
+- Rayan does not start, build or restart your app unless you set `allow_ai_restart: true` and a `restart_command`.
+- Global changes (activate/deactivate a plan, create users, toggle jobs) need your approval.
+- **Known gaps** and **deferred** items listed in the test file are recorded, not filed as new bugs.
+
+`/aiqa-fixbug` is the only command that edits your source code, and only for the one bug you name.
+
+---
+
+## 9. Configuration
+
+`ai-qa-framework/config.yaml` (edit any time; read at runtime):
 
 ```yaml
-# Project Identity
-project_name: "MyApp"
+# Identity and language
+project_name: "MyProject"
 user_name: "Your Name"
+communication_language: English
+document_output_language: English
 
-# Language -- set both to "Arabic" / "ar" for Arabic output
-communication_language: English    # Language Rayan speaks to you
-reporting_language: en             # Language for test cases and reports (en | ar)
+# Output
+output_folder: "{project-root}/ai-qa-framework/TestResult"
 
-# Test Settings
-test_mode: headed                  # headed (browser visible) | headless
-default_browser: chromium          # chromium | firefox | webkit
-min_pass_rate: 95                  # Minimum % pass rate to PASS the quality gate
+# Browser (Playwright MCP)
+show_browser: true            # false = headless (only if you do not want to watch)
+viewport: "1920x1080"
+max_locate_attempts: 2        # failed attempts to find an element, then Blocked
 
-# Database (for /aiqa-fetchtestusers)
-db_connection_string: ""           # Leave empty to enter test users manually
+# Target application (filled by /aiqa-setup)
+app_url: "https://localhost:5001"
+ui_language: "English"
+ui_direction: ltr             # rtl for Arabic/Hebrew UIs
+source_roots: ["src"]         # code folders read for bug locations and fixes
+ignored_paths: ["legacy"]     # never read or touched
+code_standards_files: ["CODE_STANDARDS.md"]
+tech_stack: "ASP.NET Core 8 MVC"
+build_command: "dotnet build"
+test_command: "dotnet test"
+restart_command: ""           # empty = Rayan never restarts the app
+allow_ai_restart: false
+
+# Quality gate
+min_pass_rate: 95
+
+# Database (optional, read-only lookups)
+db_connection_string: ""
 db_users_table: "users"
-db_username_column: "email"
-db_password_column: "password"
-db_role_column: "role"
 
-# Test users -- populated by /aiqa-fetchtestusers, reused by all phases
+# Filled by /aiqa-setup
 test_users: []
+
+# Token saving
+terse_mode: full              # off | lite | full | ultra
 ```
 
 ---
 
-## Architecture
+## 10. Tips and troubleshooting
+
+| Problem | Fix |
+|---|---|
+| "EXECUTION-GUIDE.md missing / has `<TODO>`" | Run `/aiqa-setup` and fill the TODO items |
+| `/aiqa-*` commands do not appear | Run `/aiqa-init`, restart the AI tool |
+| No browser window during execution | The Playwright MCP server runs headless. Remove `--headless` from its start command |
+| Browser opens but Rayan cannot click | Check the "Playwright notes" in the test file. Rayan marks the case **Blocked** after 2 attempts. Fix the note and re-run the file (it resumes) |
+| "App is down" and nothing runs | Start your app yourself, then re-run. Or set `restart_command` and `allow_ai_restart: true` |
+| Many cases Blocked for a missing role | Add a user for that role in the guide, or approve account creation when Rayan asks |
+| Test data left behind after a crash | Re-run the same file (it cleans up at the end), or run `/aiqa-executetests --summary` to list leftovers |
+| Same bug found twice | Rayan checks `BUGS-INDEX.md` and adds the new case id to the existing bug |
+| Replies feel too long/short | `/aiqa-terse lite` / `ultra` / `off`. Generated files are never shortened |
+
+Good habits:
+
+- Review test-case files before executing them. Wrong expectations make false failures.
+- Execute files in the order given in `INDEX.md` (a later file may need data from an earlier one).
+- Start a **new session** for each test file, bug or story.
+- Keep stories small and specific. One screen = one file.
+
+---
+
+## 11. Upgrading from v2
+
+v3 replaces the 9-phase pipeline (analyze story → XLSX → generated Playwright specs → test data → run → bug analysis → report → fix) with the 3 prompts.
+
+| v2 command | v3 |
+|---|---|
+| `/aiqa-analyzeproject`, `/aiqa-fetchtestusers` | `/aiqa-setup` |
+| `/aiqa-analyzestory`, `/aiqa-generatetestcases` | `/aiqa-writetestcases` |
+| `/aiqa-generatee2e`, `/aiqa-generatetestdata`, `/aiqa-runtests` | `/aiqa-executetests` |
+| `/aiqa-analyzebugs`, `/aiqa-generatereport` | `/aiqa-executetests` (bug files + `SUMMARY.md`) |
+| `/aiqa-fixbugs` | `/aiqa-fixbug` (one bug per run) |
+| `/aiqa-fullworkflow` | `/aiqa-fullworkflow` (chains the 3 prompts) |
+| `*-validate`, security, accessibility, regression, autonomous | Removed. Security, accessibility and regression are now case sections in test-case files |
+
+Removed outputs: XLSX files, generated Playwright page objects/specs, JSON test-data files, HTML reports.
+
+To upgrade an existing install:
+
+```bash
+npx ai-qa-framework upgrade
+```
+
+Then run `/aiqa-init`. It adds the new command files but **does not delete old ones**. Delete the old `aiqa-*` stubs in `.claude/commands/`, `.github/prompts/`, `.cursor/rules/` or `.windsurf/rules/` that no longer exist in the list above. Re-run `/aiqa-setup` once to create the guide files.
+
+---
+
+## 12. Project layout
 
 ```
 ai-qa-framework/
-+-- agents/
-|   +-- qae.md                 <- Rayan -- Senior AI QA Engineer persona + full menu
-+-- config.yaml                <- your project settings (edit this)
-+-- core/
-|   +-- orchestrator.mjs       <- routes all /aiqa-* commands to the right skill
-+-- workflows/                 <- one workflow folder per command (yaml + instructions)
-|   +-- full-workflow/         <- master: runs all 8 phases
-|   +-- analyze-project/       <- Phase 0
-|   +-- analyze-story/         <- Phase 1
-|   +-- generate-test-cases/   <- Phase 2
-|   +-- generate-e2e/          <- Phase 3
-|   +-- generate-test-data/    <- Phase 4
-|   +-- run-tests/             <- Phase 5
-|   +-- analyze-bugs/          <- Phase 6
-|   +-- generate-report/       <- Phase 7
-|   +-- fetch-test-data/       <- utility: manage test users
-+-- skills/                    <- AI skill prompts used by each workflow
-+-- project-detectors/         <- stack detection modules
-+-- adapters/                  <- stack-specific glue (Angular, .NET, etc.)
-+-- templates/                 <- report and test case templates
-+-- _config/                   <- skill and workflow manifests
-+-- _memory/                   <- persistent QA history across sessions
-+-- TestResult/                <- all generated outputs (gitignored)
+├── agents/            qae.md (Rayan), qae-compact.md, qae-init.md, terse-rules.md
+├── reusable-prompts/  write-test-cases / execute-tests / fix-bug   ← the 3 prompts
+├── skills/            project-setup, project-analysis, write-test-cases, execute-tests, fix-bug
+├── workflows/         setup, write-test-cases, execute-tests, fix-bug, full-workflow
+├── templates/         EXECUTION-GUIDE, INDEX, DATABASE-TABLES, test-cases, results,
+│                      bug-report, BUGS-INDEX, SUMMARY
+├── commands/          registry.yaml
+├── core/              orchestrator.mjs, token tools
+├── project-detectors/ adapters/ rules/ hooks/ _config/ _memory/
+├── config.yaml        your settings
+└── TestResult/        generated outputs
 ```
 
----
-
-## Supported Stacks
-
-| Layer | Supported |
-|-------|-----------|
-| **Frontend** | Angular, React, Vue, Blazor |
-| **Backend** | .NET, Node.js, Java (Spring), Python (Django / FastAPI) |
-| **Database** | SQL Server, PostgreSQL, MySQL, MongoDB, SQLite |
-| **Auth** | JWT, OAuth 2.0, Cookie sessions, HTTP Basic |
-
----
-
-## Requirements
-
-- **Node.js** >= 18
-- **npm** >= 9
-- An AI assistant: Claude Code, Cursor, GitHub Copilot, or Windsurf
+Supported stacks (detection): Angular, React, Vue, Blazor · .NET, Node.js, Java, Python · SQL Server, PostgreSQL, MySQL, MongoDB, SQLite · JWT, OAuth, cookie, basic auth.
 
 ---
 

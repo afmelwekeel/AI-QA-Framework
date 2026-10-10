@@ -1,0 +1,14 @@
+name: fix-bug
+description: 'Prompt 3: reproduce, fix, verify, commit one bug. Use for /aiqa-fixbug'
+
+config_source: "{project-root}/AI-QA-FRAMEWORK/config.yaml"
+user_name: "{config_source}:user_name"
+communication_language: "{config_source}:communication_language"
+document_output_language: "{config_source}:document_output_language"
+output_folder: "{config_source}:output_folder"
+project_name: "{config_source}:project_name"
+show_browser: "{config_source}:show_browser"
+min_pass_rate: "{config_source}:min_pass_rate"
+
+installed_path: "{project-root}/AI-QA-FRAMEWORK/workflows/fix-bug"
+instructions: "{installed_path}/instructions.xml"

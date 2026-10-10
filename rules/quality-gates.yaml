@@ -1,38 +1,27 @@
 # Global QA Rules — enforced by the framework before / after every run.
-version: 1
+version: 3
 
 quality_gates:
   min_pass_rate: 95
   block_release_on:
-    - severity: حرجة
+    - severity: Critical
       max_count: 0
-    - severity: عالية
+    - severity: High
       max_count: 0
   artifacts_required:
-    - screenshots_on_failure
-    - videos_on_failure
-    - traces_on_retry
-    - junit_xml
-    - html_report
+    - results_file_per_test_case_file     # test-results/<story>/<NN>-<screen>.results.md
+    - screenshot_for_every_fail           # test-results/<story>/screenshots/<TC-ID>.png
+    - bug_file_per_real_defect            # test-results/bugs/BUG-*.md + BUGS-INDEX.md
+    - summary_after_last_file             # test-results/SUMMARY.md
 
-autonomous:
-  max_iterations: 1
-  stop_on_skill_failure:
-    - project-analysis
+result_values: [Pass, Fail, Blocked, Not Run]
 
-reporting:
-  language: ar
-  formats: [md, html, csv]
-  include:
-    - test_results
-    - bug_summary
-    - security_scan
-    - accessibility_scan
-    - regression_diff
-
-testing:
-  default_mode: headed
-  default_browser: chromium
-  retries_local: 1
-  retries_ci: 2
-  parallel: false        # readability of human observation > speed
+execution:
+  engine: playwright-mcp
+  browser_visible_by_default: true        # headless only on explicit user request
+  viewport: 1920x1080
+  max_locate_attempts: 2                  # then Blocked
+  rerun_failed_once: true                 # flaky check
+  one_test_file_per_session: true
+  write_sql: forbidden                    # SELECT only unless the test file names the statement
+  restore_baseline: true

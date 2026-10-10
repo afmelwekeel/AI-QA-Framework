@@ -22,8 +22,7 @@ const HELP = `
 
   Install Options:
     --directory <path>          Install location (default: ./ai-qa-framework/)
-    --modules <list>            Comma-separated modules: e2e-playwright,test-cases-xlsx,
-                                  security-scan,accessibility-scan,regression-testing
+    --modules <list>            Optional. v3 has a single module (core), always installed
     --tools <list>              Comma-separated AI tools: claude-code,cursor,copilot,windsurf
     --language <code>           Communication language (English, Arabic, French, Spanish)
     --reporting-language <code> Override reporting language only
@@ -38,7 +37,7 @@ const HELP = `
     npx ai-qa-framework install
     npx ai-qa-framework install --yes
     npx ai-qa-framework install --directory qa/ --tools claude-code --language Arabic
-    npx ai-qa-framework install --modules e2e-playwright,test-cases-xlsx --yes
+    npx ai-qa-framework install --tools claude-code --yes
     npx ai-qa-framework upgrade
     npx ai-qa-framework upgrade --directory qa/ --yes
 

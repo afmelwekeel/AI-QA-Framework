@@ -4,18 +4,13 @@
 
 ## Reporting
 - Language: en (English)
-- Report formats: HTML, XLSX, MD
-- Include bug summary: true
-- Include security findings: true
-- Include accessibility findings: true
+- Files: Markdown (test cases, results, bugs, summary)
 
 ## Test Execution
-- Default mode: headed
-- Default browser: chromium
-- Slow motion: 60ms
-- Retries (local): 1
-- Retries (CI): 2
-- Parallel: false
+- Engine: Playwright MCP
+- Browser: visible (headed) unless user says headless
+- Viewport: 1920x1080
+- One test-case file per session
 
 ## Quality Gates
 - Minimum pass rate: 95%
@@ -23,12 +18,5 @@
 - Block on high severity bugs: true
 
 ## Artifacts
-- Screenshots on failure: true
-- Videos on failure: true
-- Traces on retry: true
-- JUnit XML: true
-
-## User Preferences
-- Communication language: English
-- Show verbose phase output: true
-- Auto-open HTML report after generation: false
+- Screenshot for every Fail and key Pass
+- One bug file per real defect + BUGS-INDEX.md

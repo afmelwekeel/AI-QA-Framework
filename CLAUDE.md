@@ -9,7 +9,7 @@ Auto-clarity: suspend terse for security findings, destructive confirmations, am
 
 ## Purpose
 
-QA automation framework. Takes a user story → runs 9 phases → outputs XLSX test cases, Playwright E2E tests, bug reports, QA summary report. Agent persona: Rayan (Senior AI QA Engineer). Activate with `/aiqa-help` or `@qae`.
+QA framework built on 3 prompts. Story → test-case Markdown → live Playwright MCP execution (browser visible) → bug files → fixes. Agent persona: Rayan (Senior AI QA Engineer). Activate with `/aiqa-help` or `@qae`.
 
 ---
 
@@ -17,15 +17,17 @@ QA automation framework. Takes a user story → runs 9 phases → outputs XLSX t
 
 | Path | Purpose |
 |---|---|
-| `agents/qae.md` | Rayan persona — full activation, rules, menu |
-| `agents/terse-rules.md` | Terse behavior rules (read by session-start hook) |
-| `config.yaml` | User config: project, language, browser, paths, terse_mode |
-| `commands/registry.yaml` | All `/aiqa-*` command definitions |
-| `core/orchestrator.mjs` | Node.js runtime — runs skill scripts |
-| `core/compress-prompts.mjs` | Compress skill prompts (reduces input tokens ~40%) |
-| `core/token-stats.mjs` | Session + lifetime token usage stats |
-| `hooks/session-start.js` | SessionStart hook — injects terse rules |
-| `hooks/prompt-submit.js` | UserPromptSubmit hook — mode switching + reinforcement |
+| `reusable-prompts/write-test-cases.prompt.md` | Prompt 2 — story → test cases |
+| `reusable-prompts/execute-tests.prompt.md` | Prompt 1 — run one test file, results + bugs |
+| `reusable-prompts/fix-bug.prompt.md` | Prompt 3 — fix one bug |
+| `agents/qae.md` | Rayan persona — activation, rules, menu |
+| `agents/terse-rules.md` | Terse behavior rules (session-start hook) |
+| `config.yaml` | Project config: app URL, browser, paths, source roots, terse_mode |
+| `commands/registry.yaml` | `/aiqa-*` command definitions |
+| `templates/` | EXECUTION-GUIDE, INDEX, DATABASE-TABLES, test-cases, results, bug-report, BUGS-INDEX, SUMMARY |
+| `skills/`, `workflows/` | project-setup, write-test-cases, execute-tests, fix-bug, full-workflow |
+| `core/orchestrator.mjs` | Node runtime (protected) |
+| `hooks/session-start.js`, `hooks/prompt-submit.js` | Terse rules injection, mode switching |
 | `_config/skill-manifest.csv` | Skill discovery |
 | `_memory/qae-sidecar/qa-preferences.md` | Persistent QA preferences |
 
@@ -35,18 +37,17 @@ QA automation framework. Takes a user story → runs 9 phases → outputs XLSX t
 
 | Command | What |
 |---|---|
-| `/aiqa-help` | Show Rayan's menu |
-| `/aiqa-fullworkflow <story>` | Run all 9 QA phases |
-| `/aiqa-analyzestory <story>` | Phase 1: parse story → AC + scenarios |
-| `/aiqa-generatetestcases` | Phase 2: XLSX + MD test cases |
-| `/aiqa-generatee2e` | Phase 3: Playwright POM + spec |
-| `/aiqa-generatetestdata` | Phase 4: JSON test data |
-| `/aiqa-runtests` | Phase 5: execute + inline fix loop |
-| `/aiqa-analyzebugs` | Phase 6: triage failures → bug reports |
-| `/aiqa-generatereport` | Phase 7: QA summary report |
-| `/aiqa-terse [lite\|full\|ultra\|off]` | Switch terse mode level |
-| `/aiqa-tokenstats [--all] [--since 7d]` | Token usage + savings |
-| `/aiqa-terse-help` | Terse mode reference card |
+| `/aiqa-help` | Rayan's menu |
+| `/aiqa-setup` | Once: stack, test users, EXECUTION-GUIDE / INDEX / DATABASE-TABLES |
+| `/aiqa-writetestcases <story>` | Prompt 2: test-case Markdown, one file per screen |
+| `/aiqa-executetests <test-file> [--headless] [--summary]` | Prompt 1: run cases with Playwright MCP, browser visible by default |
+| `/aiqa-fixbug <bug-file>` | Prompt 3: reproduce, fix, verify, commit |
+| `/aiqa-fullworkflow <story>` | Chain all, confirm between prompts |
+| `/aiqa-terse [level]` (lite, full, ultra, off) | Terse level |
+| `/aiqa-tokenstats [--all] [--since 7d]` | Token usage |
+| `/aiqa-terse-help` | Terse reference card |
+
+Rules: browser visible unless user says headless. One test file / bug / story per session. No app changes while testing. SELECT-only SQL. Markdown only (no XLSX, no spec files).
 
 ---
 
@@ -54,12 +55,11 @@ QA automation framework. Takes a user story → runs 9 phases → outputs XLSX t
 
 | Path | Contents |
 |---|---|
-| `TestResult/{story-id}/test-cases/` | XLSX + MD test cases |
-| `TestResult/{story-id}/e2e/pages/` | Playwright Page Objects |
-| `TestResult/{story-id}/e2e/tests/` | Playwright spec files |
-| `TestResult/{story-id}/test-data/` | JSON data (valid/edge/security) |
-| `TestResult/{story-id}/bug-reports/` | BUG-XXXX.md files |
-| `TestResult/{story-id}/reports/` | QA summary (HTML + MD + XLSX) |
+| `TestResult/EXECUTION-GUIDE.md`, `INDEX.md`, `DATABASE-TABLES.md` | Project facts (from `/aiqa-setup`) |
+| `TestResult/test-cases/{story}/` | `NN-screen.test-cases.md` |
+| `TestResult/test-results/{story}/` | `NN-screen.results.md` + `screenshots/` |
+| `TestResult/test-results/bugs/` | `BUG-*.md` + `BUGS-INDEX.md` |
+| `TestResult/test-results/SUMMARY.md` | Final summary |
 
 ---
 
@@ -69,14 +69,15 @@ QA automation framework. Takes a user story → runs 9 phases → outputs XLSX t
 - `core/autonomous-loop.mjs`
 - Any file in `node_modules/`
 - `playwright.config.js`
-- Host project files outside `TestResult/`
+- Host project files outside `TestResult/` (exception: `/aiqa-fixbug` edits source)
 
 ---
 
 ## Never Compress in AI Outputs
 
-- Generated E2E test code (Playwright specs/page objects)
-- Excel/XLSX test case cell content
-- Bug report body (Arabic RCA + steps)
+- Test-case files (steps, expected results, exact UI texts)
+- Results notes, bug report bodies, Fix Notes
+- Guide / index / summary content
 - Security or critical (🔴) findings
 - Quoted error messages or stack traces
+- Commit messages

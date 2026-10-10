@@ -1,0 +1,9 @@
+{
+  "id": "project-setup",
+  "name": "Project Setup",
+  "version": "3.0.0",
+  "description": "One-time bootstrap: detect stack, fill config.yaml, test users, and generate EXECUTION-GUIDE.md, INDEX.md, DATABASE-TABLES.md.",
+  "inputs": {},
+  "outputs": { "guide": "{output_folder}/EXECUTION-GUIDE.md", "index": "{output_folder}/INDEX.md", "tables": "{output_folder}/DATABASE-TABLES.md" },
+  "mcp": { "tool": "qa.project_setup" }
+}

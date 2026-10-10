@@ -1,57 +1,33 @@
-# {{BUG_ID}} — {{TITLE}}
+# BUG-<E>-<S>-<SEQ> — <title>
 
-> **الحالة**: مفتوح | **التاريخ**: {{DATE}} | **الجولة**: أثناء تنفيذ الاختبار
-
----
-
-## معلومات الخطأ
-
-| الحقل | القيمة |
+| Field | Value |
 |---|---|
-| **Bug ID** | `{{BUG_ID}}` |
-| **عنوان المشكلة** | {{TITLE}} |
-| **نوع الخطأ** | {{TYPE}} |
-| **الملف المُعدَّل** | {{MODIFIED_FILE}} |
-| **مستوى الخطورة** | {{SEVERITY}} |
-| **الأولوية** | {{PRIORITY}} |
+| Status | Open |
+| Severity | Critical / High / Medium / Low |
+| Type | Frontend / Backend / Both / Data / Requirement gap |
+| Screen / Route | <screen> — `<route>` |
+| Story / AC | Story <E.S>, AC <n> |
+| Found by test case(s) | TC-… (+ related) |
+| Requirement | <id + exact quote> |
+| User / Role | <user (alias)> |
+| Found on | <date> |
 
----
+## Steps to Reproduce
+1. …
 
-## وصف الخطأ
+## Expected Result
+<from test case / requirement, exact text>
 
-```
-{{ERROR_MESSAGE}}
-```
+## Actual Result
+<what happened: exact messages, values, HTTP status, redirect>
 
----
+## Evidence
+- Screenshot: `../<story-folder>/screenshots/<file>.png`
+- Request/response (trimmed): `METHOD /path` → status, key fields
+- DB check (if used): query + result
 
-## تشخيص السبب الجذري
+## Suspected Location (best guess, not verified)
+- `<path>:<line>` — reason
 
-{{ROOT_CAUSE}}
-
----
-
-## الإصلاح المُطبَّق
-
-{{FIX_DESCRIPTION}}
-
-```javascript
-// قبل الإصلاح (Before):
-{{OLD_CODE}}
-
-// بعد الإصلاح (After):
-{{NEW_CODE}}
-```
-
----
-
-## سجل التتبع (Stack Trace)
-
-<details>
-<summary>عرض سجل التتبع</summary>
-
-```
-{{STACK_TRACE}}
-```
-
-</details>
+## Fix Notes
+(empty — filled by /aiqa-fixbug: root cause, files changed, commit, verification)

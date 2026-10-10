@@ -46,10 +46,10 @@ Q: "where is the run-tests skill invoked?"
 
 ```
 Defs:
-- commands/registry.yaml:38 — `run-tests` — skill: test-execution, phase 5
+- commands/registry.yaml:38 — `execute-tests` — skill: execute-tests
 Callers:
 - core/orchestrator.mjs:142 — `run-tests` — dispatched by skill id
 - workflows/run-tests/workflow.yaml:5 — `run-tests` — step 1 command
-- agents/qae.md:147 — `/aiqa-runtests` — menu item → workflow
+- agents/qae.md:147 — `/aiqa-executetests` — menu item → workflow
 totals: 1 def, 3 callers.
 ```

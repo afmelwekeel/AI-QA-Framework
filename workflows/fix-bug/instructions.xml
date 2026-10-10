@@ -1,0 +1,16 @@
+<workflow>
+  <critical>Communicate in {communication_language}. One bug per run. Reproduce before fixing. Smallest fix. Never mark Fixed without verification evidence.</critical>
+
+  <step n="1" goal="Pick the bug">
+    <action>Bug file = command argument; if none, read {output_folder}/test-results/bugs/BUGS-INDEX.md and ask which Open bug to fix</action>
+  </step>
+
+  <step n="2" goal="Fix">
+    <action>Load and follow {project-root}/AI-QA-FRAMEWORK/reusable-prompts/fix-bug.prompt.md with {{bug_file}}</action>
+    <action>Reproduction browser is visible unless the user asked for headless</action>
+  </step>
+
+  <step n="3" goal="Report and stop">
+    <output>Status, root cause, files changed, verification, commit id. Next: /aiqa-executetests to re-verify the file that found the bug.</output>
+  </step>
+</workflow>

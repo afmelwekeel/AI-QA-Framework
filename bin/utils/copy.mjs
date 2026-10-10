@@ -27,15 +27,7 @@ const FRAMEWORK_FILES = [
   'playwright.config.js',
 ];
 
-/** Module → skill folders it includes */
-const MODULE_SKILLS = {
-  'core':               null, // always — copies everything above
-  'e2e-playwright':     ['playwright-generation', 'test-execution'],
-  'test-cases-xlsx':    ['test-case-generation'],
-  'security-scan':      ['security-validation'],
-  'accessibility-scan': ['accessibility-validation'],
-  'regression-testing': ['regression-testing'],
-};
+/** Modules: v3 ships one module — the 3 prompts, setup and workflows are always installed. */
 
 /**
  * Copy the framework into targetDir.
@@ -80,17 +72,8 @@ function writeInstalledPackageJson(targetDir, src) {
     type: 'module',
     description: `AI-QA-Framework installed in this project`,
     scripts: {
-      qa:            'node ./core/orchestrator.mjs',
-      detect:        'node ./core/orchestrator.mjs detect',
-      'analyze-story': 'node ./core/orchestrator.mjs analyze-story',
-      'test-cases':  'node ./core/orchestrator.mjs generate-test-cases',
-      e2e:           'node ./core/orchestrator.mjs generate-e2e',
-      'test-data':   'node ./core/orchestrator.mjs generate-test-data',
-      'run-tests':   'playwright test --headed',
-      'run-tests:ci':'playwright test',
-      bugs:          'node ./core/orchestrator.mjs analyze-bugs',
-      report:        'node ./core/orchestrator.mjs generate-report',
-      full:          'node ./core/orchestrator.mjs full-workflow',
+      qa:      'node ./core/orchestrator.mjs',
+      detect:  'node ./core/orchestrator.mjs detect',
     },
     dependencies: srcPkg.dependencies || {},
     devDependencies: srcPkg.devDependencies || {},
@@ -110,7 +93,7 @@ db_username_column: "${answers.dbUsernameColumn || 'email'}"
 db_password_column: "${answers.dbPasswordColumn || 'password'}"
 `
     : `# No database connection configured.
-# Run /aiqa-fetchtestusers to connect a database or provide users manually at any time.
+# Run /aiqa-setup to connect a database or provide users manually at any time.
 db_connection_string: ""
 db_users_table: "users"
 db_username_column: "email"
@@ -132,23 +115,34 @@ reporting_language: ${answers.reportingLanguage}
 
 # ── Output Paths ──────────────────────────────────────────────────────────────
 output_folder: "{project-root}/${answers.installDir}/TestResult"
-test_cases_folder: "{output_folder}/{story-id}/test-cases"
-e2e_folder: "{output_folder}/{story-id}/e2e"
-test_data_folder: "{output_folder}/{story-id}/test-data"
-bug_reports_folder: "{output_folder}/{story-id}/bug-reports"
-reports_folder: "{output_folder}/{story-id}/reports"
+test_cases_folder: "{output_folder}/test-cases"
+test_results_folder: "{output_folder}/test-results"
+bug_reports_folder: "{output_folder}/test-results/bugs"
 
 # ── Project Knowledge ─────────────────────────────────────────────────────────
 project_knowledge: "{project-root}/docs"
 implementation_artifacts: "{project-root}/docs/stories"
 
 # ── Test Settings ─────────────────────────────────────────────────────────────
-test_mode: ${answers.testMode}
+# Tests run live through the Playwright MCP browser. VISIBLE by default.
+# show_browser: false = headless (only if you do not want to see the browser).
+show_browser: ${answers.testMode === 'headless' ? 'false' : 'true'}
+viewport: "1920x1080"
 default_browser: chromium
-slow_mo_ms: 60
-retries_local: 1
-retries_ci: 2
-parallel: false
+max_locate_attempts: 2
+
+# ── Target Application (filled by /aiqa-setup) ───────────────────────────────
+app_url: ""
+ui_language: ""
+ui_direction: ltr
+restart_command: ""
+allow_ai_restart: false
+source_roots: []
+ignored_paths: []
+code_standards_files: []
+tech_stack: ""
+build_command: ""
+test_command: ""
 
 # ── Quality Gates ─────────────────────────────────────────────────────────────
 min_pass_rate: 95
@@ -157,7 +151,7 @@ block_on_high: true
 
 # ── Test Data & Database ──────────────────────────────────────────────────────
 ${dbSection}
-# Saved test users — populated by /aiqa-fetchtestusers (from DB query or entered manually).
+# Saved test users — populated by /aiqa-setup (from DB query or entered manually).
 # Format per entry: { role: "admin", username: "user@example.com", password: "Pass@123", notes: "" }
 test_users: []
 `;

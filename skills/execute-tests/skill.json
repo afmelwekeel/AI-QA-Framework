@@ -1,0 +1,10 @@
+{
+  "id": "execute-tests",
+  "name": "Execute Tests",
+  "version": "3.0.0",
+  "description": "Run every case of one test-case file with Playwright MCP (browser visible by default), write results, screenshots and bug files.",
+  "inputs": { "file": "test-case file path (required unless --summary)", "headless": "true only if the user asked", "summary": "final restore check + SUMMARY.md" },
+  "outputs": { "results": "{output_folder}/test-results/<story>/<NN>-<screen>.results.md", "bugs": "{output_folder}/test-results/bugs/BUG-*.md", "summary": "test-results/SUMMARY.md" },
+  "prompt": "reusable-prompts/execute-tests.prompt.md",
+  "mcp": { "tool": "qa.execute_tests" }
+}

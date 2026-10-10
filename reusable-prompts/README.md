@@ -1,18 +1,21 @@
-# Reusable Prompts
+# Reusable Prompts — the 3 prompts of the framework
 
-These are project-agnostic prompts the orchestrator (or any LLM driver)
-can attach as the "system" or "task" message when invoking a skill.
+| File | Command | Does |
+|---|---|---|
+| `write-test-cases.prompt.md` | `/aiqa-writetestcases <story>` | Story → test-case Markdown files (one per screen) |
+| `execute-tests.prompt.md` | `/aiqa-executetests <test-file>` | Run every case with Playwright MCP (browser visible), write results + bugs |
+| `fix-bug.prompt.md` | `/aiqa-fixbug <bug-file>` | Reproduce, fix, verify, commit one bug |
 
-| File | Skill |
+All three are project-agnostic. Project facts live in three generated documents (made by `/aiqa-setup`):
+
+| Document | Content |
 |---|---|
-| `analyze-project.prompt.md` | project-analysis |
-| `analyze-story.prompt.md`   | user-story-analysis |
-| `generate-test-cases.prompt.md` | test-case-generation |
-| `generate-e2e.prompt.md` | playwright-generation |
-| `analyze-bugs.prompt.md` | bug-analysis |
-| `qa-report.prompt.md` | qa-reporting |
+| `{output_folder}/EXECUTION-GUIDE.md` | environment, login, test users, placeholders, data rules, result + bug formats |
+| `{output_folder}/INDEX.md` | test-case file table + consolidated gaps |
+| `{output_folder}/DATABASE-TABLES.md` | schema reference for read-only checks |
 
-Each prompt:
-- Contains NO project-specific text
-- Refers to the input via the standard `ctx` envelope keys
-- Outputs JSON or files described in the matching `skill.json`
+Variables (`{project_name}`, `{app_url}`, `{output_folder}`, …) come from `config.yaml`.
+Skills and workflows load these prompts; they do not copy them.
+You can also paste a prompt into any new AI session after replacing the first-line path.
+
+Flow: `setup` once → per story `writetestcases` → per file `executetests` → per bug `fixbug` → `executetests --summary`.

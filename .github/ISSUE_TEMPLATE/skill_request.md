@@ -21,9 +21,9 @@ What does the skill need to run?
 
 ## Outputs
 What should the skill produce?
-- [ ] Test cases (XLSX/MD)
+- [ ] Test cases (MD)
 - [ ] E2E test files (Playwright)
-- [ ] Report (HTML/XLSX/MD)
+- [ ] Report (MD)
 - [ ] Other: ___
 
 ## Which Phase?

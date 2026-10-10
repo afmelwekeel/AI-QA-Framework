@@ -1,159 +1,74 @@
-# AI QA Framework — Command Registry v2
-# Mirrored by core/orchestrator.mjs and ready for VS Code / MCP integration.
-version: 2
+# AI QA Framework — Command Registry v3
+# The framework has 3 prompts: write test cases, execute tests, fix bug.
+# Everything else (setup, fullworkflow, terse, stats) supports them.
+version: 3
 commands:
-  # ── Core Pipeline ──────────────────────────────────────────────────────────
-  - id: analyze-project
-    skill: project-analysis
-    phase: 0
-    description: Detect frontend, backend, DB, auth, routes
+  # ── Setup (once per project) ───────────────────────────────────────────────
+  - id: setup
+    slash: /aiqa-setup
+    skill: project-setup
+    workflow: setup
+    description: Detect stack, fill config.yaml, test users, generate EXECUTION-GUIDE / INDEX / DATABASE-TABLES
     args: []
 
-  - id: analyze-story
-    skill: user-story-analysis
-    phase: 1
-    description: Parse a user story / epic — extract AC, scenarios, risks, edge cases
+  # ── The 3 prompts ──────────────────────────────────────────────────────────
+  - id: write-test-cases
+    slash: /aiqa-writetestcases
+    skill: write-test-cases
+    workflow: write-test-cases
+    prompt: reusable-prompts/write-test-cases.prompt.md
+    description: "Prompt 2 — story file → test-case Markdown files (one per screen)"
     args: [{ name: story, required: true }]
 
-  - id: generate-test-cases
-    skill: test-case-generation
-    phase: 2
-    description: Produce Arabic XLSX + MD test cases saved in /test-cases/
-    args: [{ name: story, required: false }, { name: ast, required: false }]
+  - id: execute-tests
+    slash: /aiqa-executetests
+    skill: execute-tests
+    workflow: execute-tests
+    prompt: reusable-prompts/execute-tests.prompt.md
+    description: "Prompt 1 — run one test-case file with Playwright MCP (browser visible by default), write results, screenshots, bugs"
+    args:
+      - { name: file,     required: false }
+      - { name: headless, required: false, flag: true, notes: "only when the user asked not to see the browser" }
+      - { name: summary,  required: false, flag: true, notes: "final restore check + SUMMARY.md" }
 
-  - id: generate-e2e
-    skill: playwright-generation
-    phase: 3
-    description: Scaffold JavaScript Playwright POM + spec in /e2e/
-    args: [{ name: suite, required: true }, { name: story, required: false }]
+  - id: fix-bug
+    slash: /aiqa-fixbug
+    skill: fix-bug
+    workflow: fix-bug
+    prompt: reusable-prompts/fix-bug.prompt.md
+    description: "Prompt 3 — reproduce, fix, verify, commit one bug"
+    args: [{ name: bug, required: false }]
 
-  - id: generate-test-data
-    skill: test-data-generation
-    phase: 4
-    description: Generate JSON test data files in /test-data/ for each E2E suite
-    args: [{ name: suite, required: false }]
-
-  - id: run-tests
-    skill: test-execution
-    phase: 5
-    description: Run Playwright tests in headed mode (browser opens visually)
-    args: [{ name: suite, required: false }, { name: headed, required: false, default: true }]
-
-  - id: analyze-bugs
-    skill: bug-analysis
-    phase: 6
-    description: Triage failures, generate Arabic bug reports in /bug-reports/
-    args: [{ name: junit, required: false }]
-
-  - id: generate-report
-    skill: qa-reporting
-    phase: 7
-    description: Aggregate QA summary (HTML + MD + XLSX) in /reports/
-    args: []
-
-  - id: fix-bugs
-    skill: bug-fixing
-    phase: 8
-    description: Fix each bug in /bug-reports/ by editing source code, then retest that single test (one fix attempt per bug)
-    args: [{ name: suite, required: false }]
-
-  # ── Master Commands ─────────────────────────────────────────────────────────
+  # ── Master ─────────────────────────────────────────────────────────────────
   - id: full-workflow
-    skill: full-workflow
-    phase: all
-    description: "MASTER — run all 9 phases: analyze → generate → run → report → fix-bugs"
-    args: [{ name: story, required: false }, { name: suite, required: false }]
+    slash: /aiqa-fullworkflow
+    workflow: full-workflow
+    description: "Chain: setup check → write test cases → execute each file → file bugs → optional fixes → SUMMARY. User confirms between prompts"
+    args: [{ name: story, required: false }]
 
-  - id: run-all
-    skill: full-workflow
-    phase: all
-    description: Alias for full-workflow (9 phases including bug-fixing)
-    args: [{ name: story, required: false }, { name: suite, required: false }]
-
-  # ── Specialized Scans ───────────────────────────────────────────────────────
-  - id: regression-test
-    skill: regression-testing
-    description: Re-run baseline + diff
+  # ── Utility ────────────────────────────────────────────────────────────────
+  - id: analyze-project
+    skill: project-analysis
+    description: Detect stack, routes, auth, DB (used by setup)
     args: []
 
-  - id: security-scan
-    skill: security-validation
-    description: OWASP-style validation pass on detected endpoints
-    args: []
-
-  - id: accessibility-scan
-    skill: accessibility-validation
-    description: a11y audit on detected pages
-    args: []
-
-  - id: autonomous-run
-    skill: autonomous-testing
-    description: Full autonomous pipeline (legacy — prefer full-workflow)
-    args: []
-
-  # ── Validate Commands ────────────────────────────────────────────────────────
-  - id: analyzeproject-validate
-    workflow: analyzeproject-validate
-    description: Validate Phase 0 output — project.config.json accuracy and completeness
-    args: []
-
-  - id: analyzestory-validate
-    workflow: analyzestory-validate
-    description: Validate Phase 1 output — story AST quality and AC coverage
-    args: [{ name: suite, required: false }]
-
-  - id: generatetestcases-validate
-    workflow: generatetestcases-validate
-    description: Validate Phase 2 output — test case coverage, traceability, and quality
-    args: [{ name: suite, required: false }]
-
-  - id: generatee2e-validate
-    workflow: generatee2e-validate
-    description: Validate Phase 3 output — Playwright POM and spec correctness
-    args: [{ name: suite, required: false }]
-
-  - id: generatetestdata-validate
-    workflow: generatetestdata-validate
-    description: Validate Phase 4 output — JSON test data field alignment and completeness
-    args: [{ name: suite, required: false }]
-
-  - id: analyzebugs-validate
-    workflow: analyzebugs-validate
-    description: Validate Phase 6 output — bug report completeness and severity accuracy
-    args: [{ name: suite, required: false }]
-
-  - id: generatereport-validate
-    workflow: generatereport-validate
-    description: Validate Phase 7 output — QA report accuracy, pass rate, quality gate
-    args: [{ name: suite, required: false }]
-
-  - id: validate
-    workflow: validate
-    description: Smart validator — auto-dispatches to the checklist for the active suite's current phase
-    args: [{ name: suite, required: false }]
-
-  # ── Token Minimization ──────────────────────────────────────────────────────
+  # ── Token Minimization ─────────────────────────────────────────────────────
   - id: aiqa-terse
     description: Switch terse output mode level (lite | full | ultra | off)
     args: [{ name: level, required: false, default: full }]
-    notes: >
-      Handled by hooks/prompt-submit.js. No skill script — the hook intercepts
-      /aiqa-terse commands and updates the .aiqa-terse-active flag file.
+    notes: Handled by hooks/prompt-submit.js. No skill script.
 
   - id: aiqa-tokenstats
     script: core/token-stats.mjs
-    description: Show token usage + savings for current session; --all for lifetime; --since 7d for window
+    description: Show token usage + savings; --all lifetime; --since 7d window
     args:
       - { name: session-file, required: false }
       - { name: all,          required: false, flag: true }
       - { name: since,        required: false }
       - { name: share,        required: false, flag: true }
-    notes: >
-      Intercepted by hooks/prompt-submit.js as decision:block — runs token-stats.mjs
-      and returns stats immediately without an AI round-trip.
+    notes: Intercepted by hooks/prompt-submit.js as decision:block.
 
   - id: aiqa-terse-help
     description: Show terse mode quick-reference card
     args: []
-    notes: >
-      One-shot display. Handled inline by qae.md persona. No mode change, no flag write.
+    notes: One-shot display handled inline by qae.md persona.

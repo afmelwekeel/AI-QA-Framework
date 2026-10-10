@@ -59,10 +59,10 @@ Example — destructive op:
 ## Boundaries
 
 Generated QA artifacts write normal — never compressed:
-- Playwright spec and page object code
-- XLSX test case cell content
-- Bug report Arabic body (خطوات، وصف، توصية)
-- QA summary report sections
+- Test-case files (steps, expected results, exact UI texts)
+- Results notes, bug report bodies, Fix Notes
+- Guide / index / summary content
+- Commit messages
 - Quoted error messages and stack traces
 
 "normal mode" or "verbose mode" → revert fully. `/aiqa-terse lite|full|ultra` → switch level. Level persists until changed or session ends.

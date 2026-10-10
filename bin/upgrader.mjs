@@ -204,7 +204,7 @@ export async function runUpgrade(flags = {}) {
   let toolsToRefresh = detectedTools;
   if (!flags.yes && detectedTools.length > 0) {
     const refresh = await confirm(
-      `Refresh AI tool command files for: ${c.cyan}${detectedTools.join(', ')}${c.reset}?\n  ${c.dim}This adds any new commands (e.g. /aiqa-fixbugs). Existing files are skipped unless forced.${c.reset}`,
+      `Refresh AI tool command files for: ${c.cyan}${detectedTools.join(', ')}${c.reset}?\n  ${c.dim}This adds any new commands (e.g. /aiqa-fixbug, /aiqa-executetests). Existing files are skipped unless forced.${c.reset}`,
       true
     );
     if (!refresh) toolsToRefresh = [];

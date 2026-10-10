@@ -1,0 +1,10 @@
+{
+  "id": "write-test-cases",
+  "name": "Write Test Cases",
+  "version": "3.0.0",
+  "description": "Story → Markdown test-case files, one per screen, with gaps, conventions, test data and Playwright notes.",
+  "inputs": { "story": "story file path (required)" },
+  "outputs": { "files": "{output_folder}/test-cases/<story>/<NN>-<screen>.test-cases.md", "index": "INDEX.md rows" },
+  "prompt": "reusable-prompts/write-test-cases.prompt.md",
+  "mcp": { "tool": "qa.write_test_cases" }
+}
