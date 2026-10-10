@@ -188,6 +188,10 @@ TestResult/test-cases/2-1-orders/02-order-form.test-cases.md
 
 Each file contains: header (route, roles, ACs covered) · **known gaps** between story and code · **deferred / out of scope** items · exact UI texts · test data needed · case tables (access, functional, validation, data, negative, security, export, UI/accessibility, regression) · Playwright notes (selectors, modals, waits).
 
+Every case has a **Status** column. It starts as `Pending`. During execution Rayan sets it to `Pass`, `Fail`, `Blocked` or `Not Run` right after each case and updates the **Progress** row in the file header (for example `12 tested / 8 pending`). Open any test-case file to see what is tested and what is still pending.
+
+For the whole project, open `TestResult/TEST-CASES-LOG.yaml`. It lists every generated test case with its story, title, file path and status, plus totals, as a YAML file. It is written by `/aiqa-writetestcases` and updated after every executed case, together with the test-case file, so both always agree.
+
 **Review these files before executing.** Edit anything wrong. Case ids look like `TC-21-OR-001`.
 
 ### Step 3 — Execute one test file
@@ -308,6 +312,7 @@ TestResult/
 ├── EXECUTION-GUIDE.md          project facts (from /aiqa-setup)
 ├── INDEX.md                    test files, status, known gaps
 ├── DATABASE-TABLES.md          schema notes for read-only checks
+├── TEST-CASES-LOG.yaml           every test case: name, file path, status
 ├── test-cases/
 │   └── <story>/
 │       └── 01-<screen>.test-cases.md

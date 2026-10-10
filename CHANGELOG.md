@@ -6,9 +6,11 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## [3.1.0] — 2026-10-10
 
 ### Added
+- `TestResult/TEST-CASES-LOG.yaml` (template `TEST-CASES-LOG.template.yaml`): one entry per test case (YAML) with story, id, title, file path and status, plus totals. Created by setup, filled by write-test-cases, updated by execute-tests after each case together with the test-case file. Review checklists verify the log matches. `/aiqa-reset` clears its entries.
+- Per-case `Status` column in test-case files (`Pending` → `Pass` / `Fail` / `Blocked` / `Not Run`) plus a `Progress` row in the file header. The writer sets `Pending`; the executor updates Status after each case. Template, prompts, skills, guide template and review checklists updated.
 - Mandatory **REVIEW AND FIX** step at the end of setup, write-test-cases, execute-tests (incl. `--summary`) and fix-bug prompts, skills and workflows. Each reviews its own output against a checklist, fixes issues (max 2 rounds) and reports found / fixed / open. In fix-bug the review runs before the commit.
 
 ## [3.0.0] — 2026-10-10

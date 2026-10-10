@@ -21,12 +21,15 @@ Update existing documents in place. Never replace a filled value with `<TODO>`.
    Verify every fact (URL answers, DB answers SELECT, login works). Record the date. Baseline values
    come from read-only queries. Leave `<TODO>` only where the user must decide.
 5. Create `{output_folder}/test-cases/`, `{output_folder}/test-results/bugs/` and copy
-   `BUGS-INDEX.template.md` to `test-results/bugs/BUGS-INDEX.md` if missing.
+   `BUGS-INDEX.template.md` to `test-results/bugs/BUGS-INDEX.md` if missing. Copy
+   `TEST-CASES-LOG.template.yaml` to `{output_folder}/TEST-CASES-LOG.yaml` if missing (add entries for
+   existing test-case files if any, taking Status from their Status column or `Pending`).
 6. REVIEW AND FIX (mandatory, before showing the user). Re-read the three documents as a reviewer.
    Check: every fact verified (URL answers, DB answers SELECT, login works); no wrong or stale
    values; test users match roles in the stories; Missing roles listed; data-change rules strict;
    baseline values present; secrets masked; no `<TODO>` left that could be found in code/DB;
-   INDEX.md lists the existing test-case files. Fix each issue, re-verify. Max 2 rounds.
+   INDEX.md lists the existing test-case files; TEST-CASES-LOG.yaml is valid YAML and has one entry
+   per existing case with a path that resolves. Fix each issue, re-verify. Max 2 rounds.
 7. Show the user the filled guide (hard stop): ask to confirm URLs, users, data rules and protected
    settings. Apply corrections. Do not continue until confirmed.
 8. Report: files written, review result (issues found / fixed / open), remaining `<TODO>` items, next command `/aiqa-writetestcases <story>`.

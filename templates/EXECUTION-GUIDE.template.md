@@ -79,9 +79,10 @@ Tools: `browser_navigate`, `browser_snapshot`, `browser_click`, `browser_type`, 
 | Screenshots | `test-results/<story-folder>/screenshots/<TC-ID>.png` |
 | Bugs | `test-results/bugs/BUG-<E>-<S>-<SEQ>-<kebab-title>.md` + `BUGS-INDEX.md` |
 | Final summary | `test-results/SUMMARY.md` |
+| Test cases log (all cases, path, status) | `TEST-CASES-LOG.yaml` |
 
 Formats: `templates/results.template.md`, `templates/bug-report.template.md`, `templates/BUGS-INDEX.template.md`.
-Result values: Pass / Fail / Blocked / Not Run. Screenshot every Fail and key Pass. After each file: short summary, then stop.
+Result values: Pass / Fail / Blocked / Not Run. Every case also has a `Status` cell in its test-case file: `Pending` until executed, then the result value; update it (and the file's `Progress` row) and the case's entry in `TEST-CASES-LOG.yaml` right after each case. Screenshot every Fail and key Pass. After each file: short summary, then stop.
 
 ### 8.1 Bug Reports
 One file per real defect (not a data / environment problem). Read BUGS-INDEX.md first; if duplicate, add the TC id to the existing bug. Add one row per bug to the index.

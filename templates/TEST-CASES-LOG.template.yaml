@@ -1,0 +1,22 @@
+# Test Cases Log
+# One entry per generated test case. Written by /aiqa-writetestcases (status: Pending),
+# updated by /aiqa-executetests after each case. The same status is kept in the case's
+# test-case file. If the two differ, the results file decides.
+# status: Pending (not tested) | Pass | Fail | Blocked | Not Run. Tested = anything except Pending.
+# Quote titles ("...") so colons and special characters stay valid YAML.
+
+totals:
+  total: 0
+  pending: 0
+  pass: 0
+  fail: 0
+  blocked: 0
+  not_run: 0
+
+cases:
+  - story: "<story-folder>"
+    id: TC-<E><S>-<SCR>-001
+    title: "<title>"
+    file: test-cases/<story-folder>/01-screen.test-cases.md   # relative to TestResult/
+    status: Pending
+    updated: "<YYYY-MM-DD>"

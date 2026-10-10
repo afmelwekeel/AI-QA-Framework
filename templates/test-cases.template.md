@@ -9,6 +9,7 @@
 | Requirement refs | <id + exact quote> |
 | Allowed roles | `<roles from code>` |
 | Test users | <users from EXECUTION-GUIDE>. ⚠ needs user with role `<X>` (missing) |
+| Progress | 0 tested / <N> pending (Pass 0 · Fail 0 · Blocked 0 · Not Run 0) |
 
 ## Known story/requirement ↔ code gaps to verify
 
@@ -24,6 +25,7 @@
 
 - Priority: P1 = blocks story / data integrity, P2 = main behaviour, P3 = UI / edge.
 - Type: FUNC, UI, RBAC, DATA, NEG, VAL, SEC, A11Y, EXP, NAV, REG.
+- Status: `Pending` = not tested yet (set by the writer). After execution: `Pass` / `Fail` / `Blocked` / `Not Run` (set by the executor; details live in the results file). Tested = anything except `Pending`.
 - Exact texts (from code, original language): labels, buttons, validation, success, error, confirm dialogs, empty state.
 - Placeholders: P_cur, P_past, classes, test-record prefix (from EXECUTION-GUIDE).
 - Do not create, change or delete real data. Read-only queries and GET calls to check state.
@@ -37,9 +39,9 @@
 ## Test cases
 
 ### A. Role access
-| ID | Title | Preconditions | Steps | Expected | Pri | Type | AC |
-|---|---|---|---|---|---|---|---|
-| TC-<E><S>-<SCR>-001 | <title> | <user, data> | 1. … 2. … | <exact result> | P1 | RBAC | AC1 |
+| ID | Title | Preconditions | Steps | Expected | Pri | Type | AC | Status |
+|---|---|---|---|---|---|---|---|---|
+| TC-<E><S>-<SCR>-001 | <title> | <user, data> | 1. … 2. … | <exact result> | P1 | RBAC | AC1 | Pending |
 
 ### B. Functional
 ### C. Validation

@@ -28,6 +28,7 @@ Next step for the user: `/aiqa-setup`.
 
 This will permanently delete:
 - Generated test cases, results, screenshots, bug files and summaries under `{output_folder}/test-cases/` and `{output_folder}/test-results/`
+- All entries in `{output_folder}/TEST-CASES-LOG.yaml` (the file is reset to `templates/TEST-CASES-LOG.template.yaml` with empty `cases: []` and zero `totals`)
 - The QA history table in `_memory/qae-sidecar/qa-history.md`
 - `.github/agents/ai-qa-framework-qae.agent.md` and `.github/prompts/aiqa-*.prompt.md`
 

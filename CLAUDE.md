@@ -56,6 +56,7 @@ Rules: browser visible unless user says headless. One test file / bug / story pe
 | Path | Contents |
 |---|---|
 | `TestResult/EXECUTION-GUIDE.md`, `INDEX.md`, `DATABASE-TABLES.md` | Project facts (from `/aiqa-setup`) |
+| `TestResult/TEST-CASES-LOG.yaml` | All test cases: id, title, file path, status |
 | `TestResult/test-cases/{story}/` | `NN-screen.test-cases.md` |
 | `TestResult/test-results/{story}/` | `NN-screen.results.md` + `screenshots/` |
 | `TestResult/test-results/bugs/` | `BUG-*.md` + `BUGS-INDEX.md` |
