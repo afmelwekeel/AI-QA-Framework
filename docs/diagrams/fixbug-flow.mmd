@@ -1,0 +1,6 @@
+flowchart LR
+    B[/BUG file/] --> R{Reproduce}
+    R -->|cannot| CR([Status: Cannot Reproduce, stop])
+    R -->|yes| RC[Find root cause] --> FX[Smallest fix] --> T[Build + tests] --> V{Bug gone?}
+    V -->|no| FX
+    V -->|yes| U[Update bug file + index] --> CM([Commit with bug id])

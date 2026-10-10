@@ -44,58 +44,13 @@ Two helpers support them:
 
 ### The big picture
 
-```mermaid
-flowchart TD
-    A([You: user story file]) --> S
+![Workflow overview: setup, write test cases, execute, fix bugs, summary](https://raw.githubusercontent.com/afmelwekeel/AI-QA-Framework/main/docs/diagrams/workflow-overview.png)
 
-    S["<b>1. /aiqa-setup</b><br/>once per project"]
-    S -->|writes| G[("EXECUTION-GUIDE.md<br/>INDEX.md<br/>DATABASE-TABLES.md")]
-    G --> R{{"You review the guide<br/>say OK"}}
-    R --> W
-
-    W["<b>2. /aiqa-writetestcases</b> &lt;story&gt;"]
-    W -->|one file per screen| TC[/"test-cases/story/<br/>01-screen.test-cases.md"/]
-    TC --> R2{{"You review<br/>the test cases"}}
-    R2 --> E
-
-    E["<b>3. /aiqa-executetests</b> &lt;test-file&gt;<br/>live browser, you watch"]
-    E --> RES[/"results.md + screenshots"/]
-    E --> Q{Real defect<br/>found?}
-    Q -->|yes| BUG[/"bugs/BUG-*.md"/]
-    Q -->|no| MORE
-    BUG --> F["<b>4. /aiqa-fixbug</b> &lt;bug-file&gt;<br/>reproduce, fix, verify, commit"]
-    F -->|re-run the file| E
-    RES --> MORE{More test<br/>files?}
-    MORE -->|yes, new session| E
-    MORE -->|no| SUM["<b>5. /aiqa-executetests --summary</b>"]
-    SUM --> DONE([SUMMARY.md])
-
-    FW["/aiqa-fullworkflow &lt;story&gt;<br/>runs steps 2 to 5 and asks before each"] -.-> W
-
-    classDef you fill:#fff3cd,stroke:#b58900,color:#000;
-    classDef cmd fill:#d1e7ff,stroke:#0b5ed7,color:#000;
-    classDef out fill:#e2f5e9,stroke:#198754,color:#000;
-    class A,R,R2 you;
-    class S,W,E,F,SUM,FW cmd;
-    class G,TC,RES,BUG,DONE out;
-```
-
-**Legend:** yellow = you, blue = command Rayan runs, green = file created.
+**Legend:** yellow = you, blue = command Rayan runs, green = file created. Diagram sources (Mermaid): [`docs/diagrams/`](https://github.com/afmelwekeel/AI-QA-Framework/tree/main/docs/diagrams).
 
 ### Which command do I need?
 
-```mermaid
-flowchart LR
-    Start([What do you want?]) --> N{First time<br/>in this project?}
-    N -->|yes| A["/aiqa-setup"]
-    N -->|no| B{What do you have?}
-    B -->|a story file| C["/aiqa-writetestcases"]
-    B -->|a test-case file| D["/aiqa-executetests"]
-    B -->|a bug file| E["/aiqa-fixbug"]
-    B -->|all tests executed| F["/aiqa-executetests --summary"]
-    B -->|just a story,<br/>want everything| G["/aiqa-fullworkflow"]
-    B -->|not sure| H["/aiqa-help"]
-```
+![Which command do I need?](https://raw.githubusercontent.com/afmelwekeel/AI-QA-Framework/main/docs/diagrams/which-command.png)
 
 Key ideas:
 
@@ -200,27 +155,7 @@ For the whole project, open `TestResult/TEST-CASES-LOG.yaml`. It lists every gen
 /aiqa-executetests TestResult/test-cases/2-1-orders/01-orders-list.test-cases.md
 ```
 
-```mermaid
-sequenceDiagram
-    actor You
-    participant Rayan
-    participant App as Your app (browser)
-    participant Files as TestResult/
-    You->>Rayan: /aiqa-executetests 01-screen.test-cases.md
-    Rayan->>App: Is the app up?
-    App-->>Rayan: yes (if no, Rayan stops and tells you)
-    Rayan->>App: Record baseline values
-    loop every test case, in order
-        Rayan->>App: Log in as the right role, run steps
-        App-->>Rayan: Actual result
-        Rayan->>Files: Append result (Pass / Fail / Blocked)
-        opt Fail
-            Rayan->>Files: Screenshot + BUG-*.md
-        end
-    end
-    Rayan->>App: Restore test data
-    Rayan-->>You: Summary, then stops
-```
+![Sequence of one executetests run](https://raw.githubusercontent.com/afmelwekeel/AI-QA-Framework/main/docs/diagrams/execute-sequence.png)
 
 Rayan:
 1. Checks that the app (and database) answer. If down, it stops and tells you.
@@ -248,14 +183,7 @@ Rayan asks you only before **global changes** (for example activating another pl
 /aiqa-fixbug TestResult/test-results/bugs/BUG-2-1-001-duplicate-error-under-both-fields.md
 ```
 
-```mermaid
-flowchart LR
-    B[/BUG file/] --> R{Reproduce}
-    R -->|cannot| CR([Status: Cannot Reproduce, stop])
-    R -->|yes| RC[Find root cause] --> FX[Smallest fix] --> T[Build + tests] --> V{Bug gone?}
-    V -->|no| FX
-    V -->|yes| U[Update bug file + index] --> CM([Commit with bug id])
-```
+![Fix-bug flow](https://raw.githubusercontent.com/afmelwekeel/AI-QA-Framework/main/docs/diagrams/fixbug-flow.png)
 
 Rayan reproduces the bug first. If it cannot, it sets the status to **Cannot Reproduce** and stops. Otherwise it finds the root cause, makes the smallest fix, runs your build and tests, repeats the reproduction, updates the bug file (Status = Fixed, Fix Notes) and the index, and commits with the bug id in the message.
 

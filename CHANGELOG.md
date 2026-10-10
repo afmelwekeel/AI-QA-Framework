@@ -6,6 +6,11 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [3.1.1] — 2026-10-10
+
+### Fixed
+- README diagrams did not render on npmjs.com (no Mermaid support). They are now PNG images with absolute GitHub URLs; Mermaid sources kept in `docs/diagrams/`.
+
 ## [3.1.0] — 2026-10-10
 
 ### Added

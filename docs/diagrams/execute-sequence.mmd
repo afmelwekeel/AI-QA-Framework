@@ -1,0 +1,19 @@
+sequenceDiagram
+    actor You
+    participant Rayan
+    participant App as Your app (browser)
+    participant Files as TestResult/
+    You->>Rayan: /aiqa-executetests 01-screen.test-cases.md
+    Rayan->>App: Is the app up?
+    App-->>Rayan: yes (if no, Rayan stops and tells you)
+    Rayan->>App: Record baseline values
+    loop every test case, in order
+        Rayan->>App: Log in as the right role, run steps
+        App-->>Rayan: Actual result
+        Rayan->>Files: Append result (Pass / Fail / Blocked)
+        opt Fail
+            Rayan->>Files: Screenshot + BUG-*.md
+        end
+    end
+    Rayan->>App: Restore test data
+    Rayan-->>You: Summary, then stops

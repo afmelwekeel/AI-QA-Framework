@@ -1,0 +1,10 @@
+flowchart LR
+    Start([What do you want?]) --> N{First time<br/>in this project?}
+    N -->|yes| A["/aiqa-setup"]
+    N -->|no| B{What do you have?}
+    B -->|a story file| C["/aiqa-writetestcases"]
+    B -->|a test-case file| D["/aiqa-executetests"]
+    B -->|a bug file| E["/aiqa-fixbug"]
+    B -->|all tests executed| F["/aiqa-executetests --summary"]
+    B -->|just a story,<br/>want everything| G["/aiqa-fullworkflow"]
+    B -->|not sure| H["/aiqa-help"]
