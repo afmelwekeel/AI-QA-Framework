@@ -1,6 +1,6 @@
 # Prompt 1 — Execute one test-case file
 
-Command: `/aiqa-executetests <test-case-file>` · One new session per file.
+Command: `/aiqa-run-tests <test-case-file>` · One new session per file.
 Generic: no project text. Project facts (URL, DB, users, rules) come from the **Execution Guide**.
 
 ```text
@@ -95,7 +95,7 @@ from BUGS-INDEX.md, confirmed gaps).
 REVIEW AND FIX: re-read SUMMARY.md against the results files and BUGS-INDEX.md. Totals, bug counts,
 severities and statuses must match the source files exactly; fix any mismatch (max 2 rounds). Stop.
 ```
-Command: `/aiqa-executetests --summary`.
+Command: `/aiqa-run-tests --summary`.
 
 ## Rules the prompt enforces
 

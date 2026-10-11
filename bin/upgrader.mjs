@@ -51,7 +51,7 @@ function findInstallDir(flagDirectory) {
   }
 
   // 2. Scan common names
-  const candidates = ['ai-qa-framework', 'AI-QA-Framework', 'qa-framework', 'qa'];
+  const candidates = ['Core', 'ai-qa-framework', 'AI-QA-Framework', 'qa-framework', 'qa'];
   for (const name of candidates) {
     const p = join(process.cwd(), name);
     if (existsSync(join(p, '_config', 'manifest.yaml'))) return { dir: name, path: p };
@@ -204,7 +204,7 @@ export async function runUpgrade(flags = {}) {
   let toolsToRefresh = detectedTools;
   if (!flags.yes && detectedTools.length > 0) {
     const refresh = await confirm(
-      `Refresh AI tool command files for: ${c.cyan}${detectedTools.join(', ')}${c.reset}?\n  ${c.dim}This adds any new commands (e.g. /aiqa-fixbug, /aiqa-executetests). Existing files are skipped unless forced.${c.reset}`,
+      `Refresh AI tool command files for: ${c.cyan}${detectedTools.join(', ')}${c.reset}?\n  ${c.dim}This adds any new commands (e.g. /aiqa-fixbug, /aiqa-run-tests). Existing files are skipped unless forced.${c.reset}`,
       true
     );
     if (!refresh) toolsToRefresh = [];

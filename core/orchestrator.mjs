@@ -152,7 +152,10 @@ async function main() {
   }
 
   // Resolve suite-scoped output root: TestResult/{suite}/
-  const TEST_RESULT_ROOT = join(FRAMEWORK_ROOT, 'TestResult');
+  // Installed layout: <project>/Core + <project>/TestResult (siblings)
+  const TEST_RESULT_ROOT = basename(FRAMEWORK_ROOT) === 'Core'
+    ? join(PROJECT_ROOT, 'TestResult')
+    : join(FRAMEWORK_ROOT, 'TestResult');
   const rawSuite = args.suite;
   const safeSuite = rawSuite
     ? String(rawSuite).replace(/[^a-z0-9-_]/gi, '-').toLowerCase()

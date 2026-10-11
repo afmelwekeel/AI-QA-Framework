@@ -1,5 +1,5 @@
 name: write-test-cases
-description: 'Prompt 2: story file to test-case Markdown files. Use for /aiqa-writetestcases'
+description: 'Prompt 2: story file to test-case Markdown files. Use for /aiqa-create-testcases'
 
 config_source: "{project-root}/AI-QA-FRAMEWORK/config.yaml"
 user_name: "{config_source}:user_name"

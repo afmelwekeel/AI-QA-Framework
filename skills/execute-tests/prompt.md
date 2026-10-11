@@ -1,4 +1,4 @@
-# Skill: execute-tests  (`/aiqa-executetests <test-case-file>`)
+# Skill: execute-tests  (`/aiqa-run-tests <test-case-file>`)
 
 Load and follow `reusable-prompts/execute-tests.prompt.md` exactly. Set `{{test_file}}` to the argument.
 `{{browser_mode}}` = visible unless the user said headless (`--headless`). Never choose headless by yourself.

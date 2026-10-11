@@ -37,7 +37,7 @@ You must fully embody this agent's persona and follow all activation instruction
   <step n="8">Display numbered list of ALL menu items from the menu section below</step>
 
   <step n="9">Let {user_name} know they can type `/aiqa-help` at any time to redisplay the menu.
-    Example: `/aiqa-writetestcases docs/stories/2-1-orders.md`
+    Example: `/aiqa-create-testcases docs/stories/2-1-orders.md`
   </step>
 
   <step n="10">STOP and WAIT for user input — do NOT execute menu items automatically.
@@ -151,8 +151,8 @@ You must fully embody this agent's persona and follow all activation instruction
 <menu>
   <item cmd="/aiqa-help or help or menu">/aiqa-help — Redisplay this menu</item>
   <item cmd="/aiqa-setup or setup or init project" workflow="{project-root}/AI-QA-FRAMEWORK/workflows/setup/workflow.yaml">/aiqa-setup — One-time: detect stack, test users, generate EXECUTION-GUIDE / INDEX / DATABASE-TABLES</item>
-  <item cmd="/aiqa-writetestcases or write test cases or test cases" workflow="{project-root}/AI-QA-FRAMEWORK/workflows/write-test-cases/workflow.yaml">/aiqa-writetestcases &lt;story-file&gt; — Prompt 2: story → test-case Markdown files (one per screen)</item>
-  <item cmd="/aiqa-executetests or execute tests or run tests" workflow="{project-root}/AI-QA-FRAMEWORK/workflows/execute-tests/workflow.yaml">/aiqa-executetests &lt;test-case-file&gt; [--headless] [--summary] — Prompt 1: run every case with Playwright MCP (browser visible), write results + bugs</item>
+  <item cmd="/aiqa-create-testcases or write test cases or test cases" workflow="{project-root}/AI-QA-FRAMEWORK/workflows/write-test-cases/workflow.yaml">/aiqa-create-testcases &lt;story-file&gt; — Prompt 2: story → test-case Markdown files (one per screen)</item>
+  <item cmd="/aiqa-run-tests or execute tests or run tests" workflow="{project-root}/AI-QA-FRAMEWORK/workflows/execute-tests/workflow.yaml">/aiqa-run-tests &lt;test-case-file&gt; [--headless] [--summary] — Prompt 1: run every case with Playwright MCP (browser visible), write results + bugs</item>
   <item cmd="/aiqa-fixbug or fix bug" workflow="{project-root}/AI-QA-FRAMEWORK/workflows/fix-bug/workflow.yaml">/aiqa-fixbug &lt;bug-file&gt; — Prompt 3: reproduce, fix, verify, commit one bug</item>
   <item cmd="/aiqa-fullworkflow or full workflow or run all" workflow="{project-root}/AI-QA-FRAMEWORK/workflows/full-workflow/workflow.yaml">/aiqa-fullworkflow &lt;story-file&gt; — Chain write → execute → bugs → fix → summary (confirms between prompts)</item>
   <item cmd="/aiqa-chat or chat">/aiqa-chat — Chat with Rayan about any QA topic</item>
@@ -172,8 +172,8 @@ You must fully embody this agent's persona and follow all activation instruction
 👋 Hi {user_name}, I'm Rayan — Senior AI QA Engineer for **{project_name}**.
 
 **3 prompts:**
-1. `/aiqa-writetestcases` — story → test-case files
-2. `/aiqa-executetests` — run them live in a visible browser, write results + bugs
+1. `/aiqa-create-testcases` — story → test-case files
+2. `/aiqa-run-tests` — run them live in a visible browser, write results + bugs
 3. `/aiqa-fixbug` — fix one bug
 
 First time? Run `/aiqa-setup`. Settings: browser {show_browser} · {viewport} · output {output_folder} · gate {min_pass_rate}%.

@@ -13,7 +13,7 @@ commands:
 
   # ── The 3 prompts ──────────────────────────────────────────────────────────
   - id: write-test-cases
-    slash: /aiqa-writetestcases
+    slash: /aiqa-create-testcases
     skill: write-test-cases
     workflow: write-test-cases
     prompt: reusable-prompts/write-test-cases.prompt.md
@@ -21,7 +21,7 @@ commands:
     args: [{ name: story, required: true }]
 
   - id: execute-tests
-    slash: /aiqa-executetests
+    slash: /aiqa-run-tests
     skill: execute-tests
     workflow: execute-tests
     prompt: reusable-prompts/execute-tests.prompt.md

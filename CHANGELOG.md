@@ -6,6 +6,14 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [3.3.0] — 2026-10-11
+
+### Changed
+- **Install layout**: the installer now creates exactly two folders in the project root — `Core/` (framework, `config.yaml`, `package.json`) and `TestResult/` (all generated test cases, results, screenshots, bugs). `output_folder` is `{project-root}/TestResult`. The install-directory prompt and `install --directory` are removed. `upgrade` detects `Core/` first, then legacy folder names.
+- **Commands renamed**: `/aiqa-writetestcases` → `/aiqa-create-testcases`, `/aiqa-executetests` → `/aiqa-run-tests`. Old command files in `.claude/commands/` and `.github/prompts/` are not removed by upgrade; delete them manually.
+- `core/orchestrator.mjs` and `playwright.config.js` write to the sibling `TestResult/` when installed as `Core/`.
+- README and diagrams updated.
+
 ## [3.2.0] — 2026-10-10
 
 ### Changed

@@ -1,10 +1,10 @@
 command,slashCmd,description,triggerPhrases,example
 "Setup","/aiqa-setup","One-time bootstrap: detect stack, test users, generate EXECUTION-GUIDE.md, INDEX.md, DATABASE-TABLES.md.","/aiqa-setup, setup project, init project","/aiqa-setup"
-"Write Test Cases","/aiqa-writetestcases","Prompt 2 — read a story, requirement and code; write test-case Markdown files (one per screen) with gaps, conventions, test data, Playwright notes.","/aiqa-writetestcases, write test cases, test cases","/aiqa-writetestcases docs/stories/2-1-orders.md"
-"Execute Tests","/aiqa-executetests","Prompt 1 — run every case of one test-case file with Playwright MCP. Browser is visible unless you ask for headless. Writes results, screenshots, bug files.","/aiqa-executetests, execute tests, run tests","/aiqa-executetests TestResult/test-cases/2-1-orders/01-orders.test-cases.md"
+"Write Test Cases","/aiqa-create-testcases","Prompt 2 — read a story, requirement and code; write test-case Markdown files (one per screen) with gaps, conventions, test data, Playwright notes.","/aiqa-create-testcases, write test cases, test cases","/aiqa-create-testcases docs/stories/2-1-orders.md"
+"Execute Tests","/aiqa-run-tests","Prompt 1 — run every case of one test-case file with Playwright MCP. Browser is visible unless you ask for headless. Writes results, screenshots, bug files.","/aiqa-run-tests, execute tests, run tests","/aiqa-run-tests TestResult/test-cases/2-1-orders/01-orders.test-cases.md"
 "Fix Bug","/aiqa-fixbug","Prompt 3 — reproduce one bug, make the smallest fix, verify, update the bug file, commit.","/aiqa-fixbug, fix bug","/aiqa-fixbug TestResult/test-results/bugs/BUG-2-1-001-title.md"
 "Full Workflow","/aiqa-fullworkflow","Chain setup check → write → execute each file → bugs → optional fixes → SUMMARY. Confirms between prompts.","/aiqa-fullworkflow, full workflow, run all","/aiqa-fullworkflow docs/stories/2-1-orders.md"
-"Final Summary","/aiqa-executetests --summary","Restore check (baseline vs now) and test-results/SUMMARY.md.","/aiqa-executetests --summary","/aiqa-executetests --summary"
+"Final Summary","/aiqa-run-tests --summary","Restore check (baseline vs now) and test-results/SUMMARY.md.","/aiqa-run-tests --summary","/aiqa-run-tests --summary"
 "Help","/aiqa-help","Redisplay the Rayan command menu.","/aiqa-help, help, menu","/aiqa-help"
 "Reset Framework","/aiqa-reset","Wipe generated outputs under the output folder (asks first) and reset QA history. Framework source and config stay.","/aiqa-reset, reset framework, fresh cycle","/aiqa-reset"
 "Chat","/aiqa-chat","Chat with Rayan about any QA topic.","/aiqa-chat, chat","/aiqa-chat"

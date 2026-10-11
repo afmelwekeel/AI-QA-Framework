@@ -1,6 +1,6 @@
 # Test Cases Log
-# One entry per test-case FILE (not per case). Written by /aiqa-writetestcases (status: Pending),
-# updated by /aiqa-executetests after each case so it always shows the file's current overall status.
+# One entry per test-case FILE (not per case). Written by /aiqa-create-testcases (status: Pending),
+# updated by /aiqa-run-tests after each case so it always shows the file's current overall status.
 # Per-case statuses live only in the test-case file and the results file.
 # File status (derived from its cases):
 #   Pending     no case executed yet

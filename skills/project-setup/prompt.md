@@ -32,7 +32,7 @@ Update existing documents in place. Never replace a filled value with `<TODO>`.
    per existing test-case file with a path that resolves. Fix each issue, re-verify. Max 2 rounds.
 7. Show the user the filled guide (hard stop): ask to confirm URLs, users, data rules and protected
    settings. Apply corrections. Do not continue until confirmed.
-8. Report: files written, review result (issues found / fixed / open), remaining `<TODO>` items, next command `/aiqa-writetestcases <story>`.
+8. Report: files written, review result (issues found / fixed / open), remaining `<TODO>` items, next command `/aiqa-create-testcases <story>`.
 
 ## Rules
 

@@ -3,7 +3,7 @@ sequenceDiagram
     participant Rayan
     participant App as Your app (browser)
     participant Files as TestResult/
-    You->>Rayan: /aiqa-executetests 01-screen.test-cases.md
+    You->>Rayan: /aiqa-run-tests 01-screen.test-cases.md
     Rayan->>App: Is the app up?
     App-->>Rayan: yes (if no, Rayan stops and tells you)
     Rayan->>App: Record baseline values

@@ -16,7 +16,9 @@ function resolveSuiteRoot() {
   const raw = process.env.QA_SUITE;
   if (!raw) return null;
   const safe = raw.replace(/[^a-z0-9-_]/gi, '-').toLowerCase();
-  return path.join(__dirname, 'TestResult', safe);
+  // Installed as <project>/Core: results go to sibling <project>/TestResult
+  const base = path.basename(__dirname) === 'Core' ? path.dirname(__dirname) : __dirname;
+  return path.join(base, 'TestResult', safe);
 }
 
 /** Load base URL from auto-detected project config */

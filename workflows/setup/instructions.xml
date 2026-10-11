@@ -16,6 +16,6 @@
   </step>
 
   <step n="4" goal="Report">
-    <output>Files written · remaining TODO items · next: /aiqa-writetestcases &lt;story-file&gt;</output>
+    <output>Files written · remaining TODO items · next: /aiqa-create-testcases &lt;story-file&gt;</output>
   </step>
 </workflow>

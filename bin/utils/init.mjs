@@ -51,13 +51,13 @@ const COMMANDS = [
 4. Follow skills/project-setup/prompt.md. Read-only on the app and database
 5. Show the filled EXECUTION-GUIDE.md and WAIT for the user to confirm it` },
 
-  { name: 'aiqa-writetestcases', desc: 'Prompt 2 — story file → test-case Markdown files (one per screen)', steps: (fw) => `
+  { name: 'aiqa-create-testcases', desc: 'Prompt 2 — story file → test-case Markdown files (one per screen)', steps: (fw) => `
 3. Load and execute the workflow at {project-root}/${fw}/workflows/write-test-cases/workflow.yaml
 4. Follow {project-root}/${fw}/reusable-prompts/write-test-cases.prompt.md exactly
 5. Story file path(s) = the command argument; if none, ask. Several files of one feature → one story folder
 6. Output Markdown only to {output_folder}/test-cases/<story-folder>/. No XLSX, no spec files` },
 
-  { name: 'aiqa-executetests', desc: 'Prompt 1 — run one test-case file with Playwright MCP (browser visible)', steps: (fw) => `
+  { name: 'aiqa-run-tests', desc: 'Prompt 1 — run one test-case file with Playwright MCP (browser visible)', steps: (fw) => `
 3. Load and execute the workflow at {project-root}/${fw}/workflows/execute-tests/workflow.yaml
 4. Follow {project-root}/${fw}/reusable-prompts/execute-tests.prompt.md exactly
 5. Test file = the command argument; if none, list files with status from INDEX.md and ask

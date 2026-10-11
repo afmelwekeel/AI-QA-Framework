@@ -1,4 +1,4 @@
-# Skill: write-test-cases  (`/aiqa-writetestcases <story-file>`)
+# Skill: write-test-cases  (`/aiqa-create-testcases <story-file>`)
 
 Load and follow `reusable-prompts/write-test-cases.prompt.md` exactly. Set `{{story_file}}` to the argument.
 Several story files of one feature: merge into ONE story folder named after the first file.

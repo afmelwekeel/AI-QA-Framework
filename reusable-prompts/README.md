@@ -2,8 +2,8 @@
 
 | File | Command | Does |
 |---|---|---|
-| `write-test-cases.prompt.md` | `/aiqa-writetestcases <story>` | Story → test-case Markdown files (one per screen) |
-| `execute-tests.prompt.md` | `/aiqa-executetests <test-file>` | Run every case with Playwright MCP (browser visible), write results + bugs |
+| `write-test-cases.prompt.md` | `/aiqa-create-testcases <story>` | Story → test-case Markdown files (one per screen) |
+| `execute-tests.prompt.md` | `/aiqa-run-tests <test-file>` | Run every case with Playwright MCP (browser visible), write results + bugs |
 | `fix-bug.prompt.md` | `/aiqa-fixbug <bug-file>` | Reproduce, fix, verify, commit one bug |
 
 All three are project-agnostic. Project facts live in three generated documents (made by `/aiqa-setup`):
@@ -18,4 +18,4 @@ Variables (`{project_name}`, `{app_url}`, `{output_folder}`, …) come from `con
 Skills and workflows load these prompts; they do not copy them.
 You can also paste a prompt into any new AI session after replacing the first-line path.
 
-Flow: `setup` once → per story `writetestcases` → per file `executetests` → per bug `fixbug` → `executetests --summary`.
+Flow: `setup` once → per story `create-testcases` → per file `run-tests` → per bug `fixbug` → `run-tests --summary`.

@@ -31,8 +31,8 @@ The framework installs a QA agent named **Rayan** into your AI assistant (Claude
 
 | Prompt | Command | Input | Output |
 |---|---|---|---|
-| **Write** test cases | `/aiqa-writetestcases` | a story file | test-case Markdown files, one per screen |
-| **Execute** tests | `/aiqa-executetests` | one test-case file | results, screenshots, bug files |
+| **Write** test cases | `/aiqa-create-testcases` | a story file | test-case Markdown files, one per screen |
+| **Execute** tests | `/aiqa-run-tests` | one test-case file | results, screenshots, bug files |
 | **Fix** a bug | `/aiqa-fixbug` | one bug file | code fix, verified, committed |
 
 Two helpers support them:
@@ -83,7 +83,7 @@ In your project folder:
 npx ai-qa-framework install
 ```
 
-The installer asks for project name, language, test mode and AI tools, then copies the framework into `./ai-qa-framework/` and registers the `/aiqa-*` commands for your tool(s).
+The installer asks for project name, language, test mode and AI tools, then copies the framework into `./Core/` (everything the framework needs) and creates `./TestResult/` (every test case, result, screenshot and bug). Your project gets exactly these two folders; only the AI-tool command files (`.claude/`, `.github/`, ...) live elsewhere because the tools require it and registers the `/aiqa-*` commands for your tool(s).
 
 Non-interactive: `npx ai-qa-framework install --yes --tools claude-code`
 
@@ -131,7 +131,7 @@ Anything marked `<TODO>` must be filled before you execute tests.
 ### Step 2 — Write the test cases
 
 ```text
-/aiqa-writetestcases docs/stories/2-1-orders.md
+/aiqa-create-testcases docs/stories/2-1-orders.md
 ```
 
 Rayan reads the story, the requirement it implements, and the source files in the story's file list. Then it writes one file per screen:
@@ -145,17 +145,17 @@ Each file contains: header (route, roles, ACs covered) · **known gaps** between
 
 Every case has a **Status** column. It starts as `Pending`. During execution Rayan sets it to `Pass`, `Fail`, `Blocked` or `Not Run` right after each case and updates the **Progress** row in the file header (for example `12 tested / 8 pending`). Open any test-case file to see what is tested and what is still pending.
 
-For the whole project, open `TestResult/TEST-CASES-LOG.yaml`. It lists every test-case file with its story, path, case count and overall status (Pending / In Progress / Pass / Fail / Blocked), plus totals, as a YAML file. It is written by `/aiqa-writetestcases` and updated after every executed case. Per-case status stays in the test-case and results files.
+For the whole project, open `TestResult/TEST-CASES-LOG.yaml`. It lists every test-case file with its story, path, case count and overall status (Pending / In Progress / Pass / Fail / Blocked), plus totals, as a YAML file. It is written by `/aiqa-create-testcases` and updated after every executed case. Per-case status stays in the test-case and results files.
 
 **Review these files before executing.** Edit anything wrong. Case ids look like `TC-21-OR-001`.
 
 ### Step 3 — Execute one test file
 
 ```text
-/aiqa-executetests TestResult/test-cases/2-1-orders/01-orders-list.test-cases.md
+/aiqa-run-tests TestResult/test-cases/2-1-orders/01-orders-list.test-cases.md
 ```
 
-![Sequence of one executetests run](https://raw.githubusercontent.com/afmelwekeel/AI-QA-Framework/main/docs/diagrams/execute-sequence.png)
+![Sequence of one run-tests run](https://raw.githubusercontent.com/afmelwekeel/AI-QA-Framework/main/docs/diagrams/execute-sequence.png)
 
 Rayan:
 1. Checks that the app (and database) answer. If down, it stops and tells you.
@@ -194,7 +194,7 @@ Then re-run the test file that found the bug to confirm.
 After all test files are executed:
 
 ```text
-/aiqa-executetests --summary
+/aiqa-run-tests --summary
 ```
 
 Rayan checks (read-only) that baseline values are restored and no test rows remain, then writes `TestResult/test-results/SUMMARY.md` with totals per story and file, bugs by severity, confirmed gaps and a recommendation.
@@ -214,8 +214,8 @@ Runs steps 2 → 5 and asks "continue?" between steps.
 | Command | Arguments | Notes |
 |---|---|---|
 | `/aiqa-setup` | — | Run first. Re-run to refresh the guide. Existing filled values are kept |
-| `/aiqa-writetestcases` | `<story-file>` | Several files of one feature = one story folder (named after the first) |
-| `/aiqa-executetests` | `<test-case-file>` | One file per run. Resumes if results exist |
+| `/aiqa-create-testcases` | `<story-file>` | Several files of one feature = one story folder (named after the first) |
+| `/aiqa-run-tests` | `<test-case-file>` | One file per run. Resumes if results exist |
 | | `--headless` | Hide the browser. Only when you ask |
 | | `--summary` | Final restore check + `SUMMARY.md` |
 | `/aiqa-fixbug` | `<bug-file>` | One bug per run |
@@ -281,7 +281,7 @@ Built into the execute prompt:
 
 ## 9. Configuration
 
-`ai-qa-framework/config.yaml` (edit any time; read at runtime):
+`Core/config.yaml` (edit any time; read at runtime):
 
 ```yaml
 # Identity and language
@@ -291,7 +291,7 @@ communication_language: English
 document_output_language: English
 
 # Output
-output_folder: "{project-root}/ai-qa-framework/TestResult"
+output_folder: "{project-root}/TestResult"
 
 # Browser (Playwright MCP)
 show_browser: true            # false = headless (only if you do not want to watch)
@@ -337,7 +337,7 @@ terse_mode: full              # off | lite | full | ultra
 | Browser opens but Rayan cannot click | Check the "Playwright notes" in the test file. Rayan marks the case **Blocked** after 2 attempts. Fix the note and re-run the file (it resumes) |
 | "App is down" and nothing runs | Start your app yourself, then re-run. Or set `restart_command` and `allow_ai_restart: true` |
 | Many cases Blocked for a missing role | Add a user for that role in the guide, or approve account creation when Rayan asks |
-| Test data left behind after a crash | Re-run the same file (it cleans up at the end), or run `/aiqa-executetests --summary` to list leftovers |
+| Test data left behind after a crash | Re-run the same file (it cleans up at the end), or run `/aiqa-run-tests --summary` to list leftovers |
 | Same bug found twice | Rayan checks `BUGS-INDEX.md` and adds the new case id to the existing bug |
 | Replies feel too long/short | `/aiqa-terse lite` / `ultra` / `off`. Generated files are never shortened |
 
@@ -357,9 +357,9 @@ v3 replaces the 9-phase pipeline (analyze story → XLSX → generated Playwrigh
 | v2 command | v3 |
 |---|---|
 | `/aiqa-analyzeproject`, `/aiqa-fetchtestusers` | `/aiqa-setup` |
-| `/aiqa-analyzestory`, `/aiqa-generatetestcases` | `/aiqa-writetestcases` |
-| `/aiqa-generatee2e`, `/aiqa-generatetestdata`, `/aiqa-runtests` | `/aiqa-executetests` |
-| `/aiqa-analyzebugs`, `/aiqa-generatereport` | `/aiqa-executetests` (bug files + `SUMMARY.md`) |
+| `/aiqa-analyzestory`, `/aiqa-generatetestcases` | `/aiqa-create-testcases` |
+| `/aiqa-generatee2e`, `/aiqa-generatetestdata`, `/aiqa-runtests` | `/aiqa-run-tests` |
+| `/aiqa-analyzebugs`, `/aiqa-generatereport` | `/aiqa-run-tests` (bug files + `SUMMARY.md`) |
 | `/aiqa-fixbugs` | `/aiqa-fixbug` (one bug per run) |
 | `/aiqa-fullworkflow` | `/aiqa-fullworkflow` (chains the 3 prompts) |
 | `*-validate`, security, accessibility, regression, autonomous | Removed. Security, accessibility and regression are now case sections in test-case files |
@@ -379,7 +379,7 @@ Then run `/aiqa-init`. It adds the new command files but **does not delete old o
 ## 12. Project layout
 
 ```
-ai-qa-framework/
+Core/
 ├── agents/            qae.md (Rayan), qae-compact.md, qae-init.md, terse-rules.md
 ├── reusable-prompts/  write-test-cases / execute-tests / fix-bug   ← the 3 prompts
 ├── skills/            project-setup, project-analysis, write-test-cases, execute-tests, fix-bug
@@ -389,8 +389,9 @@ ai-qa-framework/
 ├── commands/          registry.yaml
 ├── core/              orchestrator.mjs, token tools
 ├── project-detectors/ adapters/ rules/ hooks/ _config/ _memory/
-├── config.yaml        your settings
-└── TestResult/        generated outputs
+└── config.yaml        your settings
+
+TestResult/            generated outputs (sibling of Core/)
 ```
 
 Supported stacks (detection): Angular, React, Vue, Blazor · .NET, Node.js, Java, Python · SQL Server, PostgreSQL, MySQL, MongoDB, SQLite · JWT, OAuth, cookie, basic auth.

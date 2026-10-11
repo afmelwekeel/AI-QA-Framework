@@ -18,6 +18,6 @@
   </step>
 
   <step n="4" goal="Report and stop">
-    <output>File list + case counts + review result (issues found / fixed / open). Next: /aiqa-executetests &lt;test-case-file&gt;</output>
+    <output>File list + case counts + review result (issues found / fixed / open). Next: /aiqa-run-tests &lt;test-case-file&gt;</output>
   </step>
 </workflow>

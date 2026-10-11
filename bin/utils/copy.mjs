@@ -2,6 +2,10 @@
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+/** Installed layout: exactly two folders in the host project root. */
+export const CORE_DIR = 'Core';
+export const RESULT_DIR = 'TestResult';
+
 /** Resolve the root directory of the ai-qa-framework package itself. */
 export function packageRoot() {
   return join(fileURLToPath(import.meta.url), '..', '..', '..');
@@ -53,10 +57,11 @@ export function copyFramework(targetDir, selectedModules = ['core']) {
     }
   }
 
-  // Create empty TestResult placeholder
-  const trDir = join(targetDir, 'TestResult');
+  // TestResult lives next to Core (host project root), never inside it
+  const trDir = join(dirname(targetDir), RESULT_DIR);
   mkdirSync(trDir, { recursive: true });
-  writeFileSync(join(trDir, '.gitkeep'), '');
+  const keep = join(trDir, '.gitkeep');
+  if (!existsSync(keep)) writeFileSync(keep, '');
 
   // Create package.json inside installed dir for npm install
   writeInstalledPackageJson(targetDir, src);
@@ -86,7 +91,7 @@ export function writeConfig(targetDir, answers) {
   const hasDB = !!answers.dbConnectionString;
   const dbSection = hasDB
     ? `# ⚠️  SECURITY: This file contains a database connection string.
-#    Add ${answers.installDir}/config.yaml to your project .gitignore if it holds real credentials.
+#    Add ${CORE_DIR}/config.yaml to your project .gitignore if it holds real credentials.
 db_connection_string: "${(answers.dbConnectionString || '').replace(/"/g, '\\"')}"
 db_users_table: "${answers.dbUsersTable || 'users'}"
 db_username_column: "${answers.dbUsernameColumn || 'email'}"
@@ -114,7 +119,7 @@ document_output_language: ${answers.communicationLanguage}
 reporting_language: ${answers.reportingLanguage}
 
 # ── Output Paths ──────────────────────────────────────────────────────────────
-output_folder: "{project-root}/${answers.installDir}/TestResult"
+output_folder: "{project-root}/${RESULT_DIR}"
 test_cases_folder: "{output_folder}/test-cases"
 test_results_folder: "{output_folder}/test-results"
 bug_reports_folder: "{output_folder}/test-results/bugs"

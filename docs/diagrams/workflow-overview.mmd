@@ -6,12 +6,12 @@ flowchart TD
     G --> R{{"You review the guide<br/>say OK"}}
     R --> W
 
-    W["<b>2. /aiqa-writetestcases</b> &lt;story&gt;"]
+    W["<b>2. /aiqa-create-testcases</b> &lt;story&gt;"]
     W -->|one file per screen| TC[/"test-cases/story/<br/>01-screen.test-cases.md"/]
     TC --> R2{{"You review<br/>the test cases"}}
     R2 --> E
 
-    E["<b>3. /aiqa-executetests</b> &lt;test-file&gt;<br/>live browser, you watch"]
+    E["<b>3. /aiqa-run-tests</b> &lt;test-file&gt;<br/>live browser, you watch"]
     E --> RES[/"results.md + screenshots"/]
     E --> Q{Real defect<br/>found?}
     Q -->|yes| BUG[/"bugs/BUG-*.md"/]
@@ -20,7 +20,7 @@ flowchart TD
     F -->|re-run the file| E
     RES --> MORE{More test<br/>files?}
     MORE -->|yes, new session| E
-    MORE -->|no| SUM["<b>5. /aiqa-executetests --summary</b>"]
+    MORE -->|no| SUM["<b>5. /aiqa-run-tests --summary</b>"]
     SUM --> DONE([SUMMARY.md])
 
     FW["/aiqa-fullworkflow &lt;story&gt;<br/>runs steps 2 to 5 and asks before each"] -.-> W

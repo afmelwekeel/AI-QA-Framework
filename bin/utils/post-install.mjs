@@ -36,6 +36,7 @@ export function printPostInstall(installDir, answers) {
   console.log(label('Location', `./${installDir}/`));
   console.log(label('Config',   `./${installDir}/config.yaml`));
   console.log(label('Agent',    `./${installDir}/agents/qae.md`));
+  console.log(label('Results',  `./TestResult/`));
   console.log(blank);
   console.log(rule);
   console.log(blank);

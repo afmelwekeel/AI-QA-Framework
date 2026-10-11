@@ -39,8 +39,8 @@ QA framework built on 3 prompts. Story → test-case Markdown → live Playwrigh
 |---|---|
 | `/aiqa-help` | Rayan's menu |
 | `/aiqa-setup` | Once: stack, test users, EXECUTION-GUIDE / INDEX / DATABASE-TABLES |
-| `/aiqa-writetestcases <story>` | Prompt 2: test-case Markdown, one file per screen |
-| `/aiqa-executetests <test-file> [--headless] [--summary]` | Prompt 1: run cases with Playwright MCP, browser visible by default |
+| `/aiqa-create-testcases <story>` | Prompt 2: test-case Markdown, one file per screen |
+| `/aiqa-run-tests <test-file> [--headless] [--summary]` | Prompt 1: run cases with Playwright MCP, browser visible by default |
 | `/aiqa-fixbug <bug-file>` | Prompt 3: reproduce, fix, verify, commit |
 | `/aiqa-fullworkflow <story>` | Chain all, confirm between prompts |
 | `/aiqa-terse [level]` (lite, full, ultra, off) | Terse level |

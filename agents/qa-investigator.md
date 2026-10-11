@@ -50,6 +50,6 @@ Defs:
 Callers:
 - core/orchestrator.mjs:142 — `run-tests` — dispatched by skill id
 - workflows/run-tests/workflow.yaml:5 — `run-tests` — step 1 command
-- agents/qae.md:147 — `/aiqa-executetests` — menu item → workflow
+- agents/qae.md:147 — `/aiqa-run-tests` — menu item → workflow
 totals: 1 def, 3 callers.
 ```

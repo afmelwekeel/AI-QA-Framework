@@ -1,6 +1,6 @@
 name,description,module,path
 "setup","One-time project bootstrap: config, test users, EXECUTION-GUIDE, INDEX, DATABASE-TABLES. Trigger: /aiqa-setup or setup project","qae","AI-QA-FRAMEWORK/workflows/setup/workflow.yaml"
-"write-test-cases","Prompt 2: story file to test-case Markdown files. Trigger: /aiqa-writetestcases <story-file> or write test cases","qae","AI-QA-FRAMEWORK/workflows/write-test-cases/workflow.yaml"
-"execute-tests","Prompt 1: run one test-case file with Playwright MCP, browser visible by default. Trigger: /aiqa-executetests <test-file> or execute tests or run tests","qae","AI-QA-FRAMEWORK/workflows/execute-tests/workflow.yaml"
+"write-test-cases","Prompt 2: story file to test-case Markdown files. Trigger: /aiqa-create-testcases <story-file> or write test cases","qae","AI-QA-FRAMEWORK/workflows/write-test-cases/workflow.yaml"
+"execute-tests","Prompt 1: run one test-case file with Playwright MCP, browser visible by default. Trigger: /aiqa-run-tests <test-file> or execute tests or run tests","qae","AI-QA-FRAMEWORK/workflows/execute-tests/workflow.yaml"
 "fix-bug","Prompt 3: reproduce, fix, verify, commit one bug. Trigger: /aiqa-fixbug <bug-file> or fix bug","qae","AI-QA-FRAMEWORK/workflows/fix-bug/workflow.yaml"
 "full-workflow","Chain write → execute → bugs → fix → summary with user confirmation between prompts. Trigger: /aiqa-fullworkflow <story-file> or full workflow","qae","AI-QA-FRAMEWORK/workflows/full-workflow/workflow.yaml"

@@ -11,6 +11,6 @@
   </step>
 
   <step n="3" goal="Report and stop">
-    <output>Status, root cause, files changed, verification, review result (found / fixed / open), commit id. Next: /aiqa-executetests to re-verify the file that found the bug.</output>
+    <output>Status, root cause, files changed, verification, review result (found / fixed / open), commit id. Next: /aiqa-run-tests to re-verify the file that found the bug.</output>
   </step>
 </workflow>

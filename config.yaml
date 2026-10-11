@@ -15,13 +15,13 @@ document_output_language: English        # Language for docs (test cases, report
 reporting_language: en                   # ISO 639-1: en = English, ar = Arabic
 
 # ── Output Paths ──────────────────────────────────────────────────────────────
-output_folder: "{project-root}/ai-qa-framework/TestResult"
+output_folder: "{project-root}/TestResult"
 # Layout under output_folder:
 #   EXECUTION-GUIDE.md  INDEX.md  DATABASE-TABLES.md              (made by /aiqa-setup)
-#   test-cases/<story>/<NN>-<screen>.test-cases.md                 (/aiqa-writetestcases)
-#   test-results/<story>/<NN>-<screen>.results.md + screenshots/   (/aiqa-executetests)
-#   test-results/bugs/BUG-*.md + BUGS-INDEX.md                     (/aiqa-executetests, /aiqa-fixbug)
-#   test-results/SUMMARY.md                                        (/aiqa-executetests --summary)
+#   test-cases/<story>/<NN>-<screen>.test-cases.md                 (/aiqa-create-testcases)
+#   test-results/<story>/<NN>-<screen>.results.md + screenshots/   (/aiqa-run-tests)
+#   test-results/bugs/BUG-*.md + BUGS-INDEX.md                     (/aiqa-run-tests, /aiqa-fixbug)
+#   test-results/SUMMARY.md                                        (/aiqa-run-tests --summary)
 test_cases_folder: "{output_folder}/test-cases"
 test_results_folder: "{output_folder}/test-results"
 bug_reports_folder: "{output_folder}/test-results/bugs"

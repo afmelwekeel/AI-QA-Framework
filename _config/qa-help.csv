@@ -1,6 +1,6 @@
 trigger,response
-"/qa-help","Rayan commands:\n\n1. **/aiqa-setup** — one-time project bootstrap (guide, index, DB tables)\n2. **/aiqa-writetestcases <story>** — Prompt 2: story → test-case Markdown\n3. **/aiqa-executetests <test-file>** — Prompt 1: run cases with Playwright MCP (browser visible)\n4. **/aiqa-fixbug <bug-file>** — Prompt 3: fix one bug\n5. **/aiqa-fullworkflow <story>** — chain all of the above\n6. **/aiqa-executetests --summary** — final restore check + SUMMARY.md"
-"/qa-help where should I start","Run /aiqa-setup once. Then /aiqa-writetestcases <story-file>."
-"/qa-help new story","Run /aiqa-writetestcases <story-file>, review the files, then /aiqa-executetests <test-file> for each file."
-"/qa-help test failed","Check test-results/bugs/BUGS-INDEX.md. Fix one with /aiqa-fixbug <bug-file>, then re-run the file with /aiqa-executetests."
-"/qa-help hide browser","Say 'run headless' / use /aiqa-executetests <file> --headless. Default is a visible browser."
+"/qa-help","Rayan commands:\n\n1. **/aiqa-setup** — one-time project bootstrap (guide, index, DB tables)\n2. **/aiqa-create-testcases <story>** — Prompt 2: story → test-case Markdown\n3. **/aiqa-run-tests <test-file>** — Prompt 1: run cases with Playwright MCP (browser visible)\n4. **/aiqa-fixbug <bug-file>** — Prompt 3: fix one bug\n5. **/aiqa-fullworkflow <story>** — chain all of the above\n6. **/aiqa-run-tests --summary** — final restore check + SUMMARY.md"
+"/qa-help where should I start","Run /aiqa-setup once. Then /aiqa-create-testcases <story-file>."
+"/qa-help new story","Run /aiqa-create-testcases <story-file>, review the files, then /aiqa-run-tests <test-file> for each file."
+"/qa-help test failed","Check test-results/bugs/BUGS-INDEX.md. Fix one with /aiqa-fixbug <bug-file>, then re-run the file with /aiqa-run-tests."
+"/qa-help hide browser","Say 'run headless' / use /aiqa-run-tests <file> --headless. Default is a visible browser."

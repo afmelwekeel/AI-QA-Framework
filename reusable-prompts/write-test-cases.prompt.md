@@ -1,6 +1,6 @@
 # Prompt 2 — Write the test cases for one story
 
-Command: `/aiqa-writetestcases <story-file>` · One new session per story.
+Command: `/aiqa-create-testcases <story-file>` · One new session per story.
 Generic: no project text. Project facts come from the **Execution Guide**, **INDEX**, **DATABASE-TABLES**.
 
 ```text

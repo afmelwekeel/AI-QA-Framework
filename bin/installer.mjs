@@ -3,7 +3,7 @@ import { join, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { ask, select, checkbox, confirm, section, ok, info, warn, createSpinner, closeRL, c } from './utils/prompts.mjs';
-import { copyFramework, writeConfig, writeManifest, writeToolStubs } from './utils/copy.mjs';
+import { copyFramework, writeConfig, writeManifest, writeToolStubs, CORE_DIR } from './utils/copy.mjs';
 import { printPostInstall } from './utils/post-install.mjs';
 import { runInit } from './utils/init.mjs';
 
@@ -71,8 +71,8 @@ export async function runInstall(flags = {}) {
   printBanner();
 
   // ── Detect existing install ────────────────────────────────────────────────
-  const defaultDir    = 'ai-qa-framework';
-  const existingDirs  = [defaultDir, 'AI-QA-Framework'].filter(d => existsSync(join(process.cwd(), d, 'config.yaml')));
+  const defaultDir    = CORE_DIR;
+  const existingDirs  = [defaultDir].filter(d => existsSync(join(process.cwd(), d, 'config.yaml')));
 
   if (existingDirs.length > 0 && !flags.yes) {
     warn(`Existing installation detected at: ./${existingDirs[0]}/`);
@@ -85,12 +85,12 @@ export async function runInstall(flags = {}) {
   }
 
   // ── Step 1: Directory ──────────────────────────────────────────────────────
-  section('Step 1 of 6 — Installation Directory');
-  const installDir = flags.directory || flags.yes
-    ? (flags.directory || defaultDir)
-    : await ask('Where should the framework be installed?', defaultDir);
+  section('Step 1 of 6 — Installation Layout');
+  // Fixed layout: ./Core (framework + config) and ./TestResult (all outputs)
+  const installDir = defaultDir;
   const targetDir = resolve(process.cwd(), installDir);
-  info(`Installing to: ${c.cyan}${targetDir}${c.reset}`);
+  info(`Framework: ${c.cyan}${targetDir}${c.reset}`);
+  info(`Results  : ${c.cyan}${resolve(process.cwd(), 'TestResult')}${c.reset}`);
 
   // ── Step 2: Project config ─────────────────────────────────────────────────
   section('Step 2 of 6 — Project Configuration');
