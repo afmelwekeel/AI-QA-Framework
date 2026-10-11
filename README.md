@@ -372,7 +372,7 @@ To upgrade an existing install:
 npx ai-qa-framework upgrade
 ```
 
-Then run `/aiqa-init`. It adds the new command files but **does not delete old ones**. Delete the old `aiqa-*` stubs in `.claude/commands/`, `.github/prompts/`, `.cursor/rules/` or `.windsurf/rules/` that no longer exist in the list above. Re-run `/aiqa-setup` once to create the guide files.
+From v3.3.1, `upgrade` also migrates an older install (e.g. `ai-qa-framework/`) to the `Core/` + `TestResult/` layout: it renames the folder to `Core/`, moves its results to `./TestResult/`, fixes `output_folder` in `config.yaml`, and removes stale `aiqa-*` command files before regenerating them. Your `config.yaml` and results are kept. Then run `/aiqa-init`. Re-run `/aiqa-setup` once to create the guide files.
 
 ---
 

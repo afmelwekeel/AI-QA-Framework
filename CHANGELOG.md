@@ -6,6 +6,11 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [3.3.1] — 2026-10-11
+
+### Added
+- `upgrade` migrates legacy installs (any folder other than `Core/`, e.g. `ai-qa-framework/`) to the `Core/` + `TestResult/` layout: renames the folder to `Core/`, moves its `TestResult/` to the project root (merge, no overwrite), rewrites `output_folder` in `config.yaml`, removes stale `aiqa-*` command files and fixes stub paths, then refreshes commands. Config and results are preserved. Skipped with a warning if `Core/` already exists.
+
 ## [3.3.0] — 2026-10-11
 
 ### Changed

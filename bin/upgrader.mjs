@@ -3,7 +3,8 @@ import { join, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { select, confirm, section, ok, info, warn, createSpinner, closeRL, c } from './utils/prompts.mjs';
-import { copyFramework, writeManifest, packageRoot } from './utils/copy.mjs';
+import { copyFramework, writeManifest, packageRoot, CORE_DIR } from './utils/copy.mjs';
+import { migrateLegacyInstall } from './utils/migrate.mjs';
 import { runInit } from './utils/init.mjs';
 
 const PKG_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
@@ -121,12 +122,35 @@ export async function runUpgrade(flags = {}) {
     process.exit(1);
   }
 
-  const { dir: installDir, path: targetPath } = found;
+  let { dir: installDir, path: targetPath } = found;
+  let migrated = false;
   const installedVersion = readInstalledVersion(targetPath);
   const installedModules = readInstalledModules(targetPath);
   const detectedTools    = readInstalledTools(targetPath);
 
   printBanner(installedVersion);
+
+  // ── Legacy layout → Core/ + TestResult/ ──────────────────────────────────────
+  if (installDir !== CORE_DIR) {
+    section('Layout Migration');
+    info(`Legacy install at ${c.cyan}./${installDir}/${c.reset} → ${c.cyan}./${CORE_DIR}/${c.reset} + ${c.cyan}./TestResult/${c.reset}`);
+    const goMigrate = flags.yes
+      ? true
+      : await confirm('Migrate to the Core/ + TestResult/ layout? Your config.yaml and test results are kept.', true);
+    if (goMigrate) {
+      try {
+        const res = migrateLegacyInstall(installDir);
+        if (res.warning) warn(res.warning);
+        res.steps.forEach(st => ok(st));
+        if (res.migrated) { migrated = true; installDir = CORE_DIR; targetPath = join(process.cwd(), CORE_DIR); }
+      } catch (e) {
+        warn(`Migration failed: ${e.message}`);
+        warn(`Continuing upgrade in ./${installDir}/ without migration.`);
+      }
+    } else {
+      info('Migration skipped — upgrading in place.');
+    }
+  }
 
   // ── Show current state ───────────────────────────────────────────────────────
   section('Detected Installation');
@@ -137,7 +161,7 @@ export async function runUpgrade(flags = {}) {
   console.log();
 
   // ── Already up to date ───────────────────────────────────────────────────────
-  if (installedVersion === NEW_VERSION && !flags.force) {
+  if (installedVersion === NEW_VERSION && !flags.force && !migrated) {
     const proceed = flags.yes
       ? false
       : await confirm(`Already on v${NEW_VERSION}. Force re-copy framework files anyway?`, false);
