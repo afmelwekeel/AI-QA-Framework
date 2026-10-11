@@ -6,6 +6,12 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [3.4.0] — 2026-10-11
+
+### Changed
+- **Install layout**: the framework installs into one folder, `AI-QA-Framework/`, containing exactly `Core/` (framework, `config.yaml`, `package.json`) and `TestResult/` (all outputs). `output_folder` is `{project-root}/AI-QA-Framework/TestResult`. Command files reference `AI-QA-Framework/Core/...`.
+- `upgrade` migrates both older layouts: flat installs (e.g. `ai-qa-framework/`, results inside) and v3.3.x (`./Core` + `./TestResult`). Results are merged without overwriting, `output_folder` rewritten, stale `aiqa-*` files removed and regenerated, stub paths fixed. Case-insensitive filesystems (Windows/macOS) are handled via a temp rename.
+
 ## [3.3.1] — 2026-10-11
 
 ### Added

@@ -2,8 +2,10 @@
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-/** Installed layout: exactly two folders in the host project root. */
+/** Installed layout: <project>/AI-QA-Framework/ containing exactly Core/ and TestResult/. */
+export const ROOT_DIR = 'AI-QA-Framework';
 export const CORE_DIR = 'Core';
+export const INSTALL_DIR = `${ROOT_DIR}/${CORE_DIR}`; // path of the framework, relative to the project root
 export const RESULT_DIR = 'TestResult';
 
 /** Resolve the root directory of the ai-qa-framework package itself. */
@@ -57,7 +59,7 @@ export function copyFramework(targetDir, selectedModules = ['core']) {
     }
   }
 
-  // TestResult lives next to Core (host project root), never inside it
+  // TestResult lives next to Core, inside AI-QA-Framework/
   const trDir = join(dirname(targetDir), RESULT_DIR);
   mkdirSync(trDir, { recursive: true });
   const keep = join(trDir, '.gitkeep');
@@ -91,7 +93,7 @@ export function writeConfig(targetDir, answers) {
   const hasDB = !!answers.dbConnectionString;
   const dbSection = hasDB
     ? `# ⚠️  SECURITY: This file contains a database connection string.
-#    Add ${CORE_DIR}/config.yaml to your project .gitignore if it holds real credentials.
+#    Add ${INSTALL_DIR}/config.yaml to your project .gitignore if it holds real credentials.
 db_connection_string: "${(answers.dbConnectionString || '').replace(/"/g, '\\"')}"
 db_users_table: "${answers.dbUsersTable || 'users'}"
 db_username_column: "${answers.dbUsernameColumn || 'email'}"
@@ -119,7 +121,7 @@ document_output_language: ${answers.communicationLanguage}
 reporting_language: ${answers.reportingLanguage}
 
 # ── Output Paths ──────────────────────────────────────────────────────────────
-output_folder: "{project-root}/${RESULT_DIR}"
+output_folder: "{project-root}/${ROOT_DIR}/${RESULT_DIR}"
 test_cases_folder: "{output_folder}/test-cases"
 test_results_folder: "{output_folder}/test-results"
 bug_reports_folder: "{output_folder}/test-results/bugs"

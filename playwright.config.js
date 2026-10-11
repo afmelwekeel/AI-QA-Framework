@@ -16,7 +16,7 @@ function resolveSuiteRoot() {
   const raw = process.env.QA_SUITE;
   if (!raw) return null;
   const safe = raw.replace(/[^a-z0-9-_]/gi, '-').toLowerCase();
-  // Installed as <project>/Core: results go to sibling <project>/TestResult
+  // Installed as AI-QA-Framework/Core: results go to sibling AI-QA-Framework/TestResult
   const base = path.basename(__dirname) === 'Core' ? path.dirname(__dirname) : __dirname;
   return path.join(base, 'TestResult', safe);
 }

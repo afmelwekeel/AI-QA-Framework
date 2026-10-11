@@ -3,7 +3,7 @@ import { join, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { select, confirm, section, ok, info, warn, createSpinner, closeRL, c } from './utils/prompts.mjs';
-import { copyFramework, writeManifest, packageRoot, CORE_DIR } from './utils/copy.mjs';
+import { copyFramework, writeManifest, packageRoot, INSTALL_DIR } from './utils/copy.mjs';
 import { migrateLegacyInstall } from './utils/migrate.mjs';
 import { runInit } from './utils/init.mjs';
 
@@ -52,7 +52,7 @@ function findInstallDir(flagDirectory) {
   }
 
   // 2. Scan common names
-  const candidates = ['Core', 'ai-qa-framework', 'AI-QA-Framework', 'qa-framework', 'qa'];
+  const candidates = [INSTALL_DIR, 'Core', 'ai-qa-framework', 'AI-QA-Framework', 'qa-framework', 'qa'];
   for (const name of candidates) {
     const p = join(process.cwd(), name);
     if (existsSync(join(p, '_config', 'manifest.yaml'))) return { dir: name, path: p };
@@ -131,18 +131,18 @@ export async function runUpgrade(flags = {}) {
   printBanner(installedVersion);
 
   // ── Legacy layout → Core/ + TestResult/ ──────────────────────────────────────
-  if (installDir !== CORE_DIR) {
+  if (installDir !== INSTALL_DIR) {
     section('Layout Migration');
-    info(`Legacy install at ${c.cyan}./${installDir}/${c.reset} → ${c.cyan}./${CORE_DIR}/${c.reset} + ${c.cyan}./TestResult/${c.reset}`);
+    info(`Legacy install at ${c.cyan}./${installDir}/${c.reset} → ${c.cyan}./${INSTALL_DIR}/${c.reset} + ${c.cyan}./AI-QA-Framework/TestResult/${c.reset}`);
     const goMigrate = flags.yes
       ? true
-      : await confirm('Migrate to the Core/ + TestResult/ layout? Your config.yaml and test results are kept.', true);
+      : await confirm('Migrate to the AI-QA-Framework/Core + AI-QA-Framework/TestResult layout? Your config.yaml and test results are kept.', true);
     if (goMigrate) {
       try {
         const res = migrateLegacyInstall(installDir);
         if (res.warning) warn(res.warning);
         res.steps.forEach(st => ok(st));
-        if (res.migrated) { migrated = true; installDir = CORE_DIR; targetPath = join(process.cwd(), CORE_DIR); }
+        if (res.migrated) { migrated = true; installDir = INSTALL_DIR; targetPath = join(process.cwd(), INSTALL_DIR); }
       } catch (e) {
         warn(`Migration failed: ${e.message}`);
         warn(`Continuing upgrade in ./${installDir}/ without migration.`);

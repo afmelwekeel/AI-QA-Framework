@@ -83,7 +83,7 @@ In your project folder:
 npx ai-qa-framework install
 ```
 
-The installer asks for project name, language, test mode and AI tools, then copies the framework into `./Core/` (everything the framework needs) and creates `./TestResult/` (every test case, result, screenshot and bug). Your project gets exactly these two folders; only the AI-tool command files (`.claude/`, `.github/`, ...) live elsewhere because the tools require it and registers the `/aiqa-*` commands for your tool(s).
+The installer asks for project name, language, test mode and AI tools, then creates one folder, `./AI-QA-Framework/`, with exactly two folders inside: `Core/` (everything the framework needs, including `config.yaml`) and `TestResult/` (every test case, result, screenshot and bug). It also registers the `/aiqa-*` commands for your tool(s); those command files live in `.claude/`, `.github/` etc. because the tools require it.
 
 Non-interactive: `npx ai-qa-framework install --yes --tools claude-code`
 
@@ -236,7 +236,7 @@ You can also paste a prompt from `reusable-prompts/` into any new AI session. Re
 ## 7. What you get (output folders)
 
 ```
-TestResult/
+AI-QA-Framework/TestResult/
 ├── EXECUTION-GUIDE.md          project facts (from /aiqa-setup)
 ├── INDEX.md                    test files, status, known gaps
 ├── DATABASE-TABLES.md          schema notes for read-only checks
@@ -281,7 +281,7 @@ Built into the execute prompt:
 
 ## 9. Configuration
 
-`Core/config.yaml` (edit any time; read at runtime):
+`AI-QA-Framework/Core/config.yaml` (edit any time; read at runtime):
 
 ```yaml
 # Identity and language
@@ -291,7 +291,7 @@ communication_language: English
 document_output_language: English
 
 # Output
-output_folder: "{project-root}/TestResult"
+output_folder: "{project-root}/AI-QA-Framework/TestResult"
 
 # Browser (Playwright MCP)
 show_browser: true            # false = headless (only if you do not want to watch)
@@ -372,26 +372,26 @@ To upgrade an existing install:
 npx ai-qa-framework upgrade
 ```
 
-From v3.3.1, `upgrade` also migrates an older install (e.g. `ai-qa-framework/`) to the `Core/` + `TestResult/` layout: it renames the folder to `Core/`, moves its results to `./TestResult/`, fixes `output_folder` in `config.yaml`, and removes stale `aiqa-*` command files before regenerating them. Your `config.yaml` and results are kept. Then run `/aiqa-init`. Re-run `/aiqa-setup` once to create the guide files.
+From v3.4.0, `upgrade` also migrates an older install (a flat folder such as `ai-qa-framework/`, or the v3.3.x `Core/` + `TestResult/` at the project root) to the `AI-QA-Framework/Core` + `AI-QA-Framework/TestResult` layout: it moves the framework to `AI-QA-Framework/Core/`, merges its results into `AI-QA-Framework/TestResult/`, fixes `output_folder` in `config.yaml`, and removes stale `aiqa-*` command files before regenerating them. Your `config.yaml` and results are kept. Then run `/aiqa-init`. Re-run `/aiqa-setup` once to create the guide files.
 
 ---
 
 ## 12. Project layout
 
 ```
-Core/
-├── agents/            qae.md (Rayan), qae-compact.md, qae-init.md, terse-rules.md
-├── reusable-prompts/  write-test-cases / execute-tests / fix-bug   ← the 3 prompts
-├── skills/            project-setup, project-analysis, write-test-cases, execute-tests, fix-bug
-├── workflows/         setup, write-test-cases, execute-tests, fix-bug, full-workflow
-├── templates/         EXECUTION-GUIDE, INDEX, DATABASE-TABLES, test-cases, results,
-│                      bug-report, BUGS-INDEX, SUMMARY
-├── commands/          registry.yaml
-├── core/              orchestrator.mjs, token tools
-├── project-detectors/ adapters/ rules/ hooks/ _config/ _memory/
-└── config.yaml        your settings
-
-TestResult/            generated outputs (sibling of Core/)
+AI-QA-Framework/
+├── Core/
+│   ├── agents/            qae.md (Rayan), qae-compact.md, qae-init.md, terse-rules.md
+│   ├── reusable-prompts/  write-test-cases / execute-tests / fix-bug   ← the 3 prompts
+│   ├── skills/            project-setup, project-analysis, write-test-cases, execute-tests, fix-bug
+│   ├── workflows/         setup, write-test-cases, execute-tests, fix-bug, full-workflow
+│   ├── templates/         EXECUTION-GUIDE, INDEX, DATABASE-TABLES, test-cases, results,
+│   │                      bug-report, BUGS-INDEX, SUMMARY
+│   ├── commands/          registry.yaml
+│   ├── core/              orchestrator.mjs, token tools
+│   ├── project-detectors/ adapters/ rules/ hooks/ _config/ _memory/
+│   └── config.yaml        your settings
+└── TestResult/            generated outputs
 ```
 
 Supported stacks (detection): Angular, React, Vue, Blazor · .NET, Node.js, Java, Python · SQL Server, PostgreSQL, MySQL, MongoDB, SQLite · JWT, OAuth, cookie, basic auth.

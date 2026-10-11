@@ -15,7 +15,7 @@ document_output_language: English        # Language for docs (test cases, report
 reporting_language: en                   # ISO 639-1: en = English, ar = Arabic
 
 # ── Output Paths ──────────────────────────────────────────────────────────────
-output_folder: "{project-root}/TestResult"
+output_folder: "{project-root}/AI-QA-Framework/TestResult"
 # Layout under output_folder:
 #   EXECUTION-GUIDE.md  INDEX.md  DATABASE-TABLES.md              (made by /aiqa-setup)
 #   test-cases/<story>/<NN>-<screen>.test-cases.md                 (/aiqa-create-testcases)

@@ -152,7 +152,7 @@ async function main() {
   }
 
   // Resolve suite-scoped output root: TestResult/{suite}/
-  // Installed layout: <project>/Core + <project>/TestResult (siblings)
+  // Installed layout: <project>/AI-QA-Framework/{Core,TestResult} (siblings)
   const TEST_RESULT_ROOT = basename(FRAMEWORK_ROOT) === 'Core'
     ? join(PROJECT_ROOT, 'TestResult')
     : join(FRAMEWORK_ROOT, 'TestResult');
