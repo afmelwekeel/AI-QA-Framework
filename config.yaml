@@ -75,3 +75,12 @@ test_users: []
 # Override per-session: /aiqa-terse lite|full|ultra|off
 # Override via env:     AIQA_TERSE_MODE=ultra
 terse_mode: full
+
+# ── Worktree Isolation ────────────────────────────────────────────────────────
+# Every working /aiqa-* command runs on its own git branch in a git worktree, and (when the app is
+# needed) on a different port than the base branch. See rules/worktree-isolation.md
+worktree_isolation: true        # false = work in place on the current branch
+base_branch: ""                 # empty = current branch at command start (main / master)
+app_port: ""                    # port of the base branch app; empty = parsed from app_url
+worktree_port: ""               # empty = app_port + 1 (next free)
+port_config_files: []           # files holding the port, e.g. [".env", "Properties/launchSettings.json"]

@@ -6,3 +6,6 @@ Do the mandatory REVIEW AND FIX step (prompt step 10) before reporting. Report f
 Every case gets `Status` = `Pending`; header table gets a `Progress` row. Add every test-case file (not each case) to `{output_folder}/TEST-CASES-LOG.yaml` (file path, case count, status).
 Output: Markdown only, under `{output_folder}/test-cases/<story-folder>/`. Update `INDEX.md`. Stop after the file list.
 Never compress test-case content (steps, expected results, exact UI texts).
+
+## Worktree isolation (applies first and last)
+Before step 1: follow Phase A of rules/worktree-isolation.md (git worktree + sub-branch; app on a different port when the app/browser is needed). After the review pass: Phase B (reset port to base value, commit on sub-branch) and Phase C (ask the user to commit/push/merge and remove the sub-branch). Last line of the response: `(Next Step is : <next command>)`.

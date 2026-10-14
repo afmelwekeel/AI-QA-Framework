@@ -1,6 +1,10 @@
 <workflow>
   <critical>Communicate in {communication_language}. Chains the 3 prompts. Each prompt keeps its own rules and stop point; between prompts the user confirms. Every step ends with its own mandatory REVIEW AND FIX pass (find issues in its own output, fix them, report found/fixed/open) before the confirmation question. Browser visible unless the user asked for headless.</critical>
 
+  <step n="0" goal="Worktree isolation (start)">
+    <action>If config worktree_isolation is not false: follow Phase A of {project-root}/AI-QA-FRAMEWORK/rules/worktree-isolation.md — create branch + git worktree, work only inside it (switch app port per Phase A step 6). Whole chain uses ONE worktree; nested workflows skip their own step 0 and step 99</action>
+  </step>
+
   <step n="1" goal="Setup check">
     <action>If {output_folder}/EXECUTION-GUIDE.md is missing or has TODO values → run workflows/setup first</action>
   </step>
@@ -23,5 +27,9 @@
   <step n="5" goal="Final summary">
     <action>Run workflows/execute-tests with --summary</action>
     <output>Totals per story/file, bugs by severity and status, pass-rate vs {min_pass_rate}%, recommendation.</output>
+  </step>
+  <step n="99" goal="Worktree isolation (finish)">
+    <action>After the review pass: follow Phase B (stop app, reset port to the base value, verify, commit on the sub-branch) and Phase C of {project-root}/AI-QA-FRAMEWORK/rules/worktree-isolation.md. Ask the user to commit/push/merge to the base branch and remove the sub-branch; never do it unasked</action>
+    <output>The LAST line of the response is: (Next Step is : &lt;next command&gt;) — see "Next-step line" in the rule file. Nothing after it</output>
   </step>
 </workflow>

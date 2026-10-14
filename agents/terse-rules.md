@@ -66,3 +66,7 @@ Generated QA artifacts write normal — never compressed:
 - Quoted error messages and stack traces
 
 "normal mode" or "verbose mode" → revert fully. `/aiqa-terse lite|full|ultra` → switch level. Level persists until changed or session ends.
+
+## Next-step line (never dropped)
+
+Every response to an `/aiqa-*` command ends with exactly one last line: `(Next Step is : <next command>)`. Nothing after it. Terse mode does not remove it. Worktree hand-off text (branch, port reset, commit/push/merge/remove steps) is written as plain prose — see `rules/worktree-isolation.md`.

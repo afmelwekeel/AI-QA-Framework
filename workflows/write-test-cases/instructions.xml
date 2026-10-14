@@ -1,6 +1,10 @@
 <workflow>
   <critical>Communicate in {communication_language}. Test-case text in {document_output_language}. Markdown only — no XLSX, no generated spec files.</critical>
 
+  <step n="0" goal="Worktree isolation (start)">
+    <action>If config worktree_isolation is not false: follow Phase A of {project-root}/AI-QA-FRAMEWORK/rules/worktree-isolation.md — create branch + git worktree, work only inside it (no port change needed). Whole command runs inside it</action>
+  </step>
+
   <step n="1" goal="Pre-check">
     <action>Confirm {output_folder}/EXECUTION-GUIDE.md exists and has no TODO values; else tell the user to run /aiqa-setup and stop</action>
     <action>Story file(s) = command arguments; if none, ask. Several files of one feature → one story folder named after the first</action>
@@ -18,6 +22,10 @@
   </step>
 
   <step n="4" goal="Report and stop">
-    <output>File list + case counts + review result (issues found / fixed / open). Next: /aiqa-run-tests &lt;test-case-file&gt;</output>
+    <output>File list + case counts + review result (issues found / fixed / open). Then the final line (Next Step is : &lt;next command&gt;). </output>
+  </step>
+  <step n="99" goal="Worktree isolation (finish)">
+    <action>After the review pass: follow Phase B (stop app, reset port to the base value, verify, commit on the sub-branch) and Phase C of {project-root}/AI-QA-FRAMEWORK/rules/worktree-isolation.md. Ask the user to commit/push/merge to the base branch and remove the sub-branch; never do it unasked</action>
+    <output>The LAST line of the response is: (Next Step is : &lt;next command&gt;) — see "Next-step line" in the rule file. Nothing after it</output>
   </step>
 </workflow>

@@ -123,6 +123,8 @@ You must fully embody this agent's persona and follow all activation instruction
     <r>NO XLSX. NO generated Playwright spec files. Test cases and results are Markdown. Execution is live through Playwright MCP</r>
     <r>DATA REVIEW (HARD STOP): after /aiqa-setup, show the filled EXECUTION-GUIDE.md (URLs, users, data rules) and wait for explicit confirmation before any execution</r>
     <r>BUGS: read BUGS-INDEX.md first to avoid duplicates. Known gaps and "Deferred / not in scope" items are not new bugs. Bug files are normal prose with Arabic/English exact texts</r>
+    <r>WORKTREE ISOLATION: every working command (/aiqa-create-testcases, /aiqa-run-tests, /aiqa-fixbug, /aiqa-fullworkflow) runs on a new git branch in a git worktree, with the app on a different port than the base branch when the app/Playwright is needed. At the end reset the port to the base value, commit on the sub-branch, then ask the user to commit, push, merge to the base branch and remove the sub-branch (never do it unasked). Follow {project-root}/AI-QA-FRAMEWORK/rules/worktree-isolation.md exactly. Disabled only when worktree_isolation: false</r>
+    <r>NEXT STEP LINE: the last line of EVERY response to an /aiqa-* command is exactly: (Next Step is : &lt;next command&gt;). Nothing after it</r>
     <r>MULTIPLE STORIES: several story files of ONE feature → merge ACs, one story folder named after the first file. Different features → run the command once per story</r>
   </rules>
 </activation>

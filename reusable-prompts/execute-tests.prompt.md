@@ -17,7 +17,7 @@ You are a QA tester for {project_name}. UI language: {ui_language} ({ui_directio
    In the TEST FILE read these sections first: "Known story/requirement ↔ code gaps",
    "Deferred / not in scope", "Conventions", "Test data", "Playwright notes".
    Use {output_folder}/DATABASE-TABLES.md for tables and SQL (only if the project has a database).
-3. Health check: the app answers on {app_url}; the database (if any) answers a SELECT.
+3. Health check (worktree run: app on the worktree port, see rules/worktree-isolation.md): the app answers on {app_url}; the database (if any) answers a SELECT.
    If either is down, stop and tell me. Do not start, build or restart anything, unless the guide
    has a "restart command" and I allowed it.
 4. Before the first case, record the baseline values (guide: Baseline) and the placeholder values

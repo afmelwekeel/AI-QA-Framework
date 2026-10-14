@@ -1,6 +1,10 @@
 <workflow>
   <critical>Communicate in {communication_language}. Never invent results. Browser VISIBLE (headed) unless the user explicitly asked for headless this session.</critical>
 
+  <step n="0" goal="Worktree isolation (start)">
+    <action>If config worktree_isolation is not false: follow Phase A of {project-root}/AI-QA-FRAMEWORK/rules/worktree-isolation.md — create branch + git worktree, work only inside it (switch app port per Phase A step 6). Whole command runs inside it</action>
+  </step>
+
   <step n="1" goal="Pre-check">
     <action>Confirm {output_folder}/EXECUTION-GUIDE.md exists and has no TODO values; else tell the user to run /aiqa-setup and stop</action>
     <action>Test file = command argument; if none, list files in {output_folder}/test-cases/ with status from INDEX.md and ask. If argument is --summary go to step 5</action>
@@ -17,10 +21,14 @@
   </step>
 
   <step n="4" goal="Summary and stop">
-    <output>Pass / Fail / Blocked / Not Run counts · Blocked reasons · bugs created (ID, severity, title) · review result (found / fixed / open). Pass-rate vs {min_pass_rate}%. Next: /aiqa-fixbug &lt;bug-file&gt; or the next test file. Do not start another file.</output>
+    <output>Pass / Fail / Blocked / Not Run counts · Blocked reasons · bugs created (ID, severity, title) · review result (found / fixed / open). Pass-rate vs {min_pass_rate}%. Then the final line (Next Step is : &lt;next command&gt;). </output>
   </step>
 
   <step n="5" goal="Final session (only with --summary)">
     <action>Run the "Final session variant" in execute-tests.prompt.md: restore check with read-only queries, then write test-results/SUMMARY.md from templates/SUMMARY.template.md</action>
+  </step>
+  <step n="99" goal="Worktree isolation (finish)">
+    <action>After the review pass: follow Phase B (stop app, reset port to the base value, verify, commit on the sub-branch) and Phase C of {project-root}/AI-QA-FRAMEWORK/rules/worktree-isolation.md. Ask the user to commit/push/merge to the base branch and remove the sub-branch; never do it unasked</action>
+    <output>The LAST line of the response is: (Next Step is : &lt;next command&gt;) — see "Next-step line" in the rule file. Nothing after it</output>
   </step>
 </workflow>

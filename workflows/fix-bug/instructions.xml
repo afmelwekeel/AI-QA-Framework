@@ -1,6 +1,10 @@
 <workflow>
   <critical>Communicate in {communication_language}. One bug per run. Reproduce before fixing. Smallest fix. Never mark Fixed without verification evidence.</critical>
 
+  <step n="0" goal="Worktree isolation (start)">
+    <action>If config worktree_isolation is not false: follow Phase A of {project-root}/AI-QA-FRAMEWORK/rules/worktree-isolation.md — create branch + git worktree, work only inside it (switch app port per Phase A step 6). Whole command runs inside it</action>
+  </step>
+
   <step n="1" goal="Pick the bug">
     <action>Bug file = command argument; if none, read {output_folder}/test-results/bugs/BUGS-INDEX.md and ask which Open bug to fix</action>
   </step>
@@ -11,6 +15,10 @@
   </step>
 
   <step n="3" goal="Report and stop">
-    <output>Status, root cause, files changed, verification, review result (found / fixed / open), commit id. Next: /aiqa-run-tests to re-verify the file that found the bug.</output>
+    <output>Status, root cause, files changed, verification, review result (found / fixed / open), commit id. Then the final line (Next Step is : &lt;next command&gt;). </output>
+  </step>
+  <step n="99" goal="Worktree isolation (finish)">
+    <action>After the review pass: follow Phase B (stop app, reset port to the base value, verify, commit on the sub-branch) and Phase C of {project-root}/AI-QA-FRAMEWORK/rules/worktree-isolation.md. Ask the user to commit/push/merge to the base branch and remove the sub-branch; never do it unasked</action>
+    <output>The LAST line of the response is: (Next Step is : &lt;next command&gt;) — see "Next-step line" in the rule file. Nothing after it</output>
   </step>
 </workflow>
