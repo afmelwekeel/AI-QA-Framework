@@ -2,7 +2,7 @@
   <critical>Communicate in {communication_language}. Chains the 3 prompts. Each prompt keeps its own rules and stop point; between prompts the user confirms. Every step ends with its own mandatory REVIEW AND FIX pass (find issues in its own output, fix them, report found/fixed/open) before the confirmation question. Browser visible unless the user asked for headless.</critical>
 
   <step n="0" goal="Worktree isolation (start)">
-    <action>If config worktree_isolation is not false: follow Phase A of {project-root}/AI-QA-FRAMEWORK/rules/worktree-isolation.md — create branch + git worktree, work only inside it (switch app port per Phase A step 6). Whole chain uses ONE worktree; nested workflows skip their own step 0 and step 99</action>
+    <action>If config worktree_isolation is not false: follow Phase A of {project-root}/AI-QA-FRAMEWORK/rules/worktree-isolation.md — create a FRESH branch + git worktree every time (never reuse an old one), work only inside it (switch app port per Phase A step 6). Whole chain uses ONE worktree; nested workflows skip their own step 0 and step 99</action>
   </step>
 
   <step n="1" goal="Setup check">

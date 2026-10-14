@@ -2,7 +2,7 @@
   <critical>Communicate in {communication_language}. Test-case text in {document_output_language}. Markdown only — no XLSX, no generated spec files.</critical>
 
   <step n="0" goal="Worktree isolation (start)">
-    <action>If config worktree_isolation is not false: follow Phase A of {project-root}/AI-QA-FRAMEWORK/rules/worktree-isolation.md — create branch + git worktree, work only inside it (no port change needed). Whole command runs inside it</action>
+    <action>If config worktree_isolation is not false: follow Phase A of {project-root}/AI-QA-FRAMEWORK/rules/worktree-isolation.md — create a FRESH branch + git worktree every time (never reuse an old one), work only inside it (no port change needed). Whole command runs inside it</action>
   </step>
 
   <step n="1" goal="Pre-check">

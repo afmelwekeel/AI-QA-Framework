@@ -14,14 +14,16 @@ app are never touched. The app in the worktree runs on a different port, so both
 
 ## Phase A — Start (before the command's first step)
 
+ALWAYS FRESH: every command invocation creates a brand-new branch and a brand-new worktree from the current tip of `{base_branch}`. Never reuse, resume, or continue in an existing `aiqa/*` worktree or branch, even for the same unit (same test file or bug), and even if a previous run was unfinished or its folder still exists. Re-running a command = new worktree.
+
 1. Preconditions. Stop and tell the user if any fails:
    - `git rev-parse --is-inside-work-tree` is true.
    - Working tree is clean except `AI-QA-Framework/` and untracked files. Uncommitted source changes → ask the user to commit or stash first.
 2. Record `{base_branch}` = `base_branch` from config, else the current branch (usually `main`/`master`).
    Record `{base_port}` = `app_port` from config, else the port parsed from `{app_url}`.
-   Write both into `{project-root}/.aiqa-worktree.json` (see State file).
+   Write both into `{project-root}/.aiqa-worktree-<branch-slug>.json` (see State file).
 3. Branch name: `aiqa/<command>-<unit>-<yyyymmdd-hhmm>`
-   (`<unit>` = test-file stem, bug ID, or story stem; lowercase, `[a-z0-9-]` only).
+   (`<unit>` = test-file stem, bug ID, or story stem; lowercase, `[a-z0-9-]` only; timestamp includes seconds). If the branch name or folder already exists, append `-2`, `-3`… until both are unused. Never delete or overwrite an existing one.
 4. Create the worktree as a sibling folder, outside the host repo:
    `git worktree add "{project-root}/../{repo-name}.aiqa/<branch-slug>" -b <branch> {base_branch}`
 5. From now on `{work_root}` = the worktree path. Read and write ALL files there: source, `AI-QA-Framework/`,
@@ -74,20 +76,20 @@ Tell me "merged" and I will run steps 2–4 for you. I never merge, push or dele
 ```
 
 When the user says "commit", "push", "merge" or "merged", do exactly the step asked, confirm each
-destructive step first, then `git worktree prune`. After cleanup delete `.aiqa-worktree.json`.
+destructive step first, then `git worktree prune`. After cleanup delete that worktree's state file.
 If a merge conflicts, stop and show the conflicting files; never force.
 
 ## State file
 
-`{project-root}/.aiqa-worktree.json` (add to `.gitignore`):
+`{project-root}/.aiqa-worktree-<branch-slug>.json`, one file per worktree (`.aiqa-worktree*.json` is in `.gitignore`):
 
 ```json
 { "branch": "", "work_root": "", "base_branch": "", "base_port": 0, "work_port": 0,
   "changed_port_files": [], "command": "", "unit": "", "started": "" }
 ```
 
-If it exists at Phase A, a previous run is unfinished: show it and ask the user to continue it, or
-finish its Phase C first. One active worktree per session.
+If other state files exist at Phase A, earlier runs are unfinished. List them in one line for the user
+(branch + path, awaiting merge) and continue anyway with a fresh worktree; never touch or resume them.
 
 ## Next-step line
 
