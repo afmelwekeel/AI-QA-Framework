@@ -6,6 +6,11 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [3.6.0] — 2026-10-15
+
+### Added
+- **Unblock Protocol** for `/aiqa-run-tests`: no case stays Blocked on first obstacle. Pre-scan, one approval-gated Unblock Plan (UI / SQL / setting actions with exact steps, rollback, risk), "Unblock Log" in results, rollback + verify at end. Config key `unblock_protocol`. Write SQL allowed only for statements the user approved.
+
 ## [3.4.0] — 2026-10-11
 
 ### Changed

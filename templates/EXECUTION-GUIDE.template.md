@@ -31,7 +31,7 @@ Switch user: <logout route/method>; else clear cookies.
 | User | Roles | Alias | Use |
 |---|---|---|---|
 
-Missing roles (no user holds them): <list>. Cases needing them are **Blocked** unless the user approves creating the account.
+Missing roles (no user holds them): <list>. Cases needing them go through the UNBLOCK PROTOCOL (propose creating the account via UI or DB in an Unblock Plan); **Blocked** only if the user declines.
 
 Role → screen access (from authorization attributes / route config):
 | Screen | Roles |
@@ -54,7 +54,8 @@ Role → screen access (from authorization attributes / route config):
 
 ### 5.3 Rules for data changes
 - Allowed through the UI only: create / edit / delete the test rows a test case creates (prefix above); record the old value before every edit; restore at the end of the file.
-- Never run INSERT / UPDATE / DELETE / DDL SQL. SELECT only.
+- Default: SELECT only. INSERT / UPDATE / DELETE only when the user approved that exact statement in an Unblock Plan (UNBLOCK PROTOCOL in `execute-tests.prompt.md`); non-production environment confirmed; old values recorded first; reverted at the end. Never DDL / DROP / TRUNCATE.
+- Unblocking order: existing data → UI (create request / data / user) → DB write → global setting. Each step needs the user's approval; log in the results "Unblock Log".
 - Never delete or edit existing non-test records. Note cascades.
 - Never change <protected settings>. Never trigger jobs.
 - Ask the user first for any global change (activate / deactivate plans, create users, toggle jobs).
@@ -70,7 +71,7 @@ Tools: `browser_navigate`, `browser_snapshot`, `browser_click`, `browser_type`, 
 - Wait for AJAX lists after load / filter / save. Expand collapsed filter panels. Scope selectors to the modal form.
 - Data checks: compare the screen with a SELECT or the AJAX response.
 - "Block the server" cases: route interception (500). Never stop the app or DB.
-- After 2 failed attempts to locate an element → Blocked with reason, continue.
+- After 2 failed attempts to locate an element, try 3+ other strategies, then run the UNBLOCK PROTOCOL (missing data/state?). Blocked only as its last resort.
 
 ## 8. Recording Results
 | Output | Path |

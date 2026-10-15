@@ -47,7 +47,7 @@ QA framework built on 3 prompts. Story → test-case Markdown → live Playwrigh
 | `/aiqa-tokenstats [--all] [--since 7d]` | Token usage |
 | `/aiqa-terse-help` | Terse reference card |
 
-Rules: browser visible unless user says headless. One test file / bug / story per session. No app changes while testing. SELECT-only SQL. Markdown only (no XLSX, no spec files).
+Rules: browser visible unless user says headless. One test file / bug / story per session. No app changes while testing. SELECT-only SQL by default; write SQL / UI data creation only via an approved Unblock Plan. No case left Blocked without running the Unblock Protocol (`reusable-prompts/execute-tests.prompt.md`). Markdown only (no XLSX, no spec files).
 
 ---
 

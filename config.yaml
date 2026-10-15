@@ -36,7 +36,10 @@ implementation_artifacts: "{project-root}/docs/stories"
 show_browser: true              # true = headed (visible) | false = headless
 viewport: "1920x1080"
 default_browser: chromium       # chromium | firefox | webkit
-max_locate_attempts: 2          # failed attempts to find an element before marking Blocked
+max_locate_attempts: 2          # failed attempts to find an element before trying extra strategies, then the Unblock Protocol
+# Unblock Protocol (/aiqa-run-tests): no case stays Blocked without asking the user to approve UI / SQL / setting
+# actions that unblock it. Approval is always required; this key only turns the offer off.
+unblock_protocol: true          # false = old behaviour (mark Blocked, no unblock offers)
 
 # ── Target Application (filled by /aiqa-setup) ───────────────────────────────
 app_url: ""                     # e.g. https://localhost:7263

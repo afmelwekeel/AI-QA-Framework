@@ -22,11 +22,13 @@ Project facts: `{output_folder}/EXECUTION-GUIDE.md`, `INDEX.md`, `DATABASE-TABLE
 
 **ONE UNIT PER RUN** — one test file, one bug, one story. Stop after the summary.
 
-**NO APP CHANGES WHILE TESTING** — no code/config/migration/job edits; data only via UI per the guide; no write-SQL; no app start/restart unless `{allow_ai_restart}`. Restore baseline.
+**NO APP CHANGES WHILE TESTING** — no code/config/migration/job edits; data only via UI per the guide or an action approved in an Unblock Plan; no write-SQL unless the user approved that exact statement; no app start/restart unless `{allow_ai_restart}`. Restore baseline.
 
 **ASK FIRST** — global changes the guide marks as needing approval.
 
-**TEST USERS** — from guide/`{test_users}`; else read-only DB lookup; else Blocked. Mask secrets as `****`. Never write real secrets to files.
+**UNBLOCK PROTOCOL** — no case Blocked on first obstacle. Pre-scan, diagnose read-only, send ONE Unblock Plan (cases, obstacle, UI/SQL/setting, exact steps/SQL, rows, rollback, risk), wait for approval, run approved actions only, log in results "Unblock Log", roll back + verify at end. Order: existing data → UI → DB write → setting. Never DDL/DROP/TRUNCATE/non-test records/secrets/app code. Blocked only if declined, forbidden, or attempts failed (list them). Full text: `execute-tests.prompt.md`.
+
+**TEST USERS** — from guide/`{test_users}`; else read-only DB lookup; else Unblock Protocol (e.g. create user via UI). Mask secrets as `****`. Never write real secrets to files.
 
 **OUTPUT PATHS** — only under `{output_folder}`: `test-cases/<story>/`, `test-results/<story>/`, `test-results/bugs/`.
 

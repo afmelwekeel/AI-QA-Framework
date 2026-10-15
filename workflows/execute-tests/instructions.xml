@@ -13,7 +13,8 @@
 
   <step n="2" goal="Execute one test-case file">
     <action>Load and follow {project-root}/AI-QA-FRAMEWORK/reusable-prompts/execute-tests.prompt.md with {{test_file}} and {{browser_mode}}</action>
-    <action>Write the results file after EACH case. Resume if a results file exists</action>
+    <action>Pre-scan cases for foreseeable blockers; follow the UNBLOCK PROTOCOL in the prompt: send ONE Unblock Plan (UI / SQL / setting actions, exact steps, rollback, risk) and wait for the user's approval before case 1. Mid-run blockers: pause, new plan, wait. No approval = no data change</action>
+    <action>Write the results file after EACH case. Resume if a results file exists. Log every approved data change in the results file "Unblock Log"; roll back and verify at the end</action>
   </step>
 
   <step n="3" goal="Review and fix (mandatory)">
